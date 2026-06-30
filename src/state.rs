@@ -1,0 +1,235 @@
+// ponytail: single RwSignal for the whole game state. Splitting into per-cell signals
+// would be cleaner for reactivity but this is simpler and the grid is only 81 cells.
+
+use crate::serde_helpers::{u16_81, u8_81};
+use crate::sudoku_engine::{self, Difficulty};
+use leptos::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GameState {
+    #[serde(with = "u8_81")]
+    pub board: [u8; 81],
+    #[serde(with = "u8_81")]
+    pub solution: [u8; 81],
+    #[serde(with = "u16_81")]
+    pub notes: [u16; 81],
+    pub difficulty: Difficulty,
+    pub note_mode: bool,
+    pub selected: Option<(usize, usize)>,
+    pub timer_seconds: u32,
+    pub paused: bool,
+    pub won: bool,
+    pub history: Vec<Snapshot>,
+    pub redo_stack: Vec<Snapshot>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Snapshot {
+    #[serde(with = "u8_81")]
+    pub board: [u8; 81],
+    #[serde(with = "u16_81")]
+    pub notes: [u16; 81],
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        let board = sudoku_engine::generate(40..=45);
+        Self {
+            board: board.cells,
+            solution: board.solution,
+            notes: [0u16; 81],
+            difficulty: Difficulty::Easy,
+            note_mode: false,
+            selected: None,
+            timer_seconds: 0,
+            paused: false,
+            won: false,
+            history: Vec::new(),
+            redo_stack: Vec::new(),
+        }
+    }
+}
+
+impl GameState {
+    fn idx(r: usize, c: usize) -> usize {
+        r * 9 + c
+    }
+
+    pub fn get(&self, r: usize, c: usize) -> u8 {
+        self.board[Self::idx(r, c)]
+    }
+
+    pub fn is_given(&self, r: usize, c: usize) -> bool {
+        self.solution[Self::idx(r, c)] != 0 && self.get(r, c) != 0
+            && self.get(r, c) == self.solution[Self::idx(r, c)]
+    }
+
+    pub fn push_snapshot(&mut self) {
+        self.history.push(Snapshot {
+            board: self.board,
+            notes: self.notes,
+        });
+        self.redo_stack.clear();
+    }
+
+    pub fn undo(&mut self) {
+        if let Some(snap) = self.history.pop() {
+            self.redo_stack.push(Snapshot {
+                board: self.board,
+                notes: self.notes,
+            });
+            self.board = snap.board;
+            self.notes = snap.notes;
+        }
+    }
+
+    pub fn redo(&mut self) {
+        if let Some(snap) = self.redo_stack.pop() {
+            self.history.push(Snapshot {
+                board: self.board,
+                notes: self.notes,
+            });
+            self.board = snap.board;
+            self.notes = snap.notes;
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct AppState(pub RwSignal<GameState>);
+
+impl AppState {
+    pub fn new() -> Self {
+        // ponytail: try localStorage load, fallback to new game.
+        let saved = load_state();
+        AppState(RwSignal::new(saved.unwrap_or_default()))
+    }
+
+    pub fn new_game(&self, difficulty: Difficulty) {
+        let board = match difficulty {
+            Difficulty::Easy => sudoku_engine::generate(40..=45),
+            Difficulty::Medium => sudoku_engine::generate(32..=38),
+            Difficulty::Hard => sudoku_engine::generate(26..=31),
+            Difficulty::Expert => sudoku_engine::generate(20..=25),
+        };
+        self.0.update(|s| {
+            *s = GameState {
+                board: board.cells,
+                solution: board.solution,
+                notes: [0u16; 81],
+                difficulty,
+                note_mode: s.note_mode,
+                selected: None,
+                timer_seconds: 0,
+                paused: false,
+                won: false,
+                history: Vec::new(),
+                redo_stack: Vec::new(),
+            };
+        });
+    }
+
+    pub fn select_cell(&self, r: usize, c: usize) {
+        self.0.update(|s| s.selected = Some((r, c)));
+    }
+
+    pub fn place_number(&self, v: u8) {
+        self.0.update(|s| {
+            if let Some((r, c)) = s.selected {
+                if s.is_given(r, c) || s.won {
+                    return;
+                }
+                s.push_snapshot();
+
+                if s.note_mode {
+                    if v == 0 {
+                        s.notes[GameState::idx(r, c)] = 0;
+                    } else {
+                        let bit = 1 << (v - 1);
+                        s.notes[GameState::idx(r, c)] ^= bit;
+                    }
+                } else {
+                    if v == 0 {
+                        s.board[GameState::idx(r, c)] = 0;
+                    } else {
+                        s.board[GameState::idx(r, c)] = v;
+                        s.notes[GameState::idx(r, c)] = 0;
+                    }
+                }
+
+                // Check win
+                if !s.note_mode && s.board == s.solution {
+                    s.won = true;
+                }
+            }
+        });
+    }
+
+    pub fn undo(&self) {
+        self.0.update(|s| s.undo());
+    }
+
+    pub fn redo(&self) {
+        self.0.update(|s| s.redo());
+    }
+
+    pub fn toggle_note_mode(&self) {
+        self.0.update(|s| s.note_mode = !s.note_mode);
+    }
+
+    pub fn hint(&self) {
+        self.0.update(|s| {
+            // ponytail: find first empty or wrong cell and fill it from solution.
+            for i in 0..81 {
+                if s.board[i] != s.solution[i] {
+                    s.push_snapshot();
+                    s.board[i] = s.solution[i];
+                    s.notes[i] = 0;
+                    if s.board == s.solution {
+                        s.won = true;
+                    }
+                    return;
+                }
+            }
+        });
+    }
+
+    pub fn solve(&self) {
+        self.0.update(|s| {
+            s.push_snapshot();
+            s.board = s.solution;
+            s.notes = [0u16; 81];
+            s.won = true;
+        });
+    }
+
+    pub fn tick_timer(&self) {
+        self.0.update(|s| {
+            if !s.paused && !s.won {
+                s.timer_seconds += 1;
+            }
+        });
+    }
+
+    pub fn toggle_pause(&self) {
+        self.0.update(|s| s.paused = !s.paused);
+    }
+}
+
+fn load_state() -> Option<GameState> {
+    let window = web_sys::window()?;
+    let storage = window.local_storage().ok()??;
+    let json = storage.get_item("sudoku_state").ok()??;
+    serde_json::from_str(&json).ok()
+}
+
+pub fn save_state(state: &GameState) {
+    if let Some(window) = web_sys::window() {
+        if let Ok(Some(storage)) = window.local_storage() {
+            if let Ok(json) = serde_json::to_string(state) {
+                let _ = storage.set_item("sudoku_state", &json);
+            }
+        }
+    }
+}

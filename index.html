@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <link rel="manifest" href="/manifest.json" />
+  <link data-trunk rel="copy-file" href="manifest.json" />
+  <link data-trunk rel="copy-file" href="sw.js" />
+  <link data-trunk rel="copy-dir" href="public" />
+  <link data-trunk rel="css" href="style/output.css" />
+  <link data-trunk rel="rust" href="Cargo.toml" />
+  <meta name="theme-color" content="#1a1a2e" />
+</head>
+<body>
+  <div id="loading">Carregando Sudoku...</div>
+  <script>
+    window.__sudoku = window.__sudoku || {};
+    window.__sudoku._installPrompt = null;
+    window.__sudoku.showInstall = function() {
+      if (window.__sudoku._installPrompt) {
+        window.__sudoku._installPrompt.prompt();
+        window.__sudoku._installPrompt = null;
+      }
+    };
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__sudoku._installPrompt = e;
+      window.dispatchEvent(new CustomEvent('sudoku:installavailable'));
+    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>
