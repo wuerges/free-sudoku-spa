@@ -38,11 +38,12 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 ### Core Gameplay
 - Grid 9×9 responsivo e touch-friendly
 - 4 dificuldades: **Fácil | Médio | Difícil | Expert**
-- Botão "Novo Jogo" que gera puzzle novo instantaneamente
-- Input via **number pad virtual grande** (botões 1-9 + Apagar + alternar Nota)
+- Botão "Novo Jogo" que revela seleção de dificuldade (Fácil | Médio | Difícil | Expert) e gera puzzle novo
+- Input via **number pad virtual** (botões 1-9 em linha horizontal + Apagar + alternar Nota)
 - **Restrição de design:** Zero elementos `<input>` na UI do jogo — usar apenas `<button>` e `<div>` para evitar que o teclado virtual do OS interfira com o number pad customizado
 - **Modo Notas** (pencil marks): múltiplos candidatos pequenos por célula
 - Validação em tempo real com destaque visual de conflitos (mesmo número na linha/coluna/bloco)
+- **Destaque visual da linha e coluna** da célula selecionada
 - **Undo / Redo** com histórico de estados
 - Timer da partida (com botão pausar)
 - Botão **Dica** (revela uma célula correta) e **Resolver** (mostra solução completa)
@@ -88,7 +89,7 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 | WASM bindings       | `wasm-bindgen` + `web-sys` + `console_error_panic_hook` | Acesso a DOM, localStorage, install prompt, Canvas; panic hook para debugging |
 | PWA                 | Web App Manifest + Service Worker       | Instalável no Android, offline, com estratégia de atualização |
 | Deploy              | **Vercel** (static) + GitHub Actions    | CDN edge, preview deploys, zero custo |
-| Testes              | `cargo test` + manual / Playwright futuro | Lógica 100% testada |
+| Testes              | `cargo test` (engine + state) + manual / Playwright futuro | Engine e state management 100% testados |
 
 **Nota sobre Tailwind v4 + Trunk:** Tailwind v4 usa `@import "tailwindcss"` em vez de `tailwind.config.js`. Usar o Tailwind CLI standalone (binary, sem Node.js) junto com Trunk — o suporte built-in de Tailwind no Trunk é para v3.
 

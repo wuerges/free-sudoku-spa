@@ -9,6 +9,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
     let paused = move || state.0.get().paused;
     let won = move || state.0.get().won;
     let difficulty = move || state.0.get().difficulty;
+    let show_new_game = RwSignal::new(false);
 
     view! {
         <div class="w-full max-w-[min(90vw,500px)] mx-auto mt-2 space-y-1.5">
@@ -30,32 +31,45 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 </div>
             })}
 
-            // Difficulty selector + new game
-            <div class="flex flex-wrap items-center justify-center gap-1">
-                {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert].iter().map(|&d| {
-                    let state = state.clone();
-                    let label = match d {
-                        Difficulty::Easy => "Fácil",
-                        Difficulty::Medium => "Médio",
-                        Difficulty::Hard => "Difícil",
-                        Difficulty::Expert => "Expert",
-                    };
-                    view! {
-                        <button
-                            class=move || format!(
-                                "px-2 py-1 rounded text-xs font-medium transition-colors {}",
-                                if difficulty() == d {
-                                    "bg-blue-500 text-white"
-                                } else {
-                                    "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 active:bg-gray-300"
-                                }
-                            )
-                            on:click=move |_| state.new_game(d)
-                        >
-                            {label}
-                        </button>
-                    }
-                }).collect::<Vec<_>>()}
+            // New game button + difficulty selection
+            <div class="flex flex-col items-center gap-1">
+                <button
+                    class="px-3 py-1 rounded text-sm font-medium bg-blue-500 text-white active:bg-blue-600 transition-colors"
+                    on:click=move |_| show_new_game.update(|v| *v = !*v)
+                >
+                    "🔄 Novo Jogo"
+                </button>
+                {move || show_new_game.get().then(|| view! {
+                    <div class="flex flex-wrap items-center justify-center gap-1">
+                        {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert].iter().map(|&d| {
+                            let state = state;
+                            let label = match d {
+                                Difficulty::Easy => "Fácil",
+                                Difficulty::Medium => "Médio",
+                                Difficulty::Hard => "Difícil",
+                                Difficulty::Expert => "Expert",
+                            };
+                            view! {
+                                <button
+                                    class=move || format!(
+                                        "px-2 py-1 rounded text-xs font-medium transition-colors {}",
+                                        if difficulty() == d {
+                                            "bg-blue-500 text-white"
+                                        } else {
+                                            "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 active:bg-gray-300"
+                                        }
+                                    )
+                                    on:click=move |_| {
+                                        state.new_game(d);
+                                        show_new_game.set(false);
+                                    }
+                                >
+                                    {label}
+                                </button>
+                            }
+                        }).collect::<Vec<_>>()}
+                    </div>
+                })}
             </div>
 
             // Action buttons

@@ -19,6 +19,13 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         use crate::sudoku_engine::conflicts;
         !conflicts(&s.board, row, col).is_empty()
     };
+    let is_highlighted = move || {
+        if let Some((sr, sc)) = state.0.get().selected {
+            (row == sr || col == sc) && Some((row, col)) != state.0.get().selected
+        } else {
+            false
+        }
+    };
     let same_value = move || {
         let s = state.0.get();
         let v = s.get(row, col);
@@ -38,6 +45,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 );
                 if is_selected() { cls.push_str(" bg-blue-200 dark:bg-blue-800"); }
                 else if same_value() { cls.push_str(" bg-blue-100 dark:bg-blue-900/50"); }
+                else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/30"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
                 cls.push_str(&format!(" border-r-{}", if box_right { "2" } else { "[0.5px]" }));

@@ -218,18 +218,175 @@ impl AppState {
 }
 
 fn load_state() -> Option<GameState> {
-    let window = web_sys::window()?;
-    let storage = window.local_storage().ok()??;
-    let json = storage.get_item("sudoku_state").ok()??;
-    serde_json::from_str(&json).ok()
+    #[cfg(target_arch = "wasm32")]
+    {
+        let window = web_sys::window()?;
+        let storage = window.local_storage().ok()??;
+        let json = storage.get_item("sudoku_state").ok()??;
+        serde_json::from_str(&json).ok()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    None
 }
 
-pub fn save_state(state: &GameState) {
+pub fn save_state(_state: &GameState) {
+    #[cfg(target_arch = "wasm32")]
     if let Some(window) = web_sys::window() {
         if let Ok(Some(storage)) = window.local_storage() {
-            if let Ok(json) = serde_json::to_string(state) {
+            if let Ok(json) = serde_json::to_string(_state) {
                 let _ = storage.set_item("sudoku_state", &json);
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sudoku_engine::Difficulty;
+
+    #[test]
+    fn test_new_game_resets_state() {
+        let state = AppState::new();
+        // Place a number to dirty the state
+        state.select_cell(0, 0);
+        state.place_number(5);
+        // New game
+        state.new_game(Difficulty::Hard);
+        let s = state.0.get();
+        assert_eq!(s.difficulty, Difficulty::Hard);
+        assert_eq!(s.timer_seconds, 0);
+        assert!(s.history.is_empty());
+        assert!(s.redo_stack.is_empty());
+        assert!(!s.won);
+        // Board should have clues (not empty)
+        let clues = s.board.iter().filter(|&&c| c != 0).count();
+        assert!(clues >= 20);
+        assert!(clues <= 45);
+    }
+
+    #[test]
+    fn test_select_cell() {
+        let state = AppState::new();
+        state.select_cell(3, 5);
+        assert_eq!(state.0.get().selected, Some((3, 5)));
+        state.select_cell(0, 0);
+        assert_eq!(state.0.get().selected, Some((0, 0)));
+    }
+
+    #[test]
+    fn test_place_number_and_undo_redo() {
+        let state = AppState::new();
+        // Find an empty cell
+        let empty = (0..81).find(|&i| state.0.get().board[i] == 0).unwrap();
+        let r = empty / 9;
+        let c = empty % 9;
+        let old_val = state.0.get().get(r, c);
+        assert_eq!(old_val, 0);
+
+        state.select_cell(r, c);
+        state.place_number(3);
+        assert_eq!(state.0.get().get(r, c), 3);
+        assert_eq!(state.0.get().history.len(), 1);
+
+        state.undo();
+        assert_eq!(state.0.get().get(r, c), 0);
+        assert_eq!(state.0.get().redo_stack.len(), 1);
+
+        state.redo();
+        assert_eq!(state.0.get().get(r, c), 3);
+        assert_eq!(state.0.get().redo_stack.len(), 0);
+    }
+
+    #[test]
+    fn test_note_mode_toggle() {
+        let state = AppState::new();
+        assert!(!state.0.get().note_mode);
+        state.toggle_note_mode();
+        assert!(state.0.get().note_mode);
+        state.toggle_note_mode();
+        assert!(!state.0.get().note_mode);
+    }
+
+    #[test]
+    fn test_note_placement() {
+        let state = AppState::new();
+        // Find an empty cell
+        let i = (0..81).find(|&i| state.0.get().board[i] == 0).unwrap();
+        let r = i / 9;
+        let c = i % 9;
+        state.toggle_note_mode();
+        state.select_cell(r, c);
+        state.place_number(5);
+        assert_eq!(state.0.get().notes[i], 1 << 4); // bit 4 for number 5
+        // Toggle same note off
+        state.place_number(5);
+        assert_eq!(state.0.get().notes[i], 0);
+    }
+
+    #[test]
+    fn test_hint_fills_one_cell() {
+        let state = AppState::new();
+        let before = state.0.get().board;
+        state.hint();
+        let after = state.0.get().board;
+        // At least one cell should have changed
+        let changed = (0..81).filter(|&i| before[i] != after[i]).count();
+        assert!(changed >= 1);
+        // Hint should place correct value
+        for i in 0..81 {
+            if after[i] != 0 && before[i] == 0 {
+                assert_eq!(after[i], state.0.get().solution[i]);
+            }
+        }
+    }
+
+    #[test]
+    fn test_solve_fills_all() {
+        let state = AppState::new();
+        state.solve();
+        let s = state.0.get();
+        assert!(s.won);
+        assert_eq!(s.board, s.solution);
+        assert!(s.board.iter().all(|&c| c != 0));
+    }
+
+    #[test]
+    fn test_pause_toggle() {
+        let state = AppState::new();
+        assert!(!state.0.get().paused);
+        state.toggle_pause();
+        assert!(state.0.get().paused);
+        state.toggle_pause();
+        assert!(!state.0.get().paused);
+    }
+
+    #[test]
+    fn test_timer_ticks_only_when_unpaused() {
+        let state = AppState::new();
+        assert_eq!(state.0.get().timer_seconds, 0);
+        state.tick_timer();
+        assert_eq!(state.0.get().timer_seconds, 1);
+        state.toggle_pause();
+        state.tick_timer();
+        assert_eq!(state.0.get().timer_seconds, 1); // unchanged
+        state.toggle_pause();
+        state.tick_timer();
+        assert_eq!(state.0.get().timer_seconds, 2);
+    }
+
+    #[test]
+    fn test_cannot_edit_given_cell() {
+        let state = AppState::new();
+        // Find a given cell
+        if let Some(i) = (0..81).find(|&i| state.0.get().is_given(i / 9, i % 9)) {
+            let r = i / 9;
+            let c = i % 9;
+            let original = state.0.get().get(r, c);
+            state.select_cell(r, c);
+            state.place_number(if original == 1 { 2 } else { 1 });
+            // Should not change
+            assert_eq!(state.0.get().get(r, c), original);
         }
     }
 }
