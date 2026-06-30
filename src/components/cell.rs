@@ -34,6 +34,12 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         v == s.get(sr, sc) && v != 0 && (row != sr || col != sc)
     };
 
+    let is_wrong = move || {
+        let s = state.0.get();
+        let v = s.get(row, col);
+        v != 0 && !s.is_given(row, col) && v != s.solution[row * 9 + col]
+    };
+
     let box_right = col % 3 == 2 && col != 8;
     let box_bottom = row % 3 == 2 && row != 8;
 
@@ -60,7 +66,13 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             {move || {
                 let v = value();
                 if v != 0 {
-                    let color = if is_given() { "text-gray-900 dark:text-white" } else { "text-blue-600 dark:text-blue-400" };
+                    let color = if is_given() {
+                        "text-gray-900 dark:text-white"
+                    } else if is_wrong() {
+                        "text-red-600 dark:text-red-400"
+                    } else {
+                        "text-blue-600 dark:text-blue-400"
+                    };
                     view! { <span class=format!("{color} font-{}", if is_given() { "bold" } else { "semibold" })>{v.to_string()}</span> }.into_any()
                 } else {
                     let n = notes();
