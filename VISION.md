@@ -46,6 +46,7 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 - **Destaque visual da linha e coluna** da célula selecionada
 - **Undo / Redo** com histórico de estados (histórico limpo ao usar dica)
 - Timer da partida (com botão pausar)
+- **Contador de erros** (✅ 0 quando limpo, ❌ N ao errar; não retrocede com Desfazer)
 - Botão **Dica** (revela célula com menos candidatos, limpa notas relacionadas, apaga histórico undo/redo, célula fica amarela; desabilitada no Mestre)
 - Detecção de vitória + feedback visual (animação simples / confetti leve via CSS ou canvas)
 - Atalhos de teclado completos (números, Backspace, U para undo, etc.)

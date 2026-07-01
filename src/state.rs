@@ -17,6 +17,7 @@ pub struct GameState {
     pub seed: u64,
     #[serde(with = "u8_81")]
     pub hinted: [u8; 81],
+    pub error_count: u32,
     pub note_mode: bool,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
@@ -44,6 +45,7 @@ impl Default for GameState {
             difficulty: Difficulty::Easy,
             seed: board.seed,
             hinted: [0u8; 81],
+            error_count: 0,
             note_mode: false,
             selected: None,
             timer_seconds: 0,
@@ -130,6 +132,7 @@ impl AppState {
                 difficulty,
                 seed: board.seed,
                 hinted: [0u8; 81],
+                error_count: 0,
                 note_mode: s.note_mode,
                 selected: None,
                 timer_seconds: 0,
@@ -167,6 +170,9 @@ impl AppState {
                         let idx = GameState::idx(r, c);
                         s.board[idx] = v;
                         s.notes[idx] = 0;
+                        if v != s.solution[idx] {
+                            s.error_count += 1;
+                        }
                         // If correct, remove notes of this number from row/col/box
                         if v == s.solution[idx] {
                             let bit = !(1 << (v - 1));
@@ -523,6 +529,7 @@ mod tests {
             difficulty: board.difficulty,
             seed: board.seed,
             hinted: [0u8; 81],
+            error_count: 0,
             note_mode: false,
             selected: None,
             timer_seconds: 0,

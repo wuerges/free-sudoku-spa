@@ -22,6 +22,11 @@ pub fn HelpPage() -> impl IntoView {
         ),
         ("⏸/▶", "Pausar", "Pausa ou retoma o cronômetro."),
         (
+            "✅/❌",
+            "Contador de erros",
+            "Mostra ✅ 0 quando não há erros. Incrementa ❌ a cada número errado. Não retrocede com Desfazer.",
+        ),
+        (
             "🔄 Novo Jogo",
             "Novo jogo",
             "Inicia um novo jogo. Escolha entre Fácil, Médio, Difícil, Expert ou Mestre.",

@@ -18,9 +18,19 @@ pub fn GameControls(state: AppState) -> impl IntoView {
 
     view! {
         <div class="w-full max-w-[min(90vw,500px)] mx-auto mt-2 space-y-1.5">
-            // Timer + pause
+            // Timer + errors + pause
             <div class="flex items-center justify-center gap-2 text-xl font-mono">
                 <span>{move || timer()}</span>
+                <span class="text-sm">
+                    {move || {
+                        let e = state.0.get().error_count;
+                        if e == 0 {
+                            format!("✅ 0")
+                        } else {
+                            format!("❌ {e}")
+                        }
+                    }}
+                </span>
                 <button
                     class="text-sm px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 active:opacity-70"
                     on:click=move |_| state.toggle_pause()
