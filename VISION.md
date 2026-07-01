@@ -14,7 +14,7 @@ Criar um jogo de Sudoku moderno, leve, bonito e **100% funcional offline**, cons
 
 O app deve ser uma Progressive Web App instalável no Android (Chrome/Edge) como se fosse um aplicativo normal — com ícone na tela inicial, abertura em janela standalone, splash e funcionamento offline completo após o primeiro carregamento.
 
-O diferencial técnico: geração **client-side** de puzzles de Sudoku com 4 níveis de dificuldade reais (Fácil → Expert), usando lógica Rust pura de alta performance. Zero backend, zero dependência de servidor, deploy estático simples no Vercel.
+O diferencial técnico: geração **client-side** de puzzles de Sudoku com 5 níveis de dificuldade reais (Fácil → Mestre), usando lógica Rust pura de alta performance. Zero backend, zero dependência de servidor, deploy estático simples no Vercel.
 
 O objetivo é entregar uma experiência premium de puzzle mobile-first, com código limpo, performático e mantível.
 
@@ -25,7 +25,7 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 | Objetivo | Métrica de Sucesso |
 |----------|---------------------|
 | Experiência App-like no Android | Instalável via prompt nativo, abre em standalone, ícone bonito, funciona offline |
-| Geração de puzzles de qualidade | 4 dificuldades distintas e consistentes; todo puzzle tem **exatamente 1 solução** |
+| Geração de puzzles de qualidade | 5 dificuldades distintas e consistentes; todo puzzle tem **exatamente 1 solução** |
 | Performance | Geração de puzzle < 150ms (mesmo Expert); UI 60fps; WASM < 400KB gzipped |
 | UX Mobile | Touch targets ≥ 48px, sem lag, teclado virtual grande, modo notas fluido |
 | Código | Lógica Sudoku 100% testável em Rust (cargo test); UI reativa com Leptos signals |
@@ -37,8 +37,8 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 
 ### Core Gameplay
 - Grid 9×9 responsivo e touch-friendly
-- 4 dificuldades: **Fácil | Médio | Difícil | Expert**
-- Botão "Novo Jogo" que revela seleção de dificuldade (Fácil | Médio | Difícil | Expert) e gera puzzle novo
+- 5 dificuldades: **Fácil | Médio | Difícil | Expert | Mestre**
+- Botão "Novo Jogo" que revela seleção de dificuldade (Fácil | Médio | Difícil | Expert | Mestre) e gera puzzle novo
 - Input via **number pad virtual** (botões 1-9 em linha horizontal + Apagar + alternar Nota)
 - **Restrição de design:** Zero elementos `<input>` na UI do jogo — usar apenas `<button>` e `<div>` para evitar que o teclado virtual do OS interfira com o number pad customizado
 - **Modo Notas** (pencil marks): múltiplos candidatos pequenos por célula
@@ -46,7 +46,7 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 - **Destaque visual da linha e coluna** da célula selecionada
 - **Undo / Redo** com histórico de estados
 - Timer da partida (com botão pausar)
-- Botão **Dica** (revela uma célula correta) e **Resolver** (mostra solução completa)
+- Botão **Dica** (revela uma célula correta, limpa notas relacionadas; desabilitada no Mestre)
 - Detecção de vitória + feedback visual (animação simples / confetti leve via CSS ou canvas)
 - Atalhos de teclado completos (números, Backspace, U para undo, etc.)
 
@@ -187,6 +187,7 @@ pub enum Difficulty {
     Medium,
     Hard,
     Expert,
+    Master,
 }
 ```
 
@@ -205,6 +206,7 @@ pub enum Difficulty {
   - Medium: ~32-38 clues
   - Hard: ~26-31 clues
   - Expert: ~20-25 clues
+  - Master: ~17-19 clues (mínimo teórico para solução única)
 
 **Fase 2 (Qualidade):**
 - Implementar ou integrar analisador de técnicas humanas:
@@ -309,7 +311,7 @@ Usar **GitHub Actions** com cache de Rust + Trunk:
 |------|-------------|
 | **0. Setup** | Leptos CSR + Trunk + Tailwind CLI standalone, scaffold de componentes, manifest + SW com update lifecycle, loading indicator |
 | **1. Engine Core** | `sudoku_engine.rs` completo (generate com simetria, solve, unique check com early exit, valid move). Testes unitários. Integração com signals Leptos |
-| **2. Gameplay MVP** | Grid interativo (sem `<input>`), number pad, modo notas, conflitos visuais, undo/redo, timer com pause, dica, resolver, vitória |
+| **2. Gameplay MVP** | Grid interativo (sem `<input>`), number pad, modo notas, conflitos visuais, undo/redo, timer com pause, dica, vitória |
 | **3. Polish + PWA** | Tema dark/light, responsividade tablet + celular, persistência localStorage, otimização WASM, teste real em Android |
 | **4. Deploy** | GitHub Actions + Vercel com cache de cargo, preview deploy, Lighthouse PWA audit ≥ 90 |
 
