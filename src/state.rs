@@ -153,8 +153,24 @@ impl AppState {
                     if v == 0 {
                         s.board[GameState::idx(r, c)] = 0;
                     } else {
-                        s.board[GameState::idx(r, c)] = v;
-                        s.notes[GameState::idx(r, c)] = 0;
+                        let idx = GameState::idx(r, c);
+                        s.board[idx] = v;
+                        s.notes[idx] = 0;
+                        // If correct, remove notes of this number from row/col/box
+                        if v == s.solution[idx] {
+                            let bit = !(1 << (v - 1));
+                            for i in 0..9 {
+                                s.notes[GameState::idx(r, i)] &= bit;
+                                s.notes[GameState::idx(i, c)] &= bit;
+                            }
+                            let br = (r / 3) * 3;
+                            let bc = (c / 3) * 3;
+                            for rr in br..br + 3 {
+                                for cc in bc..bc + 3 {
+                                    s.notes[GameState::idx(rr, cc)] &= bit;
+                                }
+                            }
+                        }
                     }
                 }
 
