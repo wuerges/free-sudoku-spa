@@ -1,11 +1,15 @@
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use wasm_bindgen::JsCast;
 
 #[component]
-pub fn Header(state: AppState, dark_mode: RwSignal<bool>, show_help: RwSignal<bool>) -> impl IntoView {
+pub fn Header() -> impl IntoView {
+    let state: AppState = use_context().unwrap();
+    let dark_mode: RwSignal<bool> = use_context().unwrap();
     let install_visible = RwSignal::new(false);
+    let navigate = use_navigate();
 
     // ponytail: beforeinstallprompt via window.__sudoku JS bridge. ceiling: no typed API. upgrade: web-sys BeforeInstallPromptEvent if the feature lands.
     if let Some(_window) = web_sys::window() {
@@ -40,7 +44,7 @@ pub fn Header(state: AppState, dark_mode: RwSignal<bool>, show_help: RwSignal<bo
             <div class="flex items-center gap-2">
                 <button
                     class="text-xl px-1 active:opacity-70 select-none font-bold"
-                    on:click=move |_| show_help.set(true)
+                    on:click=move |_| navigate("/help", Default::default())
                 >
                     "?"
                 </button>

@@ -1,7 +1,9 @@
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 
 #[component]
-pub fn HelpPage(show_help: RwSignal<bool>) -> impl IntoView {
+pub fn HelpPage() -> impl IntoView {
+    let navigate = use_navigate();
     let items: Vec<(&str, &str, &str)> = vec![
         ("☀️/🌙", "Modo escuro", "Alterna entre modo claro e escuro."),
         ("📲 Instalar", "Instalar app", "Instala o Sudoku no seu dispositivo como um aplicativo nativo (PWA)."),
@@ -19,15 +21,13 @@ pub fn HelpPage(show_help: RwSignal<bool>) -> impl IntoView {
 
     view! {
         <div class="w-full max-w-[min(90vw,500px)] flex flex-col flex-1">
-            // Back button
             <button
                 class="self-start px-3 py-1 mb-2 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
-                on:click=move |_| show_help.set(false)
+                on:click=move |_| navigate("/", Default::default())
             >
                 "← Voltar"
             </button>
 
-            // Title
             <div class="text-center mb-4">
                 <div class="text-4xl mb-2">{ "🧩" }</div>
                 <h2 class="text-xl font-bold">"Sudoku"</h2>
@@ -44,7 +44,6 @@ pub fn HelpPage(show_help: RwSignal<bool>) -> impl IntoView {
                 </a>
             </div>
 
-            // Button list
             <div class="space-y-2">
                 {items.into_iter().map(|(icon, name, desc)| view! {
                     <div class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">

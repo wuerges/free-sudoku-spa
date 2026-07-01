@@ -1,9 +1,10 @@
 use crate::components::{
-    game_controls::GameControls, header::Header, help_page::HelpPage, number_pad::NumberPad,
-    sudoku_grid::SudokuGrid,
+    game_page::GamePage, help_page::HelpPage,
 };
 use crate::state::{save_state, AppState};
 use leptos::prelude::*;
+use leptos_router::components::{Route, Router, Routes};
+use leptos_router::path;
 
 fn set_html_dark(dark: bool) {
     if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
@@ -61,23 +62,20 @@ pub fn App() -> impl IntoView {
         set_html_dark(dark_mode.get());
     });
 
-    let show_help = RwSignal::new(false);
+    provide_context(state);
+    provide_context(dark_mode);
 
     view! {
-        <div class=move || format!(
-            "min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors {}",
-            if dark_mode.get() { "bg-gray-900 text-white" } else { "bg-white text-gray-900" },
-        )>
-            <Header state=state dark_mode=dark_mode show_help=show_help />
-            {move || if show_help.get() {
-                view! { <HelpPage show_help=show_help /> }.into_any()
-            } else {
-                view! {
-                    <SudokuGrid state=state />
-                    <NumberPad state=state />
-                    <GameControls state=state />
-                }.into_any()
-            }}
-        </div>
+        <Router>
+            <div class=move || format!(
+                "min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors {}",
+                if dark_mode.get() { "bg-gray-900 text-white" } else { "bg-white text-gray-900" },
+            )>
+                <Routes fallback=|| "Not found">
+                    <Route path=path!("") view=GamePage />
+                    <Route path=path!("/help") view=HelpPage />
+                </Routes>
+            </div>
+        </Router>
     }
 }
