@@ -1,7 +1,12 @@
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
-use crate::utils::format_time;
 use leptos::prelude::*;
+
+fn format_time(seconds: u32) -> String {
+    let m = (seconds % 3600) / 60;
+    let s = seconds % 60;
+    format!("{m:02}:{s:02}")
+}
 
 #[component]
 pub fn GameControls(state: AppState) -> impl IntoView {

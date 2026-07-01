@@ -1,6 +1,5 @@
 // ponytail: flat [u8; 81], 0=empty, 1-9=filled. ceiling: 9x9 only. upgrade: Grid<const N: usize> if variants needed.
 // ponytail: clue-count proxy for difficulty. ceiling: mis-rated puzzles. upgrade: human-technique grading when players complain.
-#![allow(dead_code)]
 
 use crate::serde_helpers::u8_81;
 use serde::{Deserialize, Serialize};
@@ -20,28 +19,6 @@ pub struct Board {
     #[serde(with = "u8_81")]
     pub solution: [u8; 81],
     pub difficulty: Difficulty,
-}
-
-impl Board {
-    fn idx(r: usize, c: usize) -> usize {
-        r * 9 + c
-    }
-
-    pub fn get(&self, r: usize, c: usize) -> u8 {
-        self.cells[Self::idx(r, c)]
-    }
-
-    pub fn set(&mut self, r: usize, c: usize, v: u8) {
-        self.cells[Self::idx(r, c)] = v;
-    }
-
-    pub fn is_given(&self, r: usize, c: usize) -> bool {
-        self.solution[Self::idx(r, c)] != 0 && self.get(r, c) != 0
-    }
-
-    pub fn clue_count(&self) -> u8 {
-        self.cells.iter().filter(|&&c| c != 0).count() as u8
-    }
 }
 
 /// Generate a complete valid Sudoku grid via backtracking.
@@ -153,22 +130,6 @@ pub fn conflicts(grid: &[u8; 81], row: usize, col: usize) -> Vec<(usize, usize)>
         for c in bc..bc + 3 {
             if (r != row || c != col) && grid[r * 9 + c] == v {
                 res.push((r, c));
-            }
-        }
-    }
-    res
-}
-
-/// All conflicts on the board.
-pub fn all_conflicts(grid: &[u8; 81]) -> Vec<(usize, usize)> {
-    let mut res = Vec::new();
-    for idx in 0..81 {
-        if grid[idx] != 0 {
-            let row = idx / 9;
-            let col = idx % 9;
-            let cs = conflicts(grid, row, col);
-            if !cs.is_empty() {
-                res.push((row, col));
             }
         }
     }

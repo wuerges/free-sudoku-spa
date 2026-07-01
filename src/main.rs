@@ -3,7 +3,6 @@ mod components;
 mod serde_helpers;
 mod state;
 mod sudoku_engine;
-mod utils;
 
 use leptos::prelude::*;
 
