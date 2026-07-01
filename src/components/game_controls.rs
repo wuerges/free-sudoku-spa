@@ -100,16 +100,11 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     "📝 Auto Notas"
                 </button>
                 <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70"
+                    class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70 disabled:opacity-30"
                     on:click=move |_| state.hint()
+                    disabled=move || difficulty() == Difficulty::Master
                 >
                     "💡 Dica"
-                </button>
-                <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 active:opacity-70"
-                    on:click=move |_| state.solve()
-                >
-                    "Resolver"
                 </button>
             </div>
         </div>

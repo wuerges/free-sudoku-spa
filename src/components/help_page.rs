@@ -36,9 +36,8 @@ pub fn HelpPage() -> impl IntoView {
         (
             "💡 Dica",
             "Dica",
-            "Revela a resposta correta de uma célula.",
+            "Revela a resposta correta de uma célula. Desabilitada no nível Mestre.",
         ),
-        ("Resolver", "Resolver", "Completa o jogo com a solução."),
         ("☀️/🌙", "Modo escuro", "Alterna entre modo claro e escuro."),
         (
             "📲 Instalar",

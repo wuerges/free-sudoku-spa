@@ -221,15 +221,6 @@ impl AppState {
         });
     }
 
-    pub fn solve(&self) {
-        self.0.update(|s| {
-            s.push_snapshot();
-            s.board = s.solution;
-            s.notes = [0u16; 81];
-            s.won = true;
-        });
-    }
-
     pub fn tick_timer(&self) {
         self.0.update(|s| {
             if !s.paused && !s.won {
@@ -391,16 +382,6 @@ mod tests {
                 assert_eq!(after[i], state.0.get().solution[i]);
             }
         }
-    }
-
-    #[test]
-    fn test_solve_fills_all() {
-        let state = AppState::new();
-        state.solve();
-        let s = state.0.get();
-        assert!(s.won);
-        assert_eq!(s.board, s.solution);
-        assert!(s.board.iter().all(|&c| c != 0));
     }
 
     #[test]
