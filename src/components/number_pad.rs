@@ -30,7 +30,7 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                     )
                     on:click=move |_| state.toggle_note_mode()
                 >
-                    {move || if note_mode() { "Nota ON" } else { "Nota" }}
+                    {move || if note_mode() { "📝 Nota ON" } else { "📝 Nota" }}
                 </button>
             </div>
         </div>
