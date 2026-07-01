@@ -48,7 +48,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 );
                 if is_selected() { cls.push_str(" bg-blue-200 dark:bg-blue-800"); }
                 else if same_value() { cls.push_str(" bg-blue-100 dark:bg-blue-900/50"); }
-                else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/30"); }
+                else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/50"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
                 cls
@@ -75,7 +75,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                         view! {
                             <div class="grid grid-cols-3 gap-0 w-full h-full p-[2px]">
                                 {n.iter().map(|&v| view! {
-                                    <span class="flex items-center justify-center text-[8px] sm:text-[10px] leading-none text-gray-400 dark:text-gray-500">{v.to_string()}</span>
+                                    <span class="flex items-center justify-center text-[8px] sm:text-[10px] leading-none text-gray-400 dark:text-gray-400">{v.to_string()}</span>
                                 }).collect::<Vec<_>>()}
                             </div>
                         }.into_any()
