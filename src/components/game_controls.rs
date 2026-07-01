@@ -42,7 +42,6 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 {move || show_new_game.get().then(|| view! {
                     <div class="flex flex-wrap items-center justify-center gap-1">
                         {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert].iter().map(|&d| {
-                            let state = state;
                             let label = match d {
                                 Difficulty::Easy => "Fácil",
                                 Difficulty::Medium => "Médio",

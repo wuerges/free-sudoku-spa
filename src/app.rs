@@ -19,15 +19,14 @@ pub fn App() -> impl IntoView {
     let state = AppState::new();
 
     // Timer
-    let timer_state = state.clone();
-    let timer_handle = set_interval(
+    let timer_state = state;
+    set_interval(
         move || timer_state.tick_timer(),
         std::time::Duration::from_secs(1),
     );
-    let _timer_handle = timer_handle;
 
     // Persist
-    let persist_state = state.clone();
+    let persist_state = state;
     let _effect = Effect::new(move || {
         let s = persist_state.0.get();
         save_state(&s);
@@ -57,10 +56,10 @@ pub fn App() -> impl IntoView {
             "min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors {}",
             if dark_mode.get() { "bg-gray-900 text-white" } else { "bg-white text-gray-900" },
         )>
-            <Header state=state.clone() dark_mode=dark_mode />
-            <SudokuGrid state=state.clone() />
-            <NumberPad state=state.clone() />
-            <GameControls state=state.clone() />
+            <Header state=state dark_mode=dark_mode />
+            <SudokuGrid state=state />
+            <NumberPad state=state />
+            <GameControls state=state />
         </div>
     }
 }
