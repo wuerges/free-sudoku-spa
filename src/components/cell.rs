@@ -40,9 +40,6 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         v != 0 && !s.is_given(row, col) && v != s.solution[row * 9 + col]
     };
 
-    let box_right = col % 3 == 2 && col != 8;
-    let box_bottom = row % 3 == 2 && row != 8;
-
     view! {
         <button
             class=move || {
@@ -54,10 +51,6 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/30"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
-                cls.push_str(&format!(" border-r-{}", if box_right { "2" } else { "[0.5px]" }));
-                cls.push_str(&format!(" border-b-{}", if box_bottom { "2" } else { "[0.5px]" }));
-                if col == 0 { cls.push_str(" border-l-2"); }
-                if row == 0 { cls.push_str(" border-t-2"); }
                 cls
             }
             on:click=move |_| state.select_cell(row, col)
