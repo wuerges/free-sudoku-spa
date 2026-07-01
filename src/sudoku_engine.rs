@@ -1,5 +1,5 @@
-// ponytail: flat [u8; 81] is the simplest that works. 0=empty, 1-9=filled.
-// ponytail: clue-count proxy for difficulty. Human-technique grading deferred — add when players complain puzzles are mis-rated.
+// ponytail: flat [u8; 81], 0=empty, 1-9=filled. ceiling: 9x9 only. upgrade: Grid<const N: usize> if variants needed.
+// ponytail: clue-count proxy for difficulty. ceiling: mis-rated puzzles. upgrade: human-technique grading when players complain.
 #![allow(dead_code)]
 
 use crate::serde_helpers::u8_81;
@@ -228,7 +228,7 @@ struct Rand(u64);
 
 impl Rand {
     fn new() -> Self {
-        // ponytail: seed from Math.random() * u64::MAX in wasm, time-based fallback.
+        // ponytail: xorshift seeded from Math.random(). ceiling: not cryptographically random. upgrade: getrandom crate if seed quality matters.
         #[cfg(target_arch = "wasm32")]
         let seed = (js_sys::Math::random() * (u64::MAX as f64)) as u64;
         #[cfg(not(target_arch = "wasm32"))]

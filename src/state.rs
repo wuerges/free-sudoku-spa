@@ -1,5 +1,4 @@
-// ponytail: single RwSignal for the whole game state. Splitting into per-cell signals
-// would be cleaner for reactivity but this is simpler and the grid is only 81 cells.
+// ponytail: single RwSignal<GameState>. ceiling: 81 cells re-render on any change. upgrade: per-cell signals if frame drops on low-end devices.
 
 use crate::serde_helpers::{u16_81, u8_81};
 use crate::sudoku_engine::{self, Difficulty};
@@ -101,7 +100,7 @@ pub struct AppState(pub RwSignal<GameState>);
 
 impl AppState {
     pub fn new() -> Self {
-        // ponytail: try localStorage load, fallback to new game.
+        // ponytail: localStorage load with console.warn on failure. ceiling: user doesn't see console. upgrade: toast notification if players report lost progress.
         let saved = load_state();
         AppState(RwSignal::new(saved.unwrap_or_default()))
     }
@@ -196,16 +195,26 @@ impl AppState {
 
     pub fn hint(&self) {
         self.0.update(|s| {
-            // ponytail: find first empty or wrong cell and fill it from solution.
+            // Hint: pick the unsolved cell with fewest candidates.
+            let mut best: Option<(usize, u32)> = None;
             for i in 0..81 {
                 if s.board[i] != s.solution[i] {
-                    s.push_snapshot();
-                    s.board[i] = s.solution[i];
-                    s.notes[i] = 0;
-                    if s.board == s.solution {
-                        s.won = true;
+                    let cands = (1..=9).filter(|&v| {
+                        let r = i / 9;
+                        let c = i % 9;
+                        crate::sudoku_engine::is_valid_move(&s.board, r, c, v)
+                    }).count() as u32;
+                    if cands > 0 && best.is_none_or(|(_, n)| cands < n) {
+                        best = Some((i, cands));
                     }
-                    return;
+                }
+            }
+            if let Some((i, _)) = best {
+                s.push_snapshot();
+                s.board[i] = s.solution[i];
+                s.notes[i] = 0;
+                if s.board == s.solution {
+                    s.won = true;
                 }
             }
         });
@@ -239,7 +248,13 @@ fn load_state() -> Option<GameState> {
         let window = web_sys::window()?;
         let storage = window.local_storage().ok()??;
         let json = storage.get_item("sudoku_state").ok()??;
-        serde_json::from_str(&json).ok()
+        match serde_json::from_str(&json) {
+            Ok(s) => Some(s),
+            Err(e) => {
+                web_sys::console::warn_1(&format!("sudoku: failed to load state: {e}").into());
+                None
+            }
+        }
     }
     #[cfg(not(target_arch = "wasm32"))]
     None

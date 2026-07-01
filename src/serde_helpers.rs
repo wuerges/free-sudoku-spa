@@ -1,5 +1,5 @@
-// ponytail: serde doesn't impl Serialize/Deserialize for arrays >32 elements.
-// Custom helpers convert to/from Vec for [u8; 81] and [u16; 81].
+// serde doesn't impl Serialize/Deserialize for arrays >32 elements.
+// Custom helpers convert to/from Vec — error on wrong length.
 
 pub mod u8_81 {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -10,9 +10,11 @@ pub mod u8_81 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<[u8; 81], D::Error> {
         let v = Vec::<u8>::deserialize(d)?;
+        if v.len() != 81 {
+            return Err(serde::de::Error::invalid_length(v.len(), &"81"));
+        }
         let mut arr = [0u8; 81];
-        let len = v.len().min(81);
-        arr[..len].copy_from_slice(&v[..len]);
+        arr.copy_from_slice(&v);
         Ok(arr)
     }
 }
@@ -26,9 +28,11 @@ pub mod u16_81 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<[u16; 81], D::Error> {
         let v = Vec::<u16>::deserialize(d)?;
+        if v.len() != 81 {
+            return Err(serde::de::Error::invalid_length(v.len(), &"81"));
+        }
         let mut arr = [0u16; 81];
-        let len = v.len().min(81);
-        arr[..len].copy_from_slice(&v[..len]);
+        arr.copy_from_slice(&v);
         Ok(arr)
     }
 }

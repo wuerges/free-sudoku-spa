@@ -7,8 +7,7 @@ use wasm_bindgen::JsCast;
 pub fn Header(state: AppState, dark_mode: RwSignal<bool>) -> impl IntoView {
     let install_visible = RwSignal::new(false);
 
-    // ponytail: beforeinstallprompt captured in index.html JS, stored at window.__sudoku.
-    // Check on mount if already available.
+    // ponytail: beforeinstallprompt via window.__sudoku JS bridge. ceiling: no typed API. upgrade: web-sys BeforeInstallPromptEvent if the feature lands.
     if let Some(_window) = web_sys::window() {
         let already = js_sys::eval("!!(window.__sudoku&&window.__sudoku._installPrompt)")
             .map(|v| v.as_bool().unwrap_or(false))
