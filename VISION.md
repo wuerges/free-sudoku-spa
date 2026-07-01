@@ -44,9 +44,9 @@ O objetivo é entregar uma experiência premium de puzzle mobile-first, com cód
 - **Modo Notas** (pencil marks): múltiplos candidatos pequenos por célula
 - Validação em tempo real com destaque visual de conflitos (mesmo número na linha/coluna/bloco)
 - **Destaque visual da linha e coluna** da célula selecionada
-- **Undo / Redo** com histórico de estados
+- **Undo / Redo** com histórico de estados (histórico limpo ao usar dica)
 - Timer da partida (com botão pausar)
-- Botão **Dica** (revela uma célula correta, limpa notas relacionadas; desabilitada no Mestre)
+- Botão **Dica** (revela célula com menos candidatos, limpa notas relacionadas, apaga histórico undo/redo, célula fica amarela; desabilitada no Mestre)
 - Detecção de vitória + feedback visual (animação simples / confetti leve via CSS ou canvas)
 - Atalhos de teclado completos (números, Backspace, U para undo, etc.)
 

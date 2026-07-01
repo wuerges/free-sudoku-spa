@@ -26,8 +26,8 @@ pub fn HelpPage() -> impl IntoView {
             "Novo jogo",
             "Inicia um novo jogo. Escolha entre Fácil, Médio, Difícil, Expert ou Mestre.",
         ),
-        ("↩ Desfazer", "Desfazer", "Desfaz a última ação."),
-        ("↪ Refazer", "Refazer", "Refaz a ação desfeita."),
+        ("↩ Desfazer", "Desfazer", "Desfaz a última ação. O histórico é apagado ao usar uma dica."),
+        ("↪ Refazer", "Refazer", "Refaz a ação desfeita. O histórico é apagado ao usar uma dica."),
         (
             "📝 Auto Notas",
             "Auto notas",
@@ -36,7 +36,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "💡 Dica",
             "Dica",
-            "Revela a resposta correta de uma célula com menos candidatos e limpa as notas relacionadas. Desabilitada no nível Mestre.",
+            "Revela a célula com menos candidatos, limpa as notas relacionadas e apaga o histórico de desfazer. Células reveladas ficam amarelas. Desabilitada no nível Mestre.",
         ),
         ("☀️/🌙", "Modo escuro", "Alterna entre modo claro e escuro."),
         (

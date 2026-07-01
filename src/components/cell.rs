@@ -34,6 +34,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         v == s.get(sr, sc) && v != 0 && (row != sr || col != sc)
     };
 
+    let is_hinted = move || state.0.get().is_hinted(row, col);
     let is_wrong = move || {
         let s = state.0.get();
         let v = s.get(row, col);
@@ -49,6 +50,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 if is_selected() { cls.push_str(" bg-blue-200 dark:bg-blue-800"); }
                 else if same_value() { cls.push_str(" bg-blue-100 dark:bg-blue-900/50"); }
                 else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/50"); }
+                else if is_hinted() { cls.push_str(" bg-amber-100 dark:bg-amber-900/30"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
                 cls
@@ -59,14 +61,16 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             {move || {
                 let v = value();
                 if v != 0 {
-                    let color = if is_given() {
+                    let color = if is_hinted() {
+                        "text-amber-700 dark:text-amber-300"
+                    } else if is_given() {
                         "text-gray-900 dark:text-white"
                     } else if is_wrong() {
                         "text-red-600 dark:text-red-400"
                     } else {
                         "text-blue-600 dark:text-blue-400"
                     };
-                    view! { <span class=format!("{color} font-{}", if is_given() { "bold" } else { "semibold" })>{v.to_string()}</span> }.into_any()
+                    view! { <span class=format!("{color} font-{}", if is_given() && !is_hinted() { "bold" } else { "semibold" })>{v.to_string()}</span> }.into_any()
                 } else {
                     let n = notes();
                     if n.is_empty() {

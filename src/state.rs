@@ -15,6 +15,8 @@ pub struct GameState {
     pub notes: [u16; 81],
     pub difficulty: Difficulty,
     pub seed: u64,
+    #[serde(with = "u8_81")]
+    pub hinted: [u8; 81],
     pub note_mode: bool,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
@@ -41,6 +43,7 @@ impl Default for GameState {
             notes: [0u16; 81],
             difficulty: Difficulty::Easy,
             seed: board.seed,
+            hinted: [0u8; 81],
             note_mode: false,
             selected: None,
             timer_seconds: 0,
@@ -64,6 +67,10 @@ impl GameState {
     pub fn is_given(&self, r: usize, c: usize) -> bool {
         self.solution[Self::idx(r, c)] != 0 && self.get(r, c) != 0
             && self.get(r, c) == self.solution[Self::idx(r, c)]
+    }
+
+    pub fn is_hinted(&self, r: usize, c: usize) -> bool {
+        self.hinted[Self::idx(r, c)] != 0
     }
 
     pub fn push_snapshot(&mut self) {
@@ -122,6 +129,7 @@ impl AppState {
                 notes: [0u16; 81],
                 difficulty,
                 seed: board.seed,
+                hinted: [0u8; 81],
                 note_mode: s.note_mode,
                 selected: None,
                 timer_seconds: 0,
@@ -226,8 +234,10 @@ impl AppState {
                 }
             }
             if let Some((i, _)) = best {
-                s.push_snapshot();
+                s.history.clear();
+                s.redo_stack.clear();
                 let v = s.solution[i];
+                s.hinted[i] = 1;
                 s.board[i] = v;
                 s.notes[i] = 0;
                 // Clear notes of this number from row/col/box
@@ -512,6 +522,7 @@ mod tests {
             notes: [0u16; 81],
             difficulty: board.difficulty,
             seed: board.seed,
+            hinted: [0u8; 81],
             note_mode: false,
             selected: None,
             timer_seconds: 0,
@@ -530,5 +541,10 @@ mod tests {
 
         assert_eq!(app1.0.get().board, app2.0.get().board,
             "Same seed should produce same hint cell");
+        // Hint should NOT add to undo history
+        assert!(app1.0.get().history.is_empty(), "Hint must not be undoable");
+        // Hint should mark the cell
+        let hinted_count = app1.0.get().hinted.iter().filter(|&&v| v != 0).count();
+        assert_eq!(hinted_count, 1, "Hint should mark exactly one cell");
     }
 }
