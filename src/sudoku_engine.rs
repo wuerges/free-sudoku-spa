@@ -228,8 +228,15 @@ struct Rand(u64);
 
 impl Rand {
     fn new() -> Self {
-        // ponytail: seed from a fixed value, deterministic. Replace with proper entropy if needed.
-        Rand(0xDEAD_BEEF_CAFE_BABE)
+        // ponytail: seed from Math.random() * u64::MAX in wasm, time-based fallback.
+        #[cfg(target_arch = "wasm32")]
+        let seed = (js_sys::Math::random() * (u64::MAX as f64)) as u64;
+        #[cfg(not(target_arch = "wasm32"))]
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0xDEAD_BEEF_CAFE_BABE);
+        Rand(seed)
     }
     fn next(&mut self) -> u64 {
         self.0 ^= self.0 << 13;
