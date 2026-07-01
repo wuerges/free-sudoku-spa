@@ -46,12 +46,13 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 </button>
                 {move || show_new_game.get().then(|| view! {
                     <div class="flex flex-wrap items-center justify-center gap-1">
-                        {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert].iter().map(|&d| {
+                        {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert, Difficulty::Master].iter().map(|&d| {
                             let label = match d {
                                 Difficulty::Easy => "Fácil",
                                 Difficulty::Medium => "Médio",
                                 Difficulty::Hard => "Difícil",
                                 Difficulty::Expert => "Expert",
+                                Difficulty::Master => "Mestre",
                             };
                             view! {
                                 <button

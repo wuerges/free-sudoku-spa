@@ -33,6 +33,7 @@ pub fn Header() -> impl IntoView {
         Difficulty::Medium => "Médio",
         Difficulty::Hard => "Difícil",
         Difficulty::Expert => "Expert",
+        Difficulty::Master => "Mestre",
     };
 
     view! {

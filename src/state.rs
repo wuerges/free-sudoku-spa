@@ -111,6 +111,7 @@ impl AppState {
             Difficulty::Medium => sudoku_engine::generate(32..=38),
             Difficulty::Hard => sudoku_engine::generate(26..=31),
             Difficulty::Expert => sudoku_engine::generate(20..=25),
+            Difficulty::Master => sudoku_engine::generate(17..=19),
         };
         self.0.update(|s| {
             *s = GameState {

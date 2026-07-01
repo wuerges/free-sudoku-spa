@@ -24,7 +24,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "🔄 Novo Jogo",
             "Novo jogo",
-            "Inicia um novo jogo. Escolha entre Fácil, Médio, Difícil ou Expert.",
+            "Inicia um novo jogo. Escolha entre Fácil, Médio, Difícil, Expert ou Mestre.",
         ),
         ("↩ Desfazer", "Desfazer", "Desfaz a última ação."),
         ("↪ Refazer", "Refazer", "Refaz a ação desfeita."),

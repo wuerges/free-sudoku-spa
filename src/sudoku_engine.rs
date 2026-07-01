@@ -10,6 +10,7 @@ pub enum Difficulty {
     Medium,
     Hard,
     Expert,
+    Master,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -173,8 +174,10 @@ pub fn generate(target_clues: std::ops::RangeInclusive<u8>) -> Board {
         Difficulty::Medium
     } else if clue_count >= 26 {
         Difficulty::Hard
-    } else {
+    } else if clue_count >= 20 {
         Difficulty::Expert
+    } else {
+        Difficulty::Master
     };
 
     Board {
