@@ -237,6 +237,26 @@ impl AppState {
         });
     }
 
+    pub fn auto_notes(&self) {
+        self.0.update(|s| {
+            s.push_snapshot();
+            for i in 0..81 {
+                if s.board[i] == 0 {
+                    let row = i / 9;
+                    let col = i % 9;
+                    let cands = sudoku_engine::candidates(&s.board, row, col);
+                    let mut bits = 0u16;
+                    for v in cands {
+                        bits |= 1 << (v - 1);
+                    }
+                    s.notes[i] = bits;
+                } else {
+                    s.notes[i] = 0;
+                }
+            }
+        });
+    }
+
     pub fn toggle_pause(&self) {
         self.0.update(|s| s.paused = !s.paused);
     }

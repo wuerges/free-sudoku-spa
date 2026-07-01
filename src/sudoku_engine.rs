@@ -71,7 +71,7 @@ fn count_solutions(grid: &mut [u8; 81], limit: u32) -> u32 {
 }
 
 /// Valid candidates for a cell (numbers not in same row/col/box).
-fn candidates(grid: &[u8; 81], row: usize, col: usize) -> Vec<u8> {
+pub fn candidates(grid: &[u8; 81], row: usize, col: usize) -> Vec<u8> {
     let mut used = [false; 10];
     for c in 0..9 {
         used[grid[row * 9 + c] as usize] = true;

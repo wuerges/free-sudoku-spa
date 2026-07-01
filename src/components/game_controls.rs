@@ -93,6 +93,12 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     "↪ Refazer"
                 </button>
                 <button
+                    class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
+                    on:click=move |_| state.auto_notes()
+                >
+                    "📝 Auto Notas"
+                </button>
+                <button
                     class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70"
                     on:click=move |_| state.hint()
                 >
