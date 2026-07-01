@@ -14,6 +14,7 @@ pub struct GameState {
     #[serde(with = "u16_81")]
     pub notes: [u16; 81],
     pub difficulty: Difficulty,
+    pub seed: u64,
     pub note_mode: bool,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
@@ -39,6 +40,7 @@ impl Default for GameState {
             solution: board.solution,
             notes: [0u16; 81],
             difficulty: Difficulty::Easy,
+            seed: board.seed,
             note_mode: false,
             selected: None,
             timer_seconds: 0,
@@ -119,6 +121,7 @@ impl AppState {
                 solution: board.solution,
                 notes: [0u16; 81],
                 difficulty,
+                seed: board.seed,
                 note_mode: s.note_mode,
                 selected: None,
                 timer_seconds: 0,
@@ -197,12 +200,24 @@ impl AppState {
     pub fn hint(&self) {
         self.0.update(|s| {
             // Hint: pick the unsolved cell with fewest candidates.
+            // Deterministic pseudo-random traversal order from puzzle seed.
+            let mut order: Vec<usize> = (0..81).collect();
+            {
+                let mut r = s.seed;
+                for i in (1..order.len()).rev() {
+                    r ^= r << 13;
+                    r ^= r >> 7;
+                    r ^= r << 17;
+                    let j = (r as usize) % (i + 1);
+                    order.swap(i, j);
+                }
+            }
             let mut best: Option<(usize, u32)> = None;
-            for i in 0..81 {
+            for &i in &order {
                 if s.board[i] != s.solution[i] {
+                    let r = i / 9;
+                    let c = i % 9;
                     let cands = (1..=9).filter(|&v| {
-                        let r = i / 9;
-                        let c = i % 9;
                         crate::sudoku_engine::is_valid_move(&s.board, r, c, v)
                     }).count() as u32;
                     if cands > 0 && best.is_none_or(|(_, n)| cands < n) {
@@ -212,8 +227,24 @@ impl AppState {
             }
             if let Some((i, _)) = best {
                 s.push_snapshot();
-                s.board[i] = s.solution[i];
+                let v = s.solution[i];
+                s.board[i] = v;
                 s.notes[i] = 0;
+                // Clear notes of this number from row/col/box
+                let r = i / 9;
+                let c = i % 9;
+                let bit = !(1 << (v - 1));
+                for j in 0..9 {
+                    s.notes[GameState::idx(r, j)] &= bit;
+                    s.notes[GameState::idx(j, c)] &= bit;
+                }
+                let br = (r / 3) * 3;
+                let bc = (c / 3) * 3;
+                for rr in br..br + 3 {
+                    for cc in bc..bc + 3 {
+                        s.notes[GameState::idx(rr, cc)] &= bit;
+                    }
+                }
                 if s.board == s.solution {
                     s.won = true;
                 }
@@ -421,5 +452,83 @@ mod tests {
             // Should not change
             assert_eq!(state.0.get().get(r, c), original);
         }
+    }
+
+    #[test]
+    fn test_hint_picks_fewest_candidates() {
+        let state = AppState::new();
+
+        // Before hint, compute minimum candidate count among unsolved cells
+        let s = state.0.get();
+        let mut min_cands: Option<u32> = None;
+        let mut cands_per_cell: [u32; 81] = [0; 81];
+        for i in 0..81 {
+            if s.board[i] != s.solution[i] {
+                let r = i / 9;
+                let c = i % 9;
+                let cands = (1..=9).filter(|&v| {
+                    crate::sudoku_engine::is_valid_move(&s.board, r, c, v)
+                }).count() as u32;
+                cands_per_cell[i] = cands;
+                if cands > 0 {
+                    min_cands = Some(min_cands.map_or(cands, |m| m.min(cands)));
+                }
+            }
+        }
+        drop(s);
+
+        state.hint();
+
+        // The filled cell must have had the minimum candidate count
+        let s = state.0.get();
+        let mut filled_idx = None;
+        for i in 0..81 {
+            if s.board[i] != 0 && s.board[i] == s.solution[i] && cands_per_cell[i] > 0 {
+                // This cell was unsolved before (cands > 0) and is now correct
+                filled_idx = Some(i);
+                break;
+            }
+        }
+        // Note: this may not find the exact cell if it was already filled before hint,
+        // but hint guarantees it fills at least one new cell.
+        if let Some(idx) = filled_idx {
+            if let Some(min) = min_cands {
+                assert_eq!(
+                    cands_per_cell[idx], min,
+                    "Hint must fill a cell with the fewest candidates (had {}, min was {})",
+                    cands_per_cell[idx], min
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_hint_deterministic_from_seed() {
+        // Same board + same seed = same hint result
+        let board = sudoku_engine::generate(40..=45);
+        let state1 = GameState {
+            board: board.cells,
+            solution: board.solution,
+            notes: [0u16; 81],
+            difficulty: board.difficulty,
+            seed: board.seed,
+            note_mode: false,
+            selected: None,
+            timer_seconds: 0,
+            paused: false,
+            won: false,
+            history: Vec::new(),
+            redo_stack: Vec::new(),
+        };
+        let state2 = state1.clone();
+
+        let app1 = AppState(RwSignal::new(state1));
+        let app2 = AppState(RwSignal::new(state2));
+
+        app1.hint();
+        app2.hint();
+
+        assert_eq!(app1.0.get().board, app2.0.get().board,
+            "Same seed should produce same hint cell");
     }
 }

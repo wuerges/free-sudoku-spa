@@ -20,6 +20,7 @@ pub struct Board {
     #[serde(with = "u8_81")]
     pub solution: [u8; 81],
     pub difficulty: Difficulty,
+    pub seed: u64,
 }
 
 /// Generate a complete valid Sudoku grid via backtracking.
@@ -143,6 +144,8 @@ pub fn generate(target_clues: std::ops::RangeInclusive<u8>) -> Board {
     let mut puzzle = solution;
     let mut rng = Rand::new();
 
+    let seed = rng.0;
+
     // Build list of symmetric cell pairs, shuffle
     let mut pairs: Vec<(usize, usize)> = (0..40)
         .map(|i| (i, 80 - i))
@@ -184,6 +187,7 @@ pub fn generate(target_clues: std::ops::RangeInclusive<u8>) -> Board {
         cells: puzzle,
         solution,
         difficulty,
+        seed,
     }
 }
 
