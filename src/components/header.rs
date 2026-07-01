@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
 #[component]
-pub fn Header(state: AppState, dark_mode: RwSignal<bool>) -> impl IntoView {
+pub fn Header(state: AppState, dark_mode: RwSignal<bool>, show_help: RwSignal<bool>) -> impl IntoView {
     let install_visible = RwSignal::new(false);
 
     // ponytail: beforeinstallprompt via window.__sudoku JS bridge. ceiling: no typed API. upgrade: web-sys BeforeInstallPromptEvent if the feature lands.
@@ -38,6 +38,12 @@ pub fn Header(state: AppState, dark_mode: RwSignal<bool>) -> impl IntoView {
                 <p class="text-xs text-gray-500 dark:text-gray-400">{difficulty_label}</p>
             </div>
             <div class="flex items-center gap-2">
+                <button
+                    class="text-xl px-1 active:opacity-70 select-none font-bold"
+                    on:click=move |_| show_help.set(true)
+                >
+                    "?"
+                </button>
                 <button
                     class="text-2xl active:opacity-70 select-none"
                     on:click=move |_| dark_mode.update(|d| *d = !*d)
