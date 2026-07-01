@@ -32,12 +32,19 @@ pub fn App() -> impl IntoView {
         save_state(&s);
     });
 
-    // Remove loading div
-    if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
-        if let Some(el) = doc.get_element_by_id("loading") {
-            el.remove();
-        }
-    }
+    // Remove loading div after 2s
+    set_timeout(
+        || {
+            if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+                if let Some(el) = doc.get_element_by_id("loading") {
+                    if let Some(parent) = el.parent_node() {
+                        let _ = parent.remove_child(&el);
+                    }
+                }
+            }
+        },
+        std::time::Duration::from_secs(2),
+    );
 
     // Dark mode — class on <html> so Tailwind dark: variants work
     let dark_mode = RwSignal::new(

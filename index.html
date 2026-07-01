@@ -12,7 +12,38 @@
   <meta name="theme-color" content="#1a1a2e" />
 </head>
 <body>
-  <div id="loading">Carregando Sudoku...</div>
+  <div id="loading" style="
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #1a1a2e; color: #e2e8f0; font-family: system-ui, sans-serif;
+  ">
+    <div style="font-size: 64px; margin-bottom: 16px; animation: sudokuPulse 1s ease-in-out infinite;">🧩</div>
+    <div style="font-size: 32px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px;">SUDOKU</div>
+    <div style="font-size: 14px; color: #94a3b8; text-align: center; max-width: 280px; line-height: 1.6; margin-bottom: 32px;">
+      Implementação completa, sem anúncios,<br>sem rastreadores, código aberto.
+    </div>
+    <div style="width: 120px; height: 3px; background: #1e293b; border-radius: 2px; overflow: hidden;">
+      <div style="width: 30%; height: 100%; background: #3b82f6; border-radius: 2px; animation: sudokuBar 1.4s ease-in-out infinite;"></div>
+    </div>
+    <div style="position: fixed; bottom: 24px; font-size: 12px; color: #64748b; text-align: center;">
+      Encontrou um problema?
+      <a href="https://github.com/wuerges/free-sudoku-spa/issues" target="_blank" rel="noopener"
+         style="color: #60a5fa; text-decoration: underline;">
+        Abra uma issue no GitHub
+      </a>
+    </div>
+  </div>
+  <style>
+    @keyframes sudokuPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    @keyframes sudokuBar {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(233%); }
+      100% { transform: translateX(-100%); }
+    }
+  </style>
   <script>
     window.__sudoku = window.__sudoku || {};
     window.__sudoku._installPrompt = null;
