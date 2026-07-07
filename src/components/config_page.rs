@@ -56,15 +56,15 @@ pub fn ConfigPage() -> impl IntoView {
                 {toggles.into_iter().map(|t| {
                     let state = state;
                     view! {
-                        <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; align-items: start; padding: 1.25rem 0; border-bottom: 0.5px solid #9ca3af;">
+                        <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid #9ca3af;">
                             <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">{t.icon}</span>
                             <div>
                                 <strong class="text-sm font-semibold">{t.label}</strong>
                                 <p class="text-xs text-gray-500 dark:text-gray-400" style="margin-top: 2px; line-height: 1.5;">{t.desc}</p>
                             </div>
-                            <div class="flex items-center justify-center">
+                            <label class="flex items-center justify-center cursor-pointer self-stretch">
                                 <input type="checkbox" prop:checked=move || (t.get)(&state.0.get()) on:change=move |_| (t.toggle)(&state) class="accent-blue-500 cursor-pointer" style="transform: scale(2);" />
-                            </div>
+                            </label>
                         </div>
                     }
                 }).collect::<Vec<_>>()}

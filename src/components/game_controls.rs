@@ -40,11 +40,11 @@ pub fn GameControls(state: AppState) -> impl IntoView {
             </div>
 
             // Win message
-            {move || won().then(|| view! {
+            <Show when=move || won()>
                 <div class="text-center text-green-600 dark:text-green-400 font-bold text-lg animate-pulse">
                     "🎉 Parabéns! Puzzle resolvido!"
                 </div>
-            })}
+            </Show>
 
             // New game button + difficulty selection
             <div class="flex flex-col items-center gap-1">
@@ -54,7 +54,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 >
                     "🔄 Novo Jogo"
                 </button>
-                {move || show_new_game.get().then(|| view! {
+                <Show when=move || show_new_game.get()>
                     <div class="flex flex-wrap items-center justify-center gap-1">
                         {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert, Difficulty::Master].iter().map(|&d| {
                             let label = match d {
@@ -84,12 +84,12 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                             }
                         }).collect::<Vec<_>>()}
                     </div>
-                })}
+                </Show>
             </div>
 
             // Action buttons
             <div class="flex justify-center gap-1.5">
-                {move || state.0.get().undo_enabled.then(|| view! {
+                <Show when=move || state.0.get().undo_enabled>
                     <button
                         class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
                         on:click=move |_| state.undo()
@@ -97,8 +97,8 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     >
                         "↩ Desfazer"
                     </button>
-                })}
-                {move || state.0.get().undo_enabled.then(|| view! {
+                </Show>
+                <Show when=move || state.0.get().undo_enabled>
                     <button
                         class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
                         on:click=move |_| state.redo()
@@ -106,16 +106,16 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     >
                         "↪ Refazer"
                     </button>
-                })}
-                {move || state.0.get().auto_notes_enabled.then(|| view! {
+                </Show>
+                <Show when=move || state.0.get().auto_notes_enabled>
                     <button
                         class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
                         on:click=move |_| state.auto_notes()
                     >
                         "📝 Auto Notas"
                     </button>
-                })}
-                {move || state.0.get().hint_enabled.then(|| view! {
+                </Show>
+                <Show when=move || state.0.get().hint_enabled>
                     <button
                         class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70 disabled:opacity-30"
                         on:click=move |_| state.hint()
@@ -123,7 +123,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     >
                         "💡 Dica"
                     </button>
-                })}
+                </Show>
             </div>
         </div>
     }

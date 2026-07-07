@@ -63,38 +63,36 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             on:click=move |_| state.select_cell(row, col)
             style="min-width: 0; min-height: 0;"
         >
-            {move || {
-                let v = value();
+            <Show when=move || value() != 0 fallback=move || {
                 let hv = highlighted_number();
-                if v != 0 {
-                    let color = if is_hinted() {
-                        "text-amber-700 dark:text-amber-300"
-                    } else if is_given() {
-                        "text-gray-900 dark:text-white"
-                    } else if is_wrong() {
-                        "text-red-600 dark:text-red-400"
-                    } else {
-                        "text-blue-600 dark:text-blue-400"
-                    };
-                    view! { <span class=format!("{color} font-{}", if is_given() && !is_hinted() { "bold" } else { "semibold" })>{v.to_string()}</span> }.into_any()
-                } else {
-                    view! {
-                        <div class="grid grid-cols-3 gap-0 w-full h-full p-[2px]">
-                            {(1..=9).map(|note_val| {
-                                let active = notes_mask() >> (note_val - 1) & 1 == 1;
-                                let color = if active {
-                                    if note_val == hv { "text-blue-500 dark:text-blue-400" } else { "text-gray-400 dark:text-gray-400" }
-                                } else { "" };
-                                view! {
-                                    <span class=format!("flex items-center justify-center text-[8px] sm:text-[10px] leading-none {}", color)>
-                                        { if active { note_val.to_string() } else { "".to_string() } }
-                                    </span>
-                                }
-                            }).collect::<Vec<_>>()}
-                        </div>
-                    }.into_any()
+                view! {
+                    <div class="grid grid-cols-3 gap-0 w-full h-full p-[2px]">
+                        {(1..=9).map(|note_val| {
+                            let active = notes_mask() >> (note_val - 1) & 1 == 1;
+                            let color = if active {
+                                if note_val == hv { "text-blue-500 dark:text-blue-400" } else { "text-gray-400 dark:text-gray-400" }
+                            } else { "" };
+                            view! {
+                                <span class=format!("flex items-center justify-center text-[8px] sm:text-[10px] leading-none {}", color)>
+                                    { if active { note_val.to_string() } else { "".to_string() } }
+                                </span>
+                            }
+                        }).collect::<Vec<_>>()}
+                    </div>
                 }
-            }}
+            }>
+                {let v = value();
+                let color = if is_hinted() {
+                    "text-amber-700 dark:text-amber-300"
+                } else if is_given() {
+                    "text-gray-900 dark:text-white"
+                } else if is_wrong() {
+                    "text-red-600 dark:text-red-400"
+                } else {
+                    "text-blue-600 dark:text-blue-400"
+                };
+                view! { <span class=format!("{color} font-{}", if is_given() && !is_hinted() { "bold" } else { "semibold" })>{v.to_string()}</span> }}
+            </Show>
         </button>
     }
 }

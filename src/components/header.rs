@@ -60,7 +60,7 @@ pub fn Header() -> impl IntoView {
                 >
                     {move || if dark_mode.get() { "☀️" } else { "🌙" }}
                 </button>
-                {move || install_visible.get().then(|| view! {
+                <Show when=move || install_visible.get()>
                     <button
                         class="px-3 py-1 rounded-lg text-sm font-medium bg-green-500 text-white active:bg-green-600 select-none"
                         on:click=move |_| {
@@ -70,7 +70,7 @@ pub fn Header() -> impl IntoView {
                     >
                         "📲 Instalar"
                     </button>
-                })}
+                </Show>
             </div>
         </header>
     }
