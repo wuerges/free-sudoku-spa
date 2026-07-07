@@ -5,6 +5,8 @@ use crate::sudoku_engine::{self, Difficulty};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
+const fn yes() -> bool { true }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
     #[serde(with = "u8_81")]
@@ -19,6 +21,12 @@ pub struct GameState {
     pub hinted: [u8; 81],
     pub error_count: u32,
     pub note_mode: bool,
+    #[serde(default = "yes")]
+    pub undo_enabled: bool,
+    #[serde(default = "yes")]
+    pub auto_notes_enabled: bool,
+    #[serde(default = "yes")]
+    pub hint_enabled: bool,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
     pub paused: bool,
@@ -47,6 +55,9 @@ impl Default for GameState {
             hinted: [0u8; 81],
             error_count: 0,
             note_mode: false,
+            undo_enabled: true,
+            auto_notes_enabled: true,
+            hint_enabled: true,
             selected: None,
             timer_seconds: 0,
             paused: false,
@@ -134,6 +145,9 @@ impl AppState {
                 hinted: [0u8; 81],
                 error_count: 0,
                 note_mode: s.note_mode,
+                undo_enabled: s.undo_enabled,
+                auto_notes_enabled: s.auto_notes_enabled,
+                hint_enabled: s.hint_enabled,
                 selected: None,
                 timer_seconds: 0,
                 paused: false,
@@ -209,6 +223,18 @@ impl AppState {
 
     pub fn toggle_note_mode(&self) {
         self.0.update(|s| s.note_mode = !s.note_mode);
+    }
+
+    pub fn toggle_undo(&self) {
+        self.0.update(|s| s.undo_enabled = !s.undo_enabled);
+    }
+
+    pub fn toggle_auto_notes(&self) {
+        self.0.update(|s| s.auto_notes_enabled = !s.auto_notes_enabled);
+    }
+
+    pub fn toggle_hint(&self) {
+        self.0.update(|s| s.hint_enabled = !s.hint_enabled);
     }
 
     pub fn hint(&self) {
@@ -531,6 +557,9 @@ mod tests {
             hinted: [0u8; 81],
             error_count: 0,
             note_mode: false,
+            undo_enabled: true,
+            auto_notes_enabled: true,
+            hint_enabled: true,
             selected: None,
             timer_seconds: 0,
             paused: false,

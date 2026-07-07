@@ -1,5 +1,5 @@
 use crate::components::{
-    game_page::GamePage, help_page::HelpPage,
+    config_page::ConfigPage, game_page::GamePage, help_page::HelpPage,
 };
 use crate::state::{save_state, AppState};
 use leptos::prelude::*;
@@ -74,6 +74,7 @@ pub fn App() -> impl IntoView {
                 <Routes fallback=|| "Not found">
                     <Route path=path!("") view=GamePage />
                     <Route path=path!("/help") view=HelpPage />
+                    <Route path=path!("/config") view=ConfigPage />
                 </Routes>
             </div>
         </Router>

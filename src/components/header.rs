@@ -44,8 +44,14 @@ pub fn Header() -> impl IntoView {
             </div>
             <div class="flex items-center gap-2">
                 <button
+                    class="text-xl px-1 active:opacity-70 select-none"
+                    on:click={let n = navigate.clone(); move |_| n("/config", Default::default())}
+                >
+                    "⚙"
+                </button>
+                <button
                     class="text-xl px-1 active:opacity-70 select-none font-bold"
-                    on:click=move |_| navigate("/help", Default::default())
+                    on:click={let n = navigate; move |_| n("/help", Default::default())}
                 >
                     "?"
                 </button>

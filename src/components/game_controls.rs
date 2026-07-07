@@ -89,33 +89,41 @@ pub fn GameControls(state: AppState) -> impl IntoView {
 
             // Action buttons
             <div class="flex justify-center gap-1.5">
-                <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
-                    on:click=move |_| state.undo()
-                    disabled=move || state.0.get().history.is_empty()
-                >
-                    "↩ Desfazer"
-                </button>
-                <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
-                    on:click=move |_| state.redo()
-                    disabled=move || state.0.get().redo_stack.is_empty()
-                >
-                    "↪ Refazer"
-                </button>
-                <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
-                    on:click=move |_| state.auto_notes()
-                >
-                    "📝 Auto Notas"
-                </button>
-                <button
-                    class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70 disabled:opacity-30"
-                    on:click=move |_| state.hint()
-                    disabled=move || difficulty() == Difficulty::Master
-                >
-                    "💡 Dica"
-                </button>
+                {move || state.0.get().undo_enabled.then(|| view! {
+                    <button
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
+                        on:click=move |_| state.undo()
+                        disabled=move || state.0.get().history.is_empty()
+                    >
+                        "↩ Desfazer"
+                    </button>
+                })}
+                {move || state.0.get().undo_enabled.then(|| view! {
+                    <button
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
+                        on:click=move |_| state.redo()
+                        disabled=move || state.0.get().redo_stack.is_empty()
+                    >
+                        "↪ Refazer"
+                    </button>
+                })}
+                {move || state.0.get().auto_notes_enabled.then(|| view! {
+                    <button
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
+                        on:click=move |_| state.auto_notes()
+                    >
+                        "📝 Auto Notas"
+                    </button>
+                })}
+                {move || state.0.get().hint_enabled.then(|| view! {
+                    <button
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70 disabled:opacity-30"
+                        on:click=move |_| state.hint()
+                        disabled=move || difficulty() == Difficulty::Master
+                    >
+                        "💡 Dica"
+                    </button>
+                })}
             </div>
         </div>
     }
