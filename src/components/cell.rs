@@ -6,12 +6,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
     let value = move || state.0.get().get(row, col);
     let is_given = move || state.0.get().is_given(row, col);
     let is_selected = move || state.0.get().selected == Some((row, col));
-    let notes = move || {
-        let n = state.0.get().notes[row * 9 + col];
-        (1..=9)
-            .filter(move |&v| (n >> (v - 1)) & 1 == 1)
-            .collect::<Vec<_>>()
-    };
+    let notes_mask = move || state.0.get().notes[row * 9 + col];
     let in_conflict = move || {
         let s = state.0.get();
         let v = s.get(row, col);
@@ -32,6 +27,16 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         if v == 0 || s.selected.is_none() { return false; }
         let (sr, sc) = s.selected.unwrap();
         v == s.get(sr, sc) && v != 0 && (row != sr || col != sc)
+    };
+
+    let highlighted_number = move || {
+        let s = state.0.get();
+        if let Some((sr, sc)) = s.selected {
+            let v = s.get(sr, sc);
+            if v != 0 { v } else { 0 }
+        } else {
+            0
+        }
     };
 
     let is_hinted = move || state.0.get().is_hinted(row, col);
@@ -60,6 +65,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         >
             {move || {
                 let v = value();
+                let hv = highlighted_number();
                 if v != 0 {
                     let color = if is_hinted() {
                         "text-amber-700 dark:text-amber-300"
@@ -72,18 +78,21 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                     };
                     view! { <span class=format!("{color} font-{}", if is_given() && !is_hinted() { "bold" } else { "semibold" })>{v.to_string()}</span> }.into_any()
                 } else {
-                    let n = notes();
-                    if n.is_empty() {
-                        view! { <span></span> }.into_any()
-                    } else {
-                        view! {
-                            <div class="grid grid-cols-3 gap-0 w-full h-full p-[2px]">
-                                {n.iter().map(|&v| view! {
-                                    <span class="flex items-center justify-center text-[8px] sm:text-[10px] leading-none text-gray-400 dark:text-gray-400">{v.to_string()}</span>
-                                }).collect::<Vec<_>>()}
-                            </div>
-                        }.into_any()
-                    }
+                    view! {
+                        <div class="grid grid-cols-3 gap-0 w-full h-full p-[2px]">
+                            {(1..=9).map(|note_val| {
+                                let active = notes_mask() >> (note_val - 1) & 1 == 1;
+                                let color = if active {
+                                    if note_val == hv { "text-blue-500 dark:text-blue-400" } else { "text-gray-400 dark:text-gray-400" }
+                                } else { "" };
+                                view! {
+                                    <span class=format!("flex items-center justify-center text-[8px] sm:text-[10px] leading-none {}", color)>
+                                        { if active { note_val.to_string() } else { "".to_string() } }
+                                    </span>
+                                }
+                            }).collect::<Vec<_>>()}
+                        </div>
+                    }.into_any()
                 }
             }}
         </button>
