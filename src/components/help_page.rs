@@ -1,9 +1,8 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
+use leptos_router::components::A;
 
 #[component]
 pub fn HelpPage() -> impl IntoView {
-    let navigate = use_navigate();
     let items: Vec<(&str, &str, &str)> = vec![
         (
             "1 a 9",
@@ -53,13 +52,13 @@ pub fn HelpPage() -> impl IntoView {
 
     view! {
         <div class="w-full max-w-[min(90vw,500px)] mx-auto pb-8">
-            <button
-                class="flex items-center gap-0.5 text-blue-500 dark:text-blue-400 active:opacity-60 select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity"
-                on:click=move |_| navigate("/", Default::default())
+            <A
+                href="/"
+                attr:class="flex items-center gap-0.5 text-blue-500 dark:text-blue-400 active:opacity-60 select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
             >
                 <span class="text-xl leading-none">"‹"</span>
                 <span class="text-[17px] font-normal">"Voltar"</span>
-            </button>
+            </A>
 
             <h1 class="text-3xl font-bold tracking-wider text-center mt-4 mb-10">"SUDOKU"</h1>
 

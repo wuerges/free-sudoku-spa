@@ -1,7 +1,7 @@
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
+use leptos_router::components::A;
 use wasm_bindgen::JsCast;
 
 #[component]
@@ -9,7 +9,6 @@ pub fn Header() -> impl IntoView {
     let state: AppState = use_context().unwrap();
     let dark_mode: RwSignal<bool> = use_context().unwrap();
     let install_visible = RwSignal::new(false);
-    let navigate = use_navigate();
 
     // ponytail: beforeinstallprompt via window.__sudoku JS bridge. ceiling: no typed API. upgrade: web-sys BeforeInstallPromptEvent if the feature lands.
     if let Some(_window) = web_sys::window() {
@@ -43,18 +42,18 @@ pub fn Header() -> impl IntoView {
                 <p class="text-xs text-gray-500 dark:text-gray-400">{difficulty_label}</p>
             </div>
             <div class="flex items-center gap-2">
-                <button
-                    class="text-xl px-1 active:opacity-70 select-none"
-                    on:click={let n = navigate.clone(); move |_| n("/config", Default::default())}
+                <A
+                    href="/config"
+                    attr:class="text-xl px-1 active:opacity-70 select-none no-underline text-inherit"
                 >
                     "⚙"
-                </button>
-                <button
-                    class="text-xl px-1 active:opacity-70 select-none font-bold"
-                    on:click={let n = navigate; move |_| n("/help", Default::default())}
+                </A>
+                <A
+                    href="/help"
+                    attr:class="text-xl px-1 active:opacity-70 select-none font-bold no-underline text-inherit"
                 >
                     "?"
-                </button>
+                </A>
                 <button
                     class="text-2xl active:opacity-70 select-none"
                     on:click=move |_| dark_mode.update(|d| *d = !*d)
