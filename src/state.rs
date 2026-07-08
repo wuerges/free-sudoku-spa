@@ -248,8 +248,9 @@ impl AppState {
         });
         #[cfg(target_arch = "wasm32")]
         if self.0.with(|s| s.won && !s.celebrated) {
+            let sound = self.0.with(|s| s.sound_type);
             self.0.update(|s| s.celebrated = true);
-            play_fireworks();
+            play_fireworks(sound);
         }
         if trigger_domino {
             #[cfg(target_arch = "wasm32")]
@@ -305,7 +306,7 @@ impl AppState {
                 });
                 if signal.with(|s| s.won && !s.celebrated) {
                     signal.update(|s| s.celebrated = true);
-                    play_fireworks();
+                    play_fireworks(sound);
                 }
                 if filled {
                     let next = ((delay_ms as f32 * 0.8).round() as u32).max(100);
@@ -411,8 +412,9 @@ impl AppState {
         });
         #[cfg(target_arch = "wasm32")]
         if self.0.with(|s| s.won && !s.celebrated) {
+            let sound = self.0.with(|s| s.sound_type);
             self.0.update(|s| s.celebrated = true);
-            play_fireworks();
+            play_fireworks(sound);
         }
     }
 
@@ -475,7 +477,7 @@ fn play_beep() {
          var o=a.createOscillator(),g=a.createGain();\
          o.connect(g);g.connect(a.destination);\
          o.frequency.value=660;o.type='sine';\
-         g.gain.value=0.12;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
+         g.gain.value=0.25;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
          o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()"
     ).ok();
 }
@@ -485,27 +487,27 @@ fn play_explosion() {
     js_sys::eval(
         "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();\
          var now=a.currentTime;\
-         // noise burst
          var buf=a.createBuffer(1,a.sampleRate*0.25,a.sampleRate);\
          var d=buf.getChannelData(0);\
          for(var i=0;i<d.length;i++){d[i]=(2*Math.random()-1)*Math.pow(1-i/d.length,2)}\
          var n=a.createBufferSource();n.buffer=buf;\
-         // rumble filter
          var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=300;\
-         var g=a.createGain();g.gain.setValueAtTime(0.3,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.25);\
+         var g=a.createGain();g.gain.setValueAtTime(0.5,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);\
          n.connect(f);f.connect(g);g.connect(a.destination);\
          n.start(now)}catch(e){}})()"
     ).ok();
 }
 
 #[cfg(target_arch = "wasm32")]
-fn play_fireworks() {
+fn play_fireworks(sound: SoundType) {
+    // Visual fireworks — always the same
     js_sys::eval(
         "(function(){try{var c=document.createElement('canvas');c.style='position:fixed;inset:0;pointer-events:none;z-index:9999';c.width=window.innerWidth;c.height=window.innerHeight;document.body.appendChild(c);var x=c.getContext('2d');var p=[];\
-         for(var i=0;i<120;i++){p.push({x:Math.random()*c.width,y:c.height,a:Math.random()*6.28,v:2+Math.random()*4,vy:-8-Math.random()*10,life:1,decay:0.008+Math.random()*0.012,h:Math.floor(Math.random()*360)})}\
+         function addBurst(n){for(var i=0;i<n;i++){p.push({x:Math.random()*c.width,y:c.height*(0.3+Math.random()*0.6),a:Math.random()*6.28,v:1+Math.random()*3,vy:-5-Math.random()*8,life:1,decay:0.003+Math.random()*0.005,h:Math.floor(Math.random()*360)})}}\
+         addBurst(80);setTimeout(function(){addBurst(60)},2000);setTimeout(function(){addBurst(60)},4000);setTimeout(function(){addBurst(40)},5500);\
          var b=[];for(var i=0;i<25;i++){b.push({x:20+Math.random()*(c.width-40),y:c.height+50+Math.random()*100,s:0.9+Math.random()*0.6,w:16+Math.random()*10,drift:0.3-Math.random()*0.6,sway:Math.random()*0.02,h:Math.floor(Math.random()*360),str:Math.random()*40+20})}\
          function d(){x.clearRect(0,0,c.width,c.height);var alive=false;\
-         for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.15;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,3,0,6.28);x.fill()}}\
+         for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.12;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,2+pt.life*2,0,6.28);x.fill()}}\
          for(var i=0;i<b.length;i++){var bl=b[i];bl.x+=Math.sin(i+Date.now()*bl.sway)*bl.drift;bl.y-=bl.s;if(bl.y>-80){alive=true;x.globalAlpha=1;\
          var r=bl.w/2;x.strokeStyle='#999';x.lineWidth=1;x.beginPath();x.moveTo(bl.x,bl.y+r);x.lineTo(bl.x+2,bl.y+r+bl.str);x.stroke();\
          x.fillStyle='hsl('+bl.h+',80%,55%)';x.beginPath();x.ellipse(bl.x,bl.y,r,r*1.2,0,0,6.28);x.fill();\
@@ -513,6 +515,34 @@ fn play_fireworks() {
          x.strokeStyle='#666';x.lineWidth=1;x.beginPath();x.moveTo(bl.x-r*0.5,bl.y+r*1.1);x.lineTo(bl.x-r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.5,bl.y+r*1.1);x.stroke()}}\
          if(alive){requestAnimationFrame(d)}else{c.remove()}}d()}catch(e){}})()"
     ).ok();
+    // Audio — varies by sound type
+    match sound {
+        SoundType::None => {},
+        SoundType::Beep => {
+            let _ = js_sys::eval(
+            "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;var freqs=[523,659,784];\
+             for(var i=0;i<3;i++){var o=a.createOscillator();var g=a.createGain();o.type='sine';\
+             o.frequency.setValueAtTime(freqs[i]*0.5,now);o.frequency.exponentialRampToValueAtTime(freqs[i]*1.5,now+3);\
+             o.frequency.exponentialRampToValueAtTime(freqs[i]*0.6,now+6);\
+             g.gain.setValueAtTime(0.18,now);g.gain.linearRampToValueAtTime(0.3,now+1.5);\
+             g.gain.exponentialRampToValueAtTime(0.001,now+8);\
+             o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+8)}}catch(e){}})()"
+        );
+        },
+        SoundType::Explosion => {
+            let _ = js_sys::eval(
+            "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;\
+             function boom(t){var buf=a.createBuffer(1,a.sampleRate*0.4,a.sampleRate);\
+             var d=buf.getChannelData(0);for(var i=0;i<d.length;i++){d[i]=(2*Math.random()-1)*Math.pow(1-i/d.length,3)}\
+             var n=a.createBufferSource();n.buffer=buf;\
+             var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=200+Math.random()*400;\
+             var g=a.createGain();g.gain.setValueAtTime(0.4+Math.random()*0.2,now+t);\
+             g.gain.exponentialRampToValueAtTime(0.001,now+t+0.3);\
+             n.connect(f);f.connect(g);g.connect(a.destination);n.start(now+t)}\
+             boom(0.05);boom(0.15);boom(0.3);boom(0.5);boom(0.7);boom(0.95);boom(1.2);boom(1.5);boom(1.8);boom(2.1);boom(2.5);boom(2.9);boom(3.3);boom(3.7);boom(4.1);boom(4.5);boom(5.0);boom(5.5);boom(6.0);boom(6.5)}catch(e){}})()"
+        );
+        },
+    }
 }
 
 fn load_state() -> Option<GameState> {
