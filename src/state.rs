@@ -49,6 +49,12 @@ pub struct GameState {
     pub won: bool,
     #[serde(skip)]
     pub celebrated: bool,
+    #[serde(skip)]
+    pub secondary_highlight_value: Option<u8>,
+    #[serde(skip, default)]
+    pub secondary_highlight_rows: u16,
+    #[serde(skip, default)]
+    pub secondary_highlight_cols: u16,
     pub history: Vec<Snapshot>,
     pub redo_stack: Vec<Snapshot>,
 }
@@ -85,6 +91,9 @@ impl Default for GameState {
             paused: false,
             won: false,
             celebrated: false,
+            secondary_highlight_value: None,
+            secondary_highlight_rows: 0,
+            secondary_highlight_cols: 0,
             history: Vec::new(),
             redo_stack: Vec::new(),
         }
@@ -180,6 +189,9 @@ impl AppState {
                 paused: false,
                 won: false,
             celebrated: false,
+                secondary_highlight_value: None,
+                secondary_highlight_rows: 0,
+                secondary_highlight_cols: 0,
                 history: Vec::new(),
                 redo_stack: Vec::new(),
             };
@@ -187,7 +199,36 @@ impl AppState {
     }
 
     pub fn select_cell(&self, r: usize, c: usize) {
-        self.0.update(|s| s.selected = Some((r, c)));
+        self.0.update(|s| {
+            if s.selected == Some((r, c)) && s.get(r, c) != 0 {
+                // Second click on same number cell — toggle expanded highlight
+                let v = s.get(r, c);
+                if s.secondary_highlight_value == Some(v) {
+                    s.secondary_highlight_value = None;
+                    s.secondary_highlight_rows = 0;
+                    s.secondary_highlight_cols = 0;
+                } else {
+                    let mut rows = 0u16;
+                    let mut cols = 0u16;
+                    for i in 0..9 {
+                        for j in 0..9 {
+                            if s.get(i, j) == v {
+                                rows |= 1 << i;
+                                cols |= 1 << j;
+                            }
+                        }
+                    }
+                    s.secondary_highlight_value = Some(v);
+                    s.secondary_highlight_rows = rows;
+                    s.secondary_highlight_cols = cols;
+                }
+                return;
+            }
+            s.selected = Some((r, c));
+            s.secondary_highlight_value = None;
+            s.secondary_highlight_rows = 0;
+            s.secondary_highlight_cols = 0;
+        });
     }
 
     pub fn place_number(&self, v: u8) {
@@ -787,6 +828,9 @@ mod tests {
             paused: false,
             won: false,
             celebrated: false,
+            secondary_highlight_value: None,
+            secondary_highlight_rows: 0,
+            secondary_highlight_cols: 0,
             history: Vec::new(),
             redo_stack: Vec::new(),
         };

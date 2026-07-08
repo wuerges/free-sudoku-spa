@@ -29,6 +29,22 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         v == s.get(sr, sc) && v != 0 && (row != sr || col != sc)
     };
 
+    let is_primary_highlighted = move || {
+        let s = state.0.get();
+        if s.secondary_highlight_value.is_none() { return false; }
+        if let Some((sr, sc)) = s.selected {
+            (row == sr || col == sc) && Some((row, col)) != s.selected
+        } else { false }
+    };
+    let is_secondary_highlighted = move || {
+        let s = state.0.get();
+        if s.secondary_highlight_rows == 0 && s.secondary_highlight_cols == 0 {
+            return false;
+        }
+        (s.secondary_highlight_rows >> row) & 1 == 1
+            || (s.secondary_highlight_cols >> col) & 1 == 1
+    };
+
     let highlighted_number = move || {
         let s = state.0.get();
         if let Some((sr, sc)) = s.selected {
@@ -54,8 +70,10 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                     "relative flex items-center justify-center w-full aspect-square text-lg sm:text-2xl font-medium select-none border-[0.5px] border-gray-300 dark:border-gray-600 transition-colors",
                 );
                 if is_selected() { cls.push_str(" bg-blue-200 dark:bg-blue-800"); }
+                else if is_primary_highlighted() { cls.push_str(" bg-blue-100 dark:bg-blue-900/50"); }
                 else if same_value() { cls.push_str(" bg-blue-100 dark:bg-blue-900/50"); }
                 else if is_highlighted() { cls.push_str(" bg-blue-50 dark:bg-blue-950/50"); }
+                else if is_secondary_highlighted() { cls.push_str(" bg-blue-secondary dark:bg-blue-secondary"); }
                 else if is_hinted() { cls.push_str(" bg-amber-100 dark:bg-amber-900/30"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
@@ -63,7 +81,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 cls
             }
             on:click=move |_| state.select_cell(row, col)
-            style="min-width: 0; min-height: 0;"
+style="min-width: 0; min-height: 0;"
         >
             <Show when=move || value() != 0 fallback=move || {
                 let hv = highlighted_number();

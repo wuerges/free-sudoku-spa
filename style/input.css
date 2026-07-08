@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+  .bg-blue-secondary {
+    background-color: color-mix(in srgb, var(--color-blue-50) 40%, transparent);
+  }
+  .dark .bg-blue-secondary {
+    background-color: color-mix(in srgb, var(--color-blue-950) 30%, transparent);
+  }
+}
