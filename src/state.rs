@@ -29,6 +29,8 @@ pub struct GameState {
     pub hint_enabled: bool,
     #[serde(default = "yes")]
     pub domino_enabled: bool,
+    #[serde(skip)]
+    pub just_filled: Option<(usize, usize)>,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
     pub paused: bool,
@@ -61,6 +63,7 @@ impl Default for GameState {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: true,
+            just_filled: None,
             selected: None,
             timer_seconds: 0,
             paused: false,
@@ -152,6 +155,7 @@ impl AppState {
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
                 domino_enabled: s.domino_enabled,
+                just_filled: None,
                 selected: None,
                 timer_seconds: 0,
                 paused: false,
@@ -206,6 +210,7 @@ impl AppState {
                                     s.notes[GameState::idx(rr, cc)] &= bit;
                                 }
                             }
+                            s.just_filled = Some((r, c));
                             if s.domino_enabled && s.board != s.solution {
                                 trigger_domino = true;
                             }
@@ -235,6 +240,7 @@ impl AppState {
             move || {
                 let mut filled = false;
                 signal.update(|s| {
+                    s.just_filled = None;
                     for i in 0..81 {
                         if s.board[i] == 0 {
                             let row = i / 9;
@@ -260,6 +266,7 @@ impl AppState {
                                 if s.board == s.solution {
                                     s.won = true;
                                 }
+                                s.just_filled = Some((row, col));
                                 filled = true;
                                 break;
                             }
@@ -627,6 +634,7 @@ mod tests {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: true,
+            just_filled: None,
             selected: None,
             timer_seconds: 0,
             paused: false,

@@ -66,6 +66,10 @@ pub fn App() -> impl IntoView {
     provide_context(dark_mode);
 
     view! {
+        <style>
+            "@keyframes cell-pop { 0%{transform:scale(1)}20%{transform:scale(1.12)}100%{transform:scale(1)} }
+            .cell-flash{animation:cell-pop .35s ease-out;z-index:1;position:relative}"
+        </style>
         <Router>
             <div class=move || format!(
                 "min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors {}",

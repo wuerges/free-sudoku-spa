@@ -39,6 +39,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         }
     };
 
+    let flash = move || state.0.get().just_filled == Some((row, col));
     let is_hinted = move || state.0.get().is_hinted(row, col);
     let is_wrong = move || {
         let s = state.0.get();
@@ -58,6 +59,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 else if is_hinted() { cls.push_str(" bg-amber-100 dark:bg-amber-900/30"); }
                 else if in_conflict() { cls.push_str(" bg-red-100 dark:bg-red-900/50"); }
                 else { cls.push_str(" hover:bg-gray-100 dark:hover:bg-gray-800"); }
+                if flash() { cls.push_str(" cell-flash"); }
                 cls
             }
             on:click=move |_| state.select_cell(row, col)
