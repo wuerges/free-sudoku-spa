@@ -46,6 +46,8 @@ pub struct GameState {
     pub timer_seconds: u32,
     pub paused: bool,
     pub won: bool,
+    #[serde(skip)]
+    pub celebrated: bool,
     pub history: Vec<Snapshot>,
     pub redo_stack: Vec<Snapshot>,
 }
@@ -81,6 +83,7 @@ impl Default for GameState {
             timer_seconds: 0,
             paused: false,
             won: false,
+            celebrated: false,
             history: Vec::new(),
             redo_stack: Vec::new(),
         }
@@ -175,6 +178,7 @@ impl AppState {
                 timer_seconds: 0,
                 paused: false,
                 won: false,
+            celebrated: false,
                 history: Vec::new(),
                 redo_stack: Vec::new(),
             };
@@ -241,6 +245,11 @@ impl AppState {
                 }
             }
         });
+        #[cfg(target_arch = "wasm32")]
+        if self.0.with(|s| s.won && !s.celebrated) {
+            self.0.update(|s| s.celebrated = true);
+            play_fireworks();
+        }
         if trigger_domino {
             #[cfg(target_arch = "wasm32")]
             {
@@ -293,6 +302,10 @@ impl AppState {
                         }
                     }
                 });
+                if signal.with(|s| s.won && !s.celebrated) {
+                    signal.update(|s| s.celebrated = true);
+                    play_fireworks();
+                }
                 if filled {
                     let next = ((delay_ms as f32 * 0.8).round() as u32).max(100);
                     Self::domino_chain(signal, next, gen, sound);
@@ -385,6 +398,11 @@ impl AppState {
                 }
             }
         });
+        #[cfg(target_arch = "wasm32")]
+        if self.0.with(|s| s.won && !s.celebrated) {
+            self.0.update(|s| s.celebrated = true);
+            play_fireworks();
+        }
     }
 
     pub fn tick_timer(&self) {
@@ -466,6 +484,13 @@ fn play_explosion() {
          var g=a.createGain();g.gain.setValueAtTime(0.3,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.25);\
          n.connect(f);f.connect(g);g.connect(a.destination);\
          n.start(now)}catch(e){}})()"
+    ).ok();
+}
+
+#[cfg(target_arch = "wasm32")]
+fn play_fireworks() {
+    js_sys::eval(
+        "(function(){try{var c=document.createElement('canvas');c.style='position:fixed;inset:0;pointer-events:none;z-index:9999';c.width=window.innerWidth;c.height=window.innerHeight;document.body.appendChild(c);var x=c.getContext('2d');var p=[];for(var i=0;i<120;i++){p.push({x:Math.random()*c.width,y:c.height,a:Math.random()*6.28,v:2+Math.random()*4,vy:-8-Math.random()*10,life:1,decay:0.008+Math.random()*0.012,h:Math.floor(Math.random()*360)})}function d(){x.clearRect(0,0,c.width,c.height);var alive=false;for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.15;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,3,0,6.28);x.fill()}}if(alive){requestAnimationFrame(d)}else{c.remove()}}d()}catch(e){}})()"
     ).ok();
 }
 
@@ -710,6 +735,7 @@ mod tests {
             timer_seconds: 0,
             paused: false,
             won: false,
+            celebrated: false,
             history: Vec::new(),
             redo_stack: Vec::new(),
         };
