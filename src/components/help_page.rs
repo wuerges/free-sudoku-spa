@@ -42,6 +42,16 @@ pub fn HelpPage() -> impl IntoView {
             "Dica",
             "Revela a célula com menos candidatos, limpa as notas relacionadas e apaga o histórico de desfazer. Células reveladas ficam amarelas. Desabilitada no nível Mestre.",
         ),
+        (
+            "🀄 Efeito Dominó",
+            "Efeito Dominó",
+            "Após acertar um número, abre automaticamente células que ficaram com apenas um candidato possível. O primeiro em 600ms, depois 480ms, 384ms... até no mínimo 100ms. Desligado por padrão — ative nas Configurações.",
+        ),
+        (
+            "🔊 Som",
+            "Som",
+            "Ao acertar uma célula, toca um som. Pode ser um bip, uma pequena explosão, ou desligado. Configurável na página de Configurações.",
+        ),
         ("☀️/🌙", "Modo escuro", "Alterna entre modo claro e escuro."),
         (
             "📲 Instalar",

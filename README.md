@@ -56,7 +56,25 @@ src/
     ├── sudoku_grid.rs    # 9×9 grid
     ├── number_pad.rs     # 1-9 + delete + note
     ├── game_controls.rs  # timer, undo, hint, new game
+    ├── game_page.rs      # game route layout
+    ├── config_page.rs    # config toggles (undo, auto-notes, hint, domino, sound)
+    ├── help_page.rs      # help / instructions
     └── header.rs         # dark mode, install button
+```
+
+## Features
+
+- 5 difficulty levels (Easy → Master) with unique-solution puzzles generated client-side in Rust/WASM
+- **Efeito Dominó**: after a correct guess, auto-fills cells with a single candidate in a timed cascade (600ms → *0.8 → min 100ms)
+- Sound on correct guess: beep, explosion (default), or off
+- Pencil-mark notes mode with per-cell candidates
+- Real-time conflict highlighting
+- Undo/Redo with full history (cleared on hint)
+- Timer with pause
+- Hint system (disables on Master difficulty)
+- Win detection with fireworks + balloons animation
+- Dark/light mode (auto + manual toggle)
+- PWA: installable on Android, works offline
 ```
 
 ## PWA
