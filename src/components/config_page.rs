@@ -38,6 +38,13 @@ pub fn ConfigPage() -> impl IntoView {
             get: |s| s.hint_enabled,
             toggle: |s| s.toggle_hint(),
         },
+        Toggle {
+            icon: "🀄",
+            label: "Efeito Dominó",
+            desc: "Após acertar um número, abre automaticamente células com apenas um candidato. O primeiro após 400ms, cada vez mais rápido.",
+            get: |s| s.domino_enabled,
+            toggle: |s| s.toggle_domino(),
+        },
     ];
 
     view! {

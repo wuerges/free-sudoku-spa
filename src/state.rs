@@ -27,6 +27,8 @@ pub struct GameState {
     pub auto_notes_enabled: bool,
     #[serde(default = "yes")]
     pub hint_enabled: bool,
+    #[serde(default = "yes")]
+    pub domino_enabled: bool,
     pub selected: Option<(usize, usize)>,
     pub timer_seconds: u32,
     pub paused: bool,
@@ -58,6 +60,7 @@ impl Default for GameState {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
+            domino_enabled: true,
             selected: None,
             timer_seconds: 0,
             paused: false,
@@ -148,6 +151,7 @@ impl AppState {
                 undo_enabled: s.undo_enabled,
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
+                domino_enabled: s.domino_enabled,
                 selected: None,
                 timer_seconds: 0,
                 paused: false,
@@ -163,6 +167,7 @@ impl AppState {
     }
 
     pub fn place_number(&self, v: u8) {
+        let mut trigger_domino = false;
         self.0.update(|s| {
             if let Some((r, c)) = s.selected {
                 if s.is_given(r, c) || s.won {
@@ -201,6 +206,9 @@ impl AppState {
                                     s.notes[GameState::idx(rr, cc)] &= bit;
                                 }
                             }
+                            if s.domino_enabled && s.board != s.solution {
+                                trigger_domino = true;
+                            }
                         }
                     }
                 }
@@ -211,6 +219,60 @@ impl AppState {
                 }
             }
         });
+        if trigger_domino {
+            #[cfg(target_arch = "wasm32")]
+            {
+                let gen = self.0.with(|s| s.domino_gen + 1);
+                self.0.update(|s| s.domino_gen = gen);
+                Self::domino_chain(self.0, 600, gen);
+            }
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn domino_chain(signal: RwSignal<GameState>, delay_ms: u32, gen: u32) {
+        set_timeout(
+            move || {
+                let mut filled = false;
+                signal.update(|s| {
+                    for i in 0..81 {
+                        if s.board[i] == 0 {
+                            let row = i / 9;
+                            let col = i % 9;
+                            let cands = sudoku_engine::candidates(&s.board, row, col);
+                            if cands.len() == 1 {
+                                let v = cands[0];
+                                s.board[i] = v;
+                                s.notes[i] = 0;
+                                // Clear notes of this number from row/col/box
+                                let bit = !(1 << (v - 1));
+                                for j in 0..9 {
+                                    s.notes[GameState::idx(row, j)] &= bit;
+                                    s.notes[GameState::idx(j, col)] &= bit;
+                                }
+                                let br = (row / 3) * 3;
+                                let bc = (col / 3) * 3;
+                                for rr in br..br + 3 {
+                                    for cc in bc..bc + 3 {
+                                        s.notes[GameState::idx(rr, cc)] &= bit;
+                                    }
+                                }
+                                if s.board == s.solution {
+                                    s.won = true;
+                                }
+                                filled = true;
+                                break;
+                            }
+                        }
+                    }
+                });
+                if filled {
+                    let next = ((delay_ms as f32 * 0.8).round() as u32).max(100);
+                    Self::domino_chain(signal, next, gen);
+                }
+            },
+            std::time::Duration::from_millis(delay_ms as u64),
+        );
     }
 
     pub fn undo(&self) {
@@ -235,6 +297,10 @@ impl AppState {
 
     pub fn toggle_hint(&self) {
         self.0.update(|s| s.hint_enabled = !s.hint_enabled);
+    }
+
+    pub fn toggle_domino(&self) {
+        self.0.update(|s| s.domino_enabled = !s.domino_enabled);
     }
 
     pub fn hint(&self) {
@@ -560,6 +626,7 @@ mod tests {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
+            domino_enabled: true,
             selected: None,
             timer_seconds: 0,
             paused: false,
