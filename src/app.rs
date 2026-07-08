@@ -68,10 +68,9 @@ pub fn App() -> impl IntoView {
     view! {
         <style>
             "@keyframes cell-pop {
-                0%{transform:scale(1);background-color:transparent}
-                15%{transform:scale(1.15);background-color:rgba(34,197,94,0.45)}
-                35%{background-color:rgba(34,197,94,0.15)}
-                100%{transform:scale(1);background-color:transparent}
+                0%{transform:scale(1)}
+                15%{transform:scale(1.15)}
+                100%{transform:scale(1)}
             }
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>

@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::{AppState, SoundType};
 use leptos::prelude::*;
 use leptos_router::components::A;
 
@@ -75,6 +75,26 @@ pub fn ConfigPage() -> impl IntoView {
                         </div>
                     }
                 }).collect::<Vec<_>>()}
+
+                // Sound selector
+                <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid #9ca3af;">
+                    <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">"🔊"</span>
+                    <div>
+                        <strong class="text-sm font-semibold">"Som"</strong>
+                        <p class="text-xs text-gray-500 dark:text-gray-400" style="margin-top: 2px; line-height: 1.5;">"Som ao acertar uma célula."</p>
+                    </div>
+                    <button
+                        on:click=move |_| state.cycle_sound()
+                        class="flex items-center justify-center text-sm font-medium rounded bg-gray-200 dark:bg-gray-700 active:opacity-70 transition-colors cursor-pointer"
+                        style="padding: 4px 8px;"
+                    >
+                        {move || match state.0.get().sound_type {
+                            SoundType::Beep => "Beep",
+                            SoundType::Explosion => "💥",
+                            SoundType::None => "Off",
+                        }}
+                    </button>
+                </div>
             </div>
         </div>
     }

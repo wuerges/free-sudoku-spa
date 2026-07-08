@@ -7,6 +7,14 @@ use serde::{Deserialize, Serialize};
 
 const fn yes() -> bool { true }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Default)]
+pub enum SoundType {
+    #[default]
+    Beep,
+    Explosion,
+    None,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
     #[serde(with = "u8_81")]
@@ -29,6 +37,8 @@ pub struct GameState {
     pub hint_enabled: bool,
     #[serde(default = "yes")]
     pub domino_enabled: bool,
+    #[serde(default)]
+    pub sound_type: SoundType,
     pub domino_gen: u32,
     #[serde(skip)]
     pub just_filled: Option<(usize, usize)>,
@@ -65,6 +75,7 @@ impl Default for GameState {
             hint_enabled: true,
             domino_enabled: true,
             domino_gen: 0,
+            sound_type: SoundType::Beep,
             just_filled: None,
             selected: None,
             timer_seconds: 0,
@@ -158,6 +169,7 @@ impl AppState {
                 hint_enabled: s.hint_enabled,
                 domino_enabled: s.domino_enabled,
                 domino_gen: s.domino_gen,
+                sound_type: s.sound_type,
                 just_filled: None,
                 selected: None,
                 timer_seconds: 0,
@@ -202,7 +214,7 @@ impl AppState {
                         // If correct, remove notes of this number from row/col/box
                         if v == s.solution[idx] {
                             #[cfg(target_arch = "wasm32")]
-                            play_beep();
+                            play_sound(s.sound_type);
                             let bit = !(1 << (v - 1));
                             for i in 0..9 {
                                 s.notes[GameState::idx(r, i)] &= bit;
@@ -232,15 +244,16 @@ impl AppState {
         if trigger_domino {
             #[cfg(target_arch = "wasm32")]
             {
+                let sound = self.0.with(|s| s.sound_type);
                 let gen = self.0.with(|s| s.domino_gen + 1);
                 self.0.update(|s| s.domino_gen = gen);
-                Self::domino_chain(self.0, 600, gen);
+                Self::domino_chain(self.0, 600, gen, sound);
             }
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn domino_chain(signal: RwSignal<GameState>, delay_ms: u32, gen: u32) {
+    fn domino_chain(signal: RwSignal<GameState>, delay_ms: u32, gen: u32, sound: SoundType) {
         set_timeout(
             move || {
                 let mut filled = false;
@@ -256,7 +269,7 @@ impl AppState {
                                 let v = cands[0];
                                 s.board[i] = v;
                                 s.notes[i] = 0;
-                                play_beep();
+                                play_sound(sound);
                                 // Clear notes of this number from row/col/box
                                 let bit = !(1 << (v - 1));
                                 for j in 0..9 {
@@ -282,7 +295,7 @@ impl AppState {
                 });
                 if filled {
                     let next = ((delay_ms as f32 * 0.8).round() as u32).max(100);
-                    Self::domino_chain(signal, next, gen);
+                    Self::domino_chain(signal, next, gen, sound);
                 }
             },
             std::time::Duration::from_millis(delay_ms as u64),
@@ -405,6 +418,25 @@ impl AppState {
     pub fn toggle_pause(&self) {
         self.0.update(|s| s.paused = !s.paused);
     }
+
+    pub fn cycle_sound(&self) {
+        self.0.update(|s| {
+            s.sound_type = match s.sound_type {
+                SoundType::Beep => SoundType::Explosion,
+                SoundType::Explosion => SoundType::None,
+                SoundType::None => SoundType::Beep,
+            };
+        });
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn play_sound(sound: SoundType) {
+    match sound {
+        SoundType::None => {},
+        SoundType::Beep => play_beep(),
+        SoundType::Explosion => play_explosion(),
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -416,6 +448,24 @@ fn play_beep() {
          o.frequency.value=660;o.type='sine';\
          g.gain.value=0.12;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
          o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()"
+    ).ok();
+}
+
+#[cfg(target_arch = "wasm32")]
+fn play_explosion() {
+    js_sys::eval(
+        "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();\
+         var now=a.currentTime;\
+         // noise burst
+         var buf=a.createBuffer(1,a.sampleRate*0.25,a.sampleRate);\
+         var d=buf.getChannelData(0);\
+         for(var i=0;i<d.length;i++){d[i]=(2*Math.random()-1)*Math.pow(1-i/d.length,2)}\
+         var n=a.createBufferSource();n.buffer=buf;\
+         // rumble filter
+         var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=300;\
+         var g=a.createGain();g.gain.setValueAtTime(0.3,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.25);\
+         n.connect(f);f.connect(g);g.connect(a.destination);\
+         n.start(now)}catch(e){}})()"
     ).ok();
 }
 
@@ -654,6 +704,7 @@ mod tests {
             hint_enabled: true,
             domino_enabled: true,
             domino_gen: 0,
+            sound_type: SoundType::Beep,
             just_filled: None,
             selected: None,
             timer_seconds: 0,
