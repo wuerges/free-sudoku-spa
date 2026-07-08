@@ -6,11 +6,12 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
 const fn yes() -> bool { true }
+const fn no() -> bool { false }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Default)]
 pub enum SoundType {
-    #[default]
     Beep,
+    #[default]
     Explosion,
     None,
 }
@@ -35,7 +36,7 @@ pub struct GameState {
     pub auto_notes_enabled: bool,
     #[serde(default = "yes")]
     pub hint_enabled: bool,
-    #[serde(default = "yes")]
+    #[serde(default = "no")]
     pub domino_enabled: bool,
     #[serde(default)]
     pub sound_type: SoundType,
@@ -75,9 +76,9 @@ impl Default for GameState {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
-            domino_enabled: true,
+            domino_enabled: false,
             domino_gen: 0,
-            sound_type: SoundType::Beep,
+            sound_type: SoundType::default(),
             just_filled: None,
             selected: None,
             timer_seconds: 0,
@@ -343,6 +344,16 @@ impl AppState {
         self.0.update(|s| s.domino_enabled = !s.domino_enabled);
     }
 
+    pub fn reset_config(&self) {
+        self.0.update(|s| {
+            s.undo_enabled = true;
+            s.auto_notes_enabled = true;
+            s.hint_enabled = true;
+            s.domino_enabled = false;
+            s.sound_type = SoundType::default();
+        });
+    }
+
     pub fn hint(&self) {
         self.0.update(|s| {
             // Hint: pick the unsolved cell with fewest candidates.
@@ -490,7 +501,17 @@ fn play_explosion() {
 #[cfg(target_arch = "wasm32")]
 fn play_fireworks() {
     js_sys::eval(
-        "(function(){try{var c=document.createElement('canvas');c.style='position:fixed;inset:0;pointer-events:none;z-index:9999';c.width=window.innerWidth;c.height=window.innerHeight;document.body.appendChild(c);var x=c.getContext('2d');var p=[];for(var i=0;i<120;i++){p.push({x:Math.random()*c.width,y:c.height,a:Math.random()*6.28,v:2+Math.random()*4,vy:-8-Math.random()*10,life:1,decay:0.008+Math.random()*0.012,h:Math.floor(Math.random()*360)})}function d(){x.clearRect(0,0,c.width,c.height);var alive=false;for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.15;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,3,0,6.28);x.fill()}}if(alive){requestAnimationFrame(d)}else{c.remove()}}d()}catch(e){}})()"
+        "(function(){try{var c=document.createElement('canvas');c.style='position:fixed;inset:0;pointer-events:none;z-index:9999';c.width=window.innerWidth;c.height=window.innerHeight;document.body.appendChild(c);var x=c.getContext('2d');var p=[];\
+         for(var i=0;i<120;i++){p.push({x:Math.random()*c.width,y:c.height,a:Math.random()*6.28,v:2+Math.random()*4,vy:-8-Math.random()*10,life:1,decay:0.008+Math.random()*0.012,h:Math.floor(Math.random()*360)})}\
+         var b=[];for(var i=0;i<25;i++){b.push({x:20+Math.random()*(c.width-40),y:c.height+50+Math.random()*100,s:0.9+Math.random()*0.6,w:16+Math.random()*10,drift:0.3-Math.random()*0.6,sway:Math.random()*0.02,h:Math.floor(Math.random()*360),str:Math.random()*40+20})}\
+         function d(){x.clearRect(0,0,c.width,c.height);var alive=false;\
+         for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.15;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,3,0,6.28);x.fill()}}\
+         for(var i=0;i<b.length;i++){var bl=b[i];bl.x+=Math.sin(i+Date.now()*bl.sway)*bl.drift;bl.y-=bl.s;if(bl.y>-80){alive=true;x.globalAlpha=1;\
+         var r=bl.w/2;x.strokeStyle='#999';x.lineWidth=1;x.beginPath();x.moveTo(bl.x,bl.y+r);x.lineTo(bl.x+2,bl.y+r+bl.str);x.stroke();\
+         x.fillStyle='hsl('+bl.h+',80%,55%)';x.beginPath();x.ellipse(bl.x,bl.y,r,r*1.2,0,0,6.28);x.fill();\
+         x.fillStyle='hsl('+bl.h+',80%,65%)';x.beginPath();x.ellipse(bl.x-r*0.3,bl.y-r*0.3,r*0.25,r*0.25,0,0,6.28);x.fill();\
+         x.strokeStyle='#666';x.lineWidth=1;x.beginPath();x.moveTo(bl.x-r*0.5,bl.y+r*1.1);x.lineTo(bl.x-r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.5,bl.y+r*1.1);x.stroke()}}\
+         if(alive){requestAnimationFrame(d)}else{c.remove()}}d()}catch(e){}})()"
     ).ok();
 }
 
@@ -727,9 +748,9 @@ mod tests {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
-            domino_enabled: true,
+            domino_enabled: false,
             domino_gen: 0,
-            sound_type: SoundType::Beep,
+            sound_type: SoundType::default(),
             just_filled: None,
             selected: None,
             timer_seconds: 0,

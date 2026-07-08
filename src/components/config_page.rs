@@ -95,6 +95,16 @@ pub fn ConfigPage() -> impl IntoView {
                         }}
                     </button>
                 </div>
+
+                // Reset button
+                <div class="flex justify-center" style="margin-top: 2rem;">
+                    <button
+                        on:click=move |_| state.reset_config()
+                        style="padding: 1.25rem 1rem;" class="rounded-lg text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 active:opacity-70 transition-colors cursor-pointer"
+                    >
+                        "↺ Resetar Configurações"
+                    </button>
+                </div>
             </div>
         </div>
     }
