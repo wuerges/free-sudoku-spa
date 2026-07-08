@@ -201,6 +201,8 @@ impl AppState {
                         }
                         // If correct, remove notes of this number from row/col/box
                         if v == s.solution[idx] {
+                            #[cfg(target_arch = "wasm32")]
+                            play_beep();
                             let bit = !(1 << (v - 1));
                             for i in 0..9 {
                                 s.notes[GameState::idx(r, i)] &= bit;
@@ -245,7 +247,6 @@ impl AppState {
                 signal.update(|s| {
                     if s.domino_gen != gen { return; }
                     s.just_filled = None;
-                    s.just_filled = None;
                     for i in 0..81 {
                         if s.board[i] == 0 {
                             let row = i / 9;
@@ -255,6 +256,7 @@ impl AppState {
                                 let v = cands[0];
                                 s.board[i] = v;
                                 s.notes[i] = 0;
+                                play_beep();
                                 // Clear notes of this number from row/col/box
                                 let bit = !(1 << (v - 1));
                                 for j in 0..9 {
@@ -403,6 +405,18 @@ impl AppState {
     pub fn toggle_pause(&self) {
         self.0.update(|s| s.paused = !s.paused);
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn play_beep() {
+    js_sys::eval(
+        "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();\
+         var o=a.createOscillator(),g=a.createGain();\
+         o.connect(g);g.connect(a.destination);\
+         o.frequency.value=660;o.type='sine';\
+         g.gain.value=0.12;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
+         o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()"
+    ).ok();
 }
 
 fn load_state() -> Option<GameState> {
