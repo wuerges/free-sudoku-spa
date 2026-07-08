@@ -30,6 +30,10 @@ pub struct GameState {
     pub hinted: [u8; 81],
     pub error_count: u32,
     pub note_mode: bool,
+    #[serde(skip)]
+    pub drop_mode: bool,
+    #[serde(skip)]
+    pub drop_number: Option<u8>,
     #[serde(default = "yes")]
     pub undo_enabled: bool,
     #[serde(default = "yes")]
@@ -79,6 +83,8 @@ impl Default for GameState {
             hinted: [0u8; 81],
             error_count: 0,
             note_mode: false,
+            drop_mode: false,
+            drop_number: None,
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
@@ -177,6 +183,8 @@ impl AppState {
                 hinted: [0u8; 81],
                 error_count: 0,
                 note_mode: s.note_mode,
+                drop_mode: false,
+                drop_number: None,
                 undo_enabled: s.undo_enabled,
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
@@ -200,7 +208,44 @@ impl AppState {
 
     pub fn select_cell(&self, r: usize, c: usize) {
         self.0.update(|s| {
-            if s.selected == Some((r, c)) && s.get(r, c) != 0 {
+            if s.drop_mode {
+                if let Some(dn) = s.drop_number {
+                    if !s.is_given(r, c) && !s.won {
+                        if s.note_mode {
+                            s.push_snapshot();
+                            s.notes[GameState::idx(r, c)] ^= 1 << (dn - 1);
+                        } else {
+                            s.push_snapshot();
+                            let idx = GameState::idx(r, c);
+                            s.board[idx] = dn;
+                            s.notes[idx] = 0;
+                            if dn != s.solution[idx] {
+                                s.error_count += 1;
+                            }
+                            if dn == s.solution[idx] {
+                                let bit = !(1 << (dn - 1));
+                                for i in 0..9 {
+                                    s.notes[GameState::idx(r, i)] &= bit;
+                                    s.notes[GameState::idx(i, c)] &= bit;
+                                }
+                                let br = (r / 3) * 3;
+                                let bc = (c / 3) * 3;
+                                for rr in br..br + 3 {
+                                    for cc in bc..bc + 3 {
+                                        s.notes[GameState::idx(rr, cc)] &= bit;
+                                    }
+                                }
+                                s.just_filled = Some((r, c));
+                            }
+                            if s.board == s.solution {
+                                s.won = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !s.drop_mode && s.selected == Some((r, c)) && s.get(r, c) != 0 {
                 // Second click on same number cell — toggle expanded highlight
                 let v = s.get(r, c);
                 if s.secondary_highlight_value == Some(v) {
@@ -228,6 +273,26 @@ impl AppState {
             s.secondary_highlight_value = None;
             s.secondary_highlight_rows = 0;
             s.secondary_highlight_cols = 0;
+        });
+    }
+
+    pub fn toggle_drop_mode(&self) {
+        self.0.update(|s| {
+            s.drop_mode = !s.drop_mode;
+            s.drop_number = None;
+            if s.drop_mode {
+                s.note_mode = false;
+            }
+        });
+    }
+
+    pub fn select_drop_number(&self, v: u8) {
+        self.0.update(|s| {
+            if s.drop_number == Some(v) {
+                s.drop_number = None;
+            } else {
+                s.drop_number = Some(v);
+            }
         });
     }
 
@@ -816,6 +881,8 @@ mod tests {
             hinted: [0u8; 81],
             error_count: 0,
             note_mode: false,
+            drop_mode: false,
+            drop_number: None,
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
