@@ -68,6 +68,7 @@ src/
 - **Efeito Dominó**: after a correct guess, auto-fills cells with a single candidate in a timed cascade (600ms → *0.8 → min 100ms)
 - Sound on correct guess: beep, explosion (default), or off
 - Pencil-mark notes mode with per-cell candidates
+- **🎯 Drop mode**: select a number, then tap cells to place or note it in bulk
 - Real-time conflict highlighting
 - Undo/Redo with full history (cleared on hint)
 - Timer with pause

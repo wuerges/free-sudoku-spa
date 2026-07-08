@@ -19,6 +19,11 @@ pub fn HelpPage() -> impl IntoView {
             "Modo notas",
             "Ativa o modo de lápis para marcar candidatos em vez de preencher.",
         ),
+        (
+            "🎯 Drop",
+            "Modo drop",
+            "Ative, clique num número para selecioná-lo, depois clique nas células para adicionar/remover notas ou colocar o número (dependendo se o modo notas está ligado).",
+        ),
         ("⏸/▶", "Pausar", "Pausa ou retoma o cronômetro."),
         (
             "✅/❌",
