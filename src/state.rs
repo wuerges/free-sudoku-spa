@@ -29,6 +29,7 @@ pub struct GameState {
     pub hint_enabled: bool,
     #[serde(default = "yes")]
     pub domino_enabled: bool,
+    pub domino_gen: u32,
     #[serde(skip)]
     pub just_filled: Option<(usize, usize)>,
     pub selected: Option<(usize, usize)>,
@@ -63,6 +64,7 @@ impl Default for GameState {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: true,
+            domino_gen: 0,
             just_filled: None,
             selected: None,
             timer_seconds: 0,
@@ -155,6 +157,7 @@ impl AppState {
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
                 domino_enabled: s.domino_enabled,
+                domino_gen: s.domino_gen,
                 just_filled: None,
                 selected: None,
                 timer_seconds: 0,
@@ -240,6 +243,8 @@ impl AppState {
             move || {
                 let mut filled = false;
                 signal.update(|s| {
+                    if s.domino_gen != gen { return; }
+                    s.just_filled = None;
                     s.just_filled = None;
                     for i in 0..81 {
                         if s.board[i] == 0 {
@@ -634,6 +639,7 @@ mod tests {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: true,
+            domino_gen: 0,
             just_filled: None,
             selected: None,
             timer_seconds: 0,
