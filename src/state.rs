@@ -280,9 +280,6 @@ impl AppState {
         self.0.update(|s| {
             s.drop_mode = !s.drop_mode;
             s.drop_number = None;
-            if s.drop_mode {
-                s.note_mode = false;
-            }
         });
     }
 
