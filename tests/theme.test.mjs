@@ -16,11 +16,17 @@ for (const [theme, p] of Object.entries(palettes)) {
   test(theme + ': readable numbers, notes, hints, errors, and control labels', () => {
     for (const fg of ['text', 'user', 'notes', 'accent']) {
       for (const bg of ['cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
-        assert.ok(contrast(p[fg],p[bg]) >= 4.5, `${fg}/${bg}: ${contrast(p[fg],p[bg])}`);
+        assert.ok(contrast(p[fg],p[bg]) >= 5.5, `${fg}/${bg}: ${contrast(p[fg],p[bg])}`);
       }
     }
     for (const [fg,bg] of [['error-text','error'],['hint-text','hint'],['success-text','success'],['on-primary','primary'],['on-primary','primary-hover'],['text','control'],['text','control-hover'],['muted','page'],['muted','control'],['accent','page'],['accent','control'],['error-text','selected'],['hint-text','selected'],['success-text','page']]) {
       assert.ok(contrast(p[fg],p[bg]) >= 4.5, `${fg}/${bg}`);
+    }
+  });
+  test(theme + ': distinct peer, matching, and selected backgrounds', () => {
+    // Product hierarchy targets, not WCAG thresholds for every tinted fill.
+    for (const [a,b,min] of [['peer','cell',1.2],['matching','cell',1.2],['selected','peer',1.4],['selected','matching',1.4]]) {
+      assert.ok(contrast(p[a],p[b]) >= min, `${a}/${b}: ${contrast(p[a],p[b])}`);
     }
   });
   test(theme + ': visible grid boundaries and selection/focus indicators', () => {

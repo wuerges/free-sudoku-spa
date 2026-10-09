@@ -15,6 +15,8 @@ The initial shared version is 0.9.0.
 
 ### Changed
 
+- Stronger board contrast in both themes: neutral peers, green matching numbers, a 3px active outline, clearer grid boundaries, and brighter dark-mode entries/notes.
+
 - Original clues, player entries, and hints have distinct typography and colors; peers include the selected cell's 3×3 box.
 - Package versions now share the 0.9.0 baseline, with explicit saved-game compatibility rules for future PRs.
 - Reproducible project-local Rust/Trunk tooling and separate Vercel install/build phases ([#2](https://github.com/wuerges/free-sudoku-spa/pull/2)).

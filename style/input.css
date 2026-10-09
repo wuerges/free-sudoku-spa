@@ -7,22 +7,22 @@
   --ui-control: #e2e8f0;
   --ui-control-hover: #cbd5e1;
   --ui-cell-hover: #f1f5f9;
-  --ui-grid-thin: #64748b;
-  --ui-grid-strong: #334155;
-  --ui-peer: #eff6ff;
-  --ui-matching: #dbeafe;
-  --ui-selected: #bfdbfe;
+  --ui-grid-thin: #475569;
+  --ui-grid-strong: #0f172a;
+  --ui-peer: #e2e8f0;
+  --ui-matching: #bbf7d0;
+  --ui-selected: #93c5fd;
   --ui-secondary: #f8fafc;
   --ui-error: #fee2e2;
   --ui-error-text: #991b1b;
   --ui-hint: #fef3c7;
-  --ui-hint-text: #854d0e;
+  --ui-hint-text: #713f12;
   --ui-text: #0f172a;
-  --ui-user: #1d4ed8;
-  --ui-accent: #1d4ed8;
-  --ui-muted: #475569;
-  --ui-notes: #475569;
-  --ui-primary: #1d4ed8;
+  --ui-user: #1e3a8a;
+  --ui-accent: #1e3a8a;
+  --ui-muted: #334155;
+  --ui-notes: #334155;
+  --ui-primary: #1e3a8a;
   --ui-primary-hover: #1e40af;
   --ui-on-primary: #ffffff;
   --ui-success: #dcfce7;
@@ -33,25 +33,25 @@
 
 .dark {
   --ui-page: #0f172a;
-  --ui-cell: #1e293b;
+  --ui-cell: #162338;
   --ui-control: #334155;
   --ui-control-hover: #475569;
   --ui-cell-hover: #26374d;
-  --ui-grid-thin: #94a3b8;
-  --ui-grid-strong: #cbd5e1;
-  --ui-peer: #24364f;
-  --ui-matching: #2b4567;
-  --ui-selected: #1e40af;
+  --ui-grid-thin: #a8b8cf;
+  --ui-grid-strong: #f1f5f9;
+  --ui-peer: #30435d;
+  --ui-matching: #174a3b;
+  --ui-selected: #0c245c;
   --ui-secondary: #202f43;
   --ui-error: #4c1d2b;
   --ui-error-text: #fecaca;
   --ui-hint: #422f16;
   --ui-hint-text: #fde68a;
   --ui-text: #f8fafc;
-  --ui-user: #93c5fd;
-  --ui-accent: #93c5fd;
+  --ui-user: #bfdbfe;
+  --ui-accent: #bfdbfe;
   --ui-muted: #cbd5e1;
-  --ui-notes: #cbd5e1;
+  --ui-notes: #e2e8f0;
   --ui-primary: #93c5fd;
   --ui-primary-hover: #bfdbfe;
   --ui-on-primary: #0f172a;
@@ -110,7 +110,7 @@
   .sudoku-cell[data-cell-state="error"] { background: var(--ui-error); }
   .sudoku-cell[data-cell-state="default"]:hover { background: var(--ui-cell-hover); }
   .sudoku-cell[data-selected="true"], .sudoku-cell:focus-visible {
-    outline: 2px solid var(--ui-accent);
+    outline: 3px solid var(--ui-accent);
     outline-offset: -3px;
     z-index: 1;
   }

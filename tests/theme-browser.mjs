@@ -42,6 +42,7 @@ try {
     assert.equal(await cell(fixture.hint).getAttribute('data-number-origin'),'hint');
     const selected = await cell(fixture.user).evaluate(e=>getComputedStyle(e).outlineStyle);
     assert.equal(selected,'solid');
+    assert.equal(await cell(fixture.user).evaluate(e=>getComputedStyle(e).outlineWidth),'3px');
     // A same-box cell outside the selected row and column is also a peer.
     const row=Math.floor(fixture.user/9),col=fixture.user%9;
     const boxPeer=fixture.s.board.findIndex((v,i)=>v===0 && Math.floor(i/27)===Math.floor(row/3) && Math.floor((i%9)/3)===Math.floor(col/3) && Math.floor(i/9)!==row && i%9!==col);

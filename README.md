@@ -154,8 +154,9 @@ backgrounds take precedence over selection, while an inset blue outline keeps
 the active cell visible. Matching numbers also have an underline; errors have
 an exclamation mark. Original clues use bold text, player entries use blue,
 and notes use a muted color. Same-box peers are highlighted alongside row and
-column peers. Selection has the strongest blue fill and outline; peer and
-matching tints step down in strength to keep attention on the active cell.
+column peers. Selection has a strong blue fill and 3px outline; neutral peers and green
+matching highlights separate location from digit scanning. Board text/notes
+meet a 5.5:1 product contrast target, above the 4.5:1 WCAG minimum.
 Dark surfaces use layered navy rather than black for long playing sessions.
 
 `npm run test:theme` checks text and indicator contrast; this is a color check,
@@ -163,7 +164,8 @@ not a complete accessibility audit. New saves retain original clue provenance.
 Older saves retain the correct-number locks they already had because original
 clues cannot reliably be reconstructed.
 
-See [CHANGELOG.md](CHANGELOG.md). The initial shared version is `0.9.0`. Future
+See [the contrast review](docs/theme-contrast-review.md) for comparisons and
+measured ratios, and [CHANGELOG.md](CHANGELOG.md). The initial shared version is `0.9.0`. Future
 PRs bump minor for compatible changes (including added state), or major for
 breaking saved-game changes. Keep both manifest/lockfile pairs synchronized.
 Declare `Game-state compatibility: compatible` or `breaking` in the PR body;

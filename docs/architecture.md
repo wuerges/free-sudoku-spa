@@ -52,7 +52,7 @@ Hosting defaults to revalidation, with immutable caching reserved for hashed Tru
 
 `style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
 v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
-peer, secondary, default. Selection has a separate outline, including on errors
+peer, secondary, default. Selection has a separate 3px outline, including on errors
 and hints. The early theme script in `index.html` applies system preference
 before WASM renders.
 

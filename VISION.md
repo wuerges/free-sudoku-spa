@@ -57,7 +57,7 @@ These statements describe code present in the repository. Browser behavior, perf
 
 **Acceptance:** Verify the affected flows at phone and tablet sizes, check touch target sizes and contrast, and review keyboard and screen-reader behavior. Do not declare compliance based on markup alone.
 
-Color-token tests cover text and indicator contrast in both themes. Original clues, player entries, hints, errors, selection, matching numbers, and row/column/box peers have distinct treatments. A full keyboard/screen-reader and target-device audit remains open.
+Color-token tests cover text and indicator contrast in both themes, including a 5.5:1 board-text target and stronger separation of highlight fills. Original clues, player entries, hints, errors, selection, matching numbers, and row/column/box peers have distinct treatments. A full keyboard/screen-reader and target-device audit remains open.
 
 ### 4. Persistence and reliability
 
