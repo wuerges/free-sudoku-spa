@@ -34,4 +34,14 @@ The npm lockfile supplies Tailwind's CLI. `just css` produces `style/output.css`
 
 Game progress is serialized into the `sudoku_state` localStorage key by `src/state.rs`. Check the load/save functions and serde helpers when altering the state format. Browser APIs belong at the state/UI boundary; keep engine algorithms independent of DOM and Leptos.
 
-`VISION.md` describes product goals, current capabilities, and known gaps. In particular, the current service worker precaches only the manifest and does not cache fetched app-shell assets; full offline support remains a goal.
+## Offline bundles
+
+Trunk runs `scripts/offline-bundle.mjs` after asset generation and before publishing its staging directory. The script enumerates the staged files (excluding the worker), hashes their paths/contents and the worker template, and injects the asset list and version into the deployed worker. Node.js is required for all Trunk builds, including the deployment script.
+
+Each worker installs its complete bundle into a separate `sudoku-offline-<hash>` cache. A failed precache rejects installation and deletes only that incomplete cache. Navigation always uses that version's cached HTML; listed assets use the same cache, keeping HTML and hashed assets consistent across releases. Other requests use the browser's network behavior.
+
+Updates wait for all controlled tabs to close. Activation removes only obsolete Sudoku caches, including legacy `sudoku-v1`; unrelated caches and localStorage remain untouched. Initial installation does not claim the already-open page, so reload after installation to enter worker control.
+
+Hosting defaults to revalidation, with immutable caching reserved for hashed Trunk JS/WASM/CSS. Verify actual Vercel response headers on a preview before marking the hosting-cache issue resolved.
+
+`VISION.md` describes product goals, current capabilities, and remaining validation work.

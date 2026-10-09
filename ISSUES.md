@@ -4,16 +4,10 @@ Track only unresolved issues here. Remove an issue when its acceptance criteria
 have been verified; keep resolution history in the PR or change description.
 Use stable IDs and do not renumber existing issues.
 
-## ISSUE-001: Complete offline caching
-
-- Evidence: `sw.js` precaches only the manifest and does not cache fetched app-shell assets.
-- Impact: Offline reload and navigation are not reliable.
-- Acceptance: After an online load, verify offline reload, navigation, new-game generation, and saved-game resume with all required HTML, WASM, JS, CSS, and icons available.
-
 ## ISSUE-002: Correct hosting cache policy
 
-- Evidence: `vercel.json` applies one-year immutable caching broadly, with an exception only for `/index.html`.
-- Impact: Unhashed files and navigation routes may receive unsuitable cache headers.
+- Status: Configuration now defaults to revalidation and reserves immutable caching for hashed Trunk JS/WASM/CSS. Deployed behavior remains unverified.
+- Impact: Actual Vercel response headers and returning-player updates still need a preview deployment check.
 - Acceptance: Use long-lived immutable caching only for hashed assets. Verify deployed response headers for `/`, `/help`, `/config`, `/index.html`, `/sw.js`, and `/manifest.json`, and verify updates reach returning players.
 
 ## ISSUE-003: Make deployment builds reproducible

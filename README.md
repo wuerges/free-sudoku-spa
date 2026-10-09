@@ -1,6 +1,6 @@
 # Sudoku PWA
 
-Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Targets offline play and installation on Android; see [known gaps](VISION.md#1-offline-play-and-updates).
+Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Supports offline reload after a successful online installation and targets installation on Android.
 
 ## Tech
 
@@ -72,13 +72,13 @@ src/
 - Hint system (disables on Master difficulty)
 - Win detection with fireworks + balloons animation
 - Dark/light mode (auto + manual toggle)
-- PWA manifest and install prompt; complete offline caching remains unfinished
+- PWA manifest, install prompt, and versioned offline app-shell caching
 
 
 ## PWA
 
 - `manifest.json` — installable, standalone, portrait
-- `sw.js` — network-first navigation, cache lookup for assets; currently precaches only the manifest
+- `sw.js` — build-time template for versioned app-shell and asset caching
 - Install prompt via `beforeinstallprompt` (Android Chrome/Edge)
 
 ## Deploy
@@ -98,3 +98,28 @@ Track unresolved work in [ISSUES.md](ISSUES.md); remove issues when they are sol
 Run `just css-watch` in a second terminal when changing Tailwind styles during
 `just serve`. Run `cargo fmt --check`, `just test`, and `just check` for Rust
 changes, and `just build` to verify the production bundle.
+
+## Offline reload and updates
+
+Trunk's post-build hook requires Node.js and generates `dist/sw.js` from the
+completed bundle. It precaches HTML, JS, WASM, CSS, manifest, and icons. After
+installation completes online, reload once to enter service-worker control;
+`/`, `/help`, and `/config` then reload offline using the same cached bundle.
+Offline support depends on the browser retaining its cache.
+
+Updates download a complete new bundle and wait until all app tabs close.
+An incomplete download leaves the previous version usable. Saved-game storage
+is unchanged. Serve production builds over HTTPS or localhost; opening
+`dist/index.html` directly does not install a service worker.
+
+Run `npm run test:offline` for generator and worker regression tests. For browser
+verification, serve `dist/`, wait for `navigator.serviceWorker.ready`, reload,
+then enable offline mode and check all three routes, saved-game resume, and
+new-game generation. For updates, keep two tabs open, serve a second build,
+verify its worker waits, close both tabs, and reopen the app.
+
+Verified locally in Chromium at a 390×844 viewport: offline routes (including a
+query string), saved-game resume, new games, puzzle completion, all precached
+assets, and safe multi-tab updates. A
+missing required asset rejected the update while preserving the working bundle.
+Vercel response headers still need verification on a deployed preview.

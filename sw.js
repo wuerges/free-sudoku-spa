@@ -1,35 +1,44 @@
-const CACHE = "sudoku-v1";
+// Trunk replaces this marker with the complete, content-versioned asset list.
+/* OFFLINE_BUNDLE */
+const CACHE_PREFIX = 'sudoku-offline-';
+const CACHE = CACHE_PREFIX + VERSION;
+const ASSET_URLS = new Set(ASSETS.map(url => new URL(url, self.location.origin).href));
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((cache) =>
-      cache.addAll([
-        "/manifest.json",
-      ])
-    )
-  );
-  self.skipWaiting();
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      // Bypass HTTP caches so an update never precaches stale HTML or metadata.
+      await cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' })));
+    } catch (error) {
+      await caches.delete(CACHE);
+      throw error;
+    }
+  })());
+  // Updates wait until every tab controlled by the previous worker has closed.
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
-  );
-  clients.claim();
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key =>
+      key !== CACHE && (key.startsWith(CACHE_PREFIX) || key === 'sudoku-v1')
+    ).map(key => caches.delete(key)));
+  })());
 });
 
-self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  // Network first for HTML (always get fresh app shell), cache-first for assets
-  if (e.request.mode === "navigate") {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-  } else {
-    e.respondWith(
-      caches.match(e.request).then((cached) => cached || fetch(e.request))
-    );
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      return await cache.match('/index.html') || new Response('Offline app unavailable', { status: 503 });
+    })());
+  } else if (ASSET_URLS.has(request.url)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      return await cache.match(request) || fetch(request);
+    })());
   }
 });

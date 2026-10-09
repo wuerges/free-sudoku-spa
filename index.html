@@ -59,7 +59,8 @@
       window.dispatchEvent(new CustomEvent('sudoku:installavailable'));
     });
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+        .catch(error => console.warn('Offline installation failed:', error));
     }
   </script>
 </body>
