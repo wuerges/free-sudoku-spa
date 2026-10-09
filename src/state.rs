@@ -31,6 +31,7 @@ pub enum SoundType {
 pub struct HighlightSettings {
     pub selected_shading: u8,
     pub matching_shading: u8,
+    pub available_shading: u8,
     pub dots: bool,
     pub stripes: bool,
 }
@@ -40,6 +41,7 @@ impl Default for HighlightSettings {
         Self {
             selected_shading: full_shading(),
             matching_shading: full_shading(),
+            available_shading: 0,
             dots: true,
             stripes: true,
         }
@@ -162,13 +164,21 @@ impl GameState {
         number.filter(|n| (1..=9).contains(n))
     }
 
-    /// Rule-based preview for empty cells only. Never consults the solution.
+    /// Rule-based preview for empty cells. Without a digit, previews selected
+    /// row/column/box membership instead. Never consults the solution.
     pub fn placement_available(&self, r: usize, c: usize) -> Option<bool> {
         if self.get(r, c) != 0 {
             return None;
         }
         self.active_number()
             .map(|n| sudoku_engine::is_valid_move(&self.board, r, c, n))
+            .or_else(|| {
+                if self.drop_mode {
+                    return None;
+                }
+                self.selected
+                    .map(|(sr, sc)| !(sr == r || sc == c || (sr / 3 == r / 3 && sc / 3 == c / 3)))
+            })
     }
 
     /// Selected-cell blockers take precedence where both sources overlap.
@@ -177,9 +187,9 @@ impl GameState {
         if self.placement_available(r, c) != Some(false) {
             return None;
         }
-        let number = self.active_number()?;
+        let number = self.active_number();
         if self.selected.is_some_and(|(sr, sc)| {
-            self.get(sr, sc) == number
+            ((!self.drop_mode && number.is_none()) || number == Some(self.get(sr, sc)))
                 && (sr == r || sc == c || (sr / 3 == r / 3 && sc / 3 == c / 3))
         }) {
             Some("selected")
@@ -753,6 +763,7 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     let mut state: GameState = serde_json::from_value(value)?;
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
+    state.highlights.available_shading = state.highlights.available_shading.min(100);
     if legacy {
         for i in 0..81 {
             if state.board[i] != 0 && state.board[i] == state.solution[i] {
@@ -803,6 +814,7 @@ mod tests {
         s.highlights = HighlightSettings {
             selected_shading: 25,
             matching_shading: 70,
+            available_shading: 40,
             dots: false,
             stripes: false,
         };
@@ -810,6 +822,17 @@ mod tests {
         let mut saved = serde_json::to_value(&s).unwrap();
         let restored = decode_saved_state(&saved.to_string()).unwrap();
         assert_eq!(restored.highlights, s.highlights);
+        let mut two_slider_save = saved.clone();
+        two_slider_save["highlights"]
+            .as_object_mut()
+            .unwrap()
+            .remove("available_shading");
+        let migrated = decode_saved_state(&two_slider_save.to_string()).unwrap();
+        assert_eq!(migrated.highlights.selected_shading, 25);
+        assert_eq!(migrated.highlights.matching_shading, 70);
+        assert_eq!(migrated.highlights.available_shading, 0);
+        assert!(!migrated.highlights.dots && !migrated.highlights.stripes);
+        assert_eq!(migrated.board, s.board);
         saved.as_object_mut().unwrap().remove("highlights");
         let legacy = decode_saved_state(&saved.to_string()).unwrap();
         assert_eq!(legacy.highlights, HighlightSettings::default());
@@ -827,6 +850,7 @@ mod tests {
         let preferences = HighlightSettings {
             selected_shading: 0,
             matching_shading: 45,
+            available_shading: 60,
             dots: false,
             stripes: false,
         };
@@ -857,7 +881,24 @@ mod tests {
         assert_eq!(s.placement_available(4, 4), Some(true));
         s.selected = Some((4, 4));
         assert_eq!(s.active_number(), None);
-        assert_eq!(s.placement_available(4, 4), None);
+        assert_eq!(s.placement_available(4, 4), Some(false));
+        assert_eq!(s.placement_available(7, 7), Some(true));
+    }
+
+    #[test]
+    fn empty_selection_highlights_peers_and_available_empty_cells() {
+        let mut s = GameState::default();
+        s.board = [0; 81];
+        s.selected = Some((4, 4));
+        assert_eq!(s.active_number(), None);
+        for (r, c) in [(4, 4), (4, 8), (8, 4), (3, 3)] {
+            assert_eq!(s.placement_available(r, c), Some(false));
+            assert_eq!(s.placement_blocker(r, c), Some("selected"));
+        }
+        assert_eq!(s.placement_available(0, 0), Some(true));
+        assert_eq!(s.placement_blocker(0, 0), None);
+        s.selected = None;
+        assert_eq!(s.placement_available(0, 0), None);
     }
 
     #[test]

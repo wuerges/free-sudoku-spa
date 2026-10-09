@@ -4,17 +4,17 @@
 :root {
   --ui-page: #f8fafc;
   --ui-cell: #ffffff;
-  --ui-available: #ffffff;
-  --ui-blocked: #c0cede;
-  --ui-matching-blocked: #c7d3e2;
-  --ui-blocked-stripe: #9bafc8;
+  --ui-available: #94abc6;
+  --ui-blocked: #93c5fd;
+  --ui-matching-blocked: #acc3df;
+  --ui-blocked-stripe: #e3edf9;
   --ui-control: #e2e8f0;
   --ui-control-hover: #cbd5e1;
   --ui-cell-hover: #f1f5f9;
   --ui-grid-thin: #475569;
   --ui-grid-strong: #0f172a;
-  --ui-peer: #e2e8f0;
-  --ui-matching: #c1d2e8;
+  --ui-peer: #93c5fd;
+  --ui-matching: #acc3df;
   --ui-selected: #93c5fd;
   --ui-secondary: #f8fafc;
   --ui-error: #fee2e2;
@@ -39,17 +39,17 @@
   --ui-page: #0f172a;
   --ui-cell: #162338;
   --ui-available: #3a536d;
-  --ui-blocked: #182b43;
-  --ui-matching-blocked: #1d314a;
-  --ui-blocked-stripe: #3d526b;
+  --ui-blocked: #234f7f;
+  --ui-matching-blocked: #2d4662;
+  --ui-blocked-stripe: #102238;
   --ui-control: #334155;
   --ui-control-hover: #475569;
   --ui-cell-hover: #26374d;
   --ui-grid-thin: #a8b8cf;
   --ui-grid-strong: #f1f5f9;
-  --ui-peer: #30435d;
-  --ui-matching: #25496e;
-  --ui-selected: #0c245c;
+  --ui-peer: #234f7f;
+  --ui-matching: #2d4662;
+  --ui-selected: #234f7f;
   --ui-secondary: #202f43;
   --ui-error: #4c1d2b;
   --ui-error-text: #fecaca;
@@ -110,13 +110,13 @@
 
 @layer components {
   .sudoku-cell { background: var(--ui-cell); border-color: var(--ui-grid-thin); }
-  .sudoku-cell[data-cell-state="available"] { background: var(--ui-available); }
-  .sudoku-cell[data-cell-state="matching-blocked"] { background: color-mix(in srgb, var(--ui-matching-blocked) var(--matching-shading, 100%), var(--ui-available)); }
-  .sudoku-cell[data-cell-state="blocked"] { background: color-mix(in srgb, var(--ui-blocked) var(--selected-shading, 100%), var(--ui-available)); }
-  .sudoku-board[data-blocked-stripes="true"] .sudoku-cell[data-cell-state="blocked"] {
+  .sudoku-cell[data-cell-state="available"] { background: color-mix(in srgb, var(--ui-available) var(--available-shading, 0%), var(--ui-cell)); }
+  .sudoku-cell[data-cell-state="matching-blocked"] { background: color-mix(in srgb, var(--ui-matching-blocked) var(--matching-shading, 100%), var(--ui-cell)); }
+  .sudoku-cell[data-cell-state="blocked"] { background: color-mix(in srgb, var(--ui-blocked) var(--selected-shading, 100%), var(--ui-cell)); }
+  .sudoku-board[data-selected-stripes="true"] .sudoku-cell[data-cell-state="blocked"] {
     background-image: repeating-linear-gradient(135deg, transparent 0 6px, var(--ui-blocked-stripe) 6px 8px, transparent 8px 12px);
   }
-  .sudoku-board[data-blocked-stripes="true"] .sudoku-cell[data-cell-state="matching-blocked"] {
+  .sudoku-board[data-matching-stripes="true"] .sudoku-cell[data-cell-state="matching-blocked"] {
     background-image: repeating-linear-gradient(45deg, transparent 0 6px, var(--ui-blocked-stripe) 6px 8px, transparent 8px 12px);
   }
   .sudoku-board[data-placement-dots="true"] .sudoku-cell[data-placement="available"]::after {
@@ -124,10 +124,10 @@
     width: 3px; height: 3px; border-radius: 50%; background: var(--ui-accent);
     pointer-events: none;
   }
-  .sudoku-cell[data-cell-state="secondary"] { background: var(--ui-secondary); }
-  .sudoku-cell[data-cell-state="peer"] { background: var(--ui-peer); }
-  .sudoku-cell[data-cell-state="matching"] { background: var(--ui-matching); }
-  .sudoku-cell[data-cell-state="selected"] { background: var(--ui-selected); }
+  .sudoku-cell[data-cell-state="secondary"] { background: color-mix(in srgb, var(--ui-secondary) var(--selected-shading, 100%), var(--ui-cell)); }
+  .sudoku-cell[data-cell-state="peer"] { background: color-mix(in srgb, var(--ui-peer) var(--selected-shading, 100%), var(--ui-cell)); }
+  .sudoku-cell[data-cell-state="matching"] { background: color-mix(in srgb, var(--ui-matching) var(--matching-shading, 100%), var(--ui-cell)); }
+  .sudoku-cell[data-cell-state="selected"] { background: color-mix(in srgb, var(--ui-selected) var(--selected-shading, 100%), var(--ui-cell)); }
   .sudoku-cell[data-cell-state="hint"] { background: var(--ui-hint); }
   .sudoku-cell[data-cell-state="error"] { background: var(--ui-error); }
   .sudoku-cell[data-cell-state="default"]:hover { background: var(--ui-cell-hover); }

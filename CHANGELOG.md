@@ -9,7 +9,7 @@ The initial shared version is 0.9.0.
 
 ### Added
 
-- Saved board-highlight preferences: separate shading sliders for selected-number and matching-number blockers, plus independent dot and stripe toggles.
+- Saved board-highlight preferences: three shading sliders for selection/peers, matching-number blockers, and available cells, plus independent dot and stripe toggles.
 
 - Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, solid blue/slate fills with stronger opposite diagonal stripes for selected-number and matching-number blockers.
 
@@ -26,6 +26,8 @@ The initial shared version is 0.9.0.
 - Reproducible project-local Rust/Trunk tooling and separate Vercel install/build phases ([#2](https://github.com/wuerges/free-sudoku-spa/pull/2)).
 
 ### Fixed
+
+- Zero shading now restores the normal cell background and removes that source’s stripes. Selection shading applies to empty-cell row/column/box highlights as well.
 
 - Legacy undo history can erase migrated player entries without leaving their cells locked.
 

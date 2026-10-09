@@ -52,7 +52,7 @@ Hosting defaults to revalidation, with immutable caching reserved for hashed Tru
 
 `style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
 v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
-available/blocked/matching-blocked (empty cells with an active digit), peer, secondary, default. Selection has a separate 3px outline, including on errors
+available/blocked/matching-blocked (empty cells with an active digit or empty selection), peer, secondary, default. Selection has a separate 3px outline, including on errors
 and hints. The early theme script in `index.html` applies system preference
 before WASM renders.
 
@@ -65,7 +65,8 @@ so undo cannot leave an empty cell permanently locked.
 
 `GameState.active_number` derives the inspected digit from Drop selection or
 the selected filled cell. `placement_available` uses the existing engine
-`is_valid_move` on empty cells and the current board only. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. A selected empty
+`is_valid_move` on empty cells and the current board only. With no digit in normal
+mode, it instead classifies selected-unit peers versus outside empty cells. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. A selected empty
 cell retains its selection fill/outline, with placement metadata and an available
 dot when inspecting a Drop digit; errors and hints retain precedence.
 
@@ -77,8 +78,12 @@ no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
 matching-source blockers.
 
 `GameState.highlights` persists a serde-defaulted `HighlightSettings` object.
-Both shading percentages default to 100; dots/stripes default to enabled.
+Selection/matching shading default to 100; available shading defaults to zero.
+Dots/stripes default to enabled.
 Partial settings use the same defaults, loading clamps percentages to 0–100,
 new games preserve preferences, and reset restores defaults without changing
-the board. Board CSS variables independently blend each blocker fill toward
-the available-cell fill; scoped data attributes control dots and stripes.
+the board. Board CSS variables independently blend selection/peer, matching/blocker, and
+available fills from the normal cell background to strong theme shades.
+Zero restores the normal fill and disables that source’s stripes; selection
+outline, matching underline, errors/hints, and optional dots remain independent.
+Scoped data attributes control dots and each source’s stripe visibility.

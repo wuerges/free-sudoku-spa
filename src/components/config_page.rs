@@ -97,17 +97,17 @@ pub fn ConfigPage() -> impl IntoView {
 
                 <section class="py-5 border-b border-grid-thin space-y-3" aria-labelledby="highlight-settings">
                     <h2 id="highlight-settings" class="text-sm font-semibold">"Destaques do tabuleiro"</h2>
-                    {[(false, "Sombreamento pela seleção"), (true, "Sombreamento pelos iguais")].into_iter().map(|(matching, label)| {
-                        let id = if matching { "matching-shading" } else { "selected-shading" };
+                    {[(0, "Sombreamento pela seleção"), (1, "Sombreamento pelos iguais"), (2, "Sombreamento das células disponíveis")].into_iter().map(|(target, label)| {
+                        let id = match target { 0 => "selected-shading", 1 => "matching-shading", _ => "available-shading" };
                         view! {
                             <div>
                                 <label for=id class="flex justify-between gap-2 text-sm">
                                     <span>{label}</span>
-                                    <span>{move || { let h = state.0.get().highlights; format!("{}%", if matching { h.matching_shading } else { h.selected_shading }) }}</span>
+                                    <span>{move || { let h = state.0.get().highlights; format!("{}%", match target { 0 => h.selected_shading, 1 => h.matching_shading, _ => h.available_shading }) }}</span>
                                 </label>
                                 <input id=id type="range" min="0" max="100" step="1" class="w-full h-12 accent-accent cursor-pointer"
-                                    prop:value=move || { let h = state.0.get().highlights; (if matching { h.matching_shading } else { h.selected_shading }).to_string() }
-                                    on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() { state.0.update(|s| { if matching { s.highlights.matching_shading = value.min(100); } else { s.highlights.selected_shading = value.min(100); } }); } }
+                                    prop:value=move || { let h = state.0.get().highlights; (match target { 0 => h.selected_shading, 1 => h.matching_shading, _ => h.available_shading }).to_string() }
+                                    on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() { state.0.update(|s| { match target { 0 => s.highlights.selected_shading = value.min(100), 1 => s.highlights.matching_shading = value.min(100), _ => s.highlights.available_shading = value.min(100) } }); } }
                                 />
                             </div>
                         }

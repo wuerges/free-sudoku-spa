@@ -164,9 +164,12 @@ blocked by the selected number, and `\` stripes by another matching number.
 Both blocker sources retain nearby blue/slate fills beneath the 2px stripes,
 and matching filled numbers have a stronger blue highlight and underline.
 Selected-number shading takes precedence when both block a cell.
-Settings has separate 0–100% shading sliders for both blocker sources, plus
-independent dot/stripe toggles. Preferences survive reloads and new games;
-reset restores full shading with dots and stripes enabled.
+Settings has three 0–100% shading sliders: selection and its peers/blockers,
+matching-number blockers, and available empty cells. Zero uses the normal cell
+background without stripes; 100 uses a strong shade. An empty selection also
+highlights its row/column/box and available empties outside those groups.
+Dots/stripes have independent toggles. Preferences survive reloads/new games;
+reset restores 100% selection/matching, 0% available shading, and both toggles.
 This preview does not reveal the solution or prevent entering a number.
 
 `npm run test:theme` checks text and indicator contrast; this is a color check,

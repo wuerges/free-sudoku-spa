@@ -91,9 +91,9 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 match origin() { "given" => ", número original", "hint" => ", dica", _ => "" },
                 if error() { ", erro ou conflito" } else { "" },
                 match placement() {
-                    Some(true) => format!(", disponível para {} pelas regras", state.0.get().active_number().unwrap()),
-                    Some(false) => format!(", bloqueada para {} pelas regras, {}", state.0.get().active_number().unwrap(),
-                        if blocker() == Some("selected") { "pela célula selecionada" } else { "por outro número igual" }),
+                    Some(true) => state.0.get().active_number().map_or_else(|| ", fora da linha, coluna e bloco selecionados".to_string(), |n| format!(", disponível para {n} pelas regras")),
+                    Some(false) => state.0.get().active_number().map_or_else(|| ", na linha, coluna ou bloco selecionado".to_string(), |n| format!(", bloqueada para {n} pelas regras, {}",
+                        if blocker() == Some("selected") { "pela célula selecionada" } else { "por outro número igual" })),
                     None => String::new(),
                 },
             )

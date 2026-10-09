@@ -123,39 +123,74 @@ try {
     await page.setViewportSize({width:390,height:844});
     await page.goto(url+'/config');
     await page.getByRole('slider',{name:'Sombreamento pela seleção'}).waitFor();
-    for(const [label,value] of [['Sombreamento pela seleção','0'],['Sombreamento pelos iguais','65']]) {
+    for(const [label,value] of [['Sombreamento pela seleção','0'],['Sombreamento pelos iguais','65'],['Sombreamento das células disponíveis','35']]) {
       await page.getByRole('slider',{name:label}).evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));},value);
     }
     await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).uncheck();
     await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).uncheck();
-    await page.waitForFunction(()=>{const h=JSON.parse(localStorage.getItem('sudoku_state')).highlights;return h.selected_shading===0 && h.matching_shading===65 && !h.dots && !h.stripes});
+    await page.waitForFunction(()=>{const h=JSON.parse(localStorage.getItem('sudoku_state')).highlights;return h.selected_shading===0 && h.matching_shading===65 && h.available_shading===35 && !h.dots && !h.stripes});
     await page.reload();
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'0');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'65');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'35');
+    assert.equal(await page.getByRole('slider').count(),3);
     assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),false);
     await page.locator('#loading').waitFor({state:'detached'});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.screenshot({path:path.join(output,`${theme}-settings.png`),fullPage:true});
     await page.goto(url);await page.locator('.sudoku-cell').first().waitFor();
     const boardRoot=page.locator('.sudoku-board');
-    assert.equal(await boardRoot.getAttribute('data-blocked-stripes'),'false');
+    assert.equal(await boardRoot.getAttribute('data-selected-stripes'),'false');
     assert.equal(await boardRoot.getAttribute('data-placement-dots'),'false');
     assert.equal(await boardRoot.evaluate(e=>e.style.getPropertyValue('--selected-shading')),'0%');
     assert.equal(await boardRoot.evaluate(e=>e.style.getPropertyValue('--matching-shading')),'65%');
+    assert.equal(await boardRoot.evaluate(e=>e.style.getPropertyValue('--available-shading')),'35%');
     const availableCell=page.locator('[data-cell-state="available"]').first();
     const selectedBlocked=page.locator('[data-cell-state="blocked"]').first();
     if(await selectedBlocked.count() && await availableCell.count()) {
       const colorPixel=async locator=>locator.evaluate(e=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');ctx.fillStyle=getComputedStyle(e).backgroundColor;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]});
-      assert.deepEqual(await colorPixel(selectedBlocked),await colorPixel(availableCell));
+      const normalPixel=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--ui-cell');ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]});
+      assert.deepEqual(await colorPixel(selectedBlocked),normalPixel);
+      assert.notDeepEqual(await colorPixel(availableCell),normalPixel);
       assert.equal(await selectedBlocked.evaluate(e=>getComputedStyle(e).backgroundImage),'none');
       assert.equal(await availableCell.evaluate(e=>getComputedStyle(e,'::after').content),'none');
     }
     const matchingBlocked=page.locator('[data-cell-state="matching-blocked"]').first();
     if(await matchingBlocked.count()) assert.equal(await matchingBlocked.evaluate(e=>getComputedStyle(e).backgroundImage),'none');
+    // All zero values use the normal fill and suppress stripes, even when enabled.
+    await page.goto(url+'/config');
+    for(const label of ['Sombreamento pela seleção','Sombreamento pelos iguais','Sombreamento das células disponíveis']) {
+      await page.getByRole('slider',{name:label}).evaluate(e=>{e.value='0';e.dispatchEvent(new Event('input',{bubbles:true}));});
+    }
+    await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).check();
+    await page.goto(url);await page.locator('.sudoku-cell').first().waitFor();
+    const zeroCells=await page.locator('[data-cell-state="selected"], [data-cell-state="blocked"], [data-cell-state="matching-blocked"], [data-cell-state="matching"], [data-cell-state="peer"], [data-cell-state="available"]').evaluateAll(es=>{
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');
+      const pixel=c=>{ctx.fillStyle=c;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]};
+      const normal=pixel(getComputedStyle(document.documentElement).getPropertyValue('--ui-cell'));
+      return es.map(e=>({state:e.dataset.cellState,same:JSON.stringify(pixel(getComputedStyle(e).backgroundColor))===JSON.stringify(normal),image:getComputedStyle(e).backgroundImage}));
+    });
+    assert.ok(zeroCells.length>0);
+    for(const e of zeroCells){assert.equal(e.same,true,`${theme} zero ${e.state}`);assert.equal(e.image,'none');}
+    // Empty-cell selection still shades peers; the third slider controls outside empties.
+    await page.goto(url+'/config');
+    for(const label of ['Sombreamento pela seleção','Sombreamento pelos iguais','Sombreamento das células disponíveis']) {
+      await page.getByRole('slider',{name:label}).evaluate(e=>{e.value='100';e.dispatchEvent(new Event('input',{bubbles:true}));});
+    }
+    await page.goto(url);await page.locator('.sudoku-cell').first().waitFor();
+    await cell(fixture.notes).click();
+    const emptySelection=await page.locator('.sudoku-cell').evaluateAll(es=>es.map(e=>({r:Number(e.dataset.row),c:Number(e.dataset.col),origin:e.dataset.numberOrigin,state:e.dataset.cellState,blocker:e.dataset.blocker})));
+    const er=Math.floor(fixture.notes/9),ec=fixture.notes%9;
+    for(const e of emptySelection.filter(e=>e.origin==='empty')) {
+      const related=e.r===er || e.c===ec || (Math.floor(e.r/3)===Math.floor(er/3) && Math.floor(e.c/3)===Math.floor(ec/3));
+      assert.equal(e.state,e.r===er && e.c===ec ? 'selected' : related ? 'blocked' : 'available');
+      assert.equal(e.blocker,related?'selected':'none');
+    }
     await page.goto(url+'/config');
     await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'100');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'100');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'0');
     assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),true);
     assert.equal(await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).isChecked(),true);
     assert.deepEqual(errors,[]);

@@ -29,27 +29,18 @@ and errors red with an exclamation marker. This keeps color from carrying every
 meaning alone. Dark cells use deep navy, with brighter player entries/notes and
 higher-contrast box boundaries; light entries/notes and boundaries are darker.
 
-The outline is the primary active-cell cue in dark mode. Its selected-fill
-contrast is 10.39:1 (light: 7.24:1). Tinted fills intentionally remain softer than
-text and outlines so a whole highlighted row does not overwhelm the puzzle.
+The 3px outline is the primary active-cell cue in both themes: selection and
+its directly related cells share the same shading slider. At maximum, selection
+has 1.80:1 contrast against the normal cell in light mode and 1.87:1 in dark.
+Matching fills have 1.81:1 and 1.63:1 respectively. Notes on the maximum selected
+fill have 8.11:1 (light) / 6.82:1 (dark); player entries have 7.24:1 / 5.92:1.
 
-| Contrast pair | Light | Dark |
-| --- | ---: | ---: |
-| Peer / default cell | 1.23:1 | 1.57:1 |
-| Matching / default cell | 1.54:1 | 1.69:1 |
-| Selected / peer | 1.46:1 | 1.47:1 |
-| Selected / matching | 1.17:1 | 1.59:1 |
-| Given / selected | 9.90:1 | 14.11:1 |
-| Player entry / selected | 7.24:1 | 10.39:1 |
-| Notes / selected | 8.11:1 | 11.97:1 |
-
-`npm run test:theme` checks board text at ≥5.5:1 across every cell background,
-other text at ≥4.5:1, and grid/selection indicators at ≥3:1. New hierarchy tests
-also require peers versus default ≥1.2:1, matching digits versus default
-≥1.5:1, selection versus peers ≥1.4:1 and versus matching digits ≥1.1:1.
-The stronger matching-digit fill intentionally sits closer to the selected fill;
-the high-contrast 3px outline identifies selection independently. These are
-product targets, not WCAG requirements.
+`npm run test:theme` checks board text at ≥5.5:1 across every maximum fill and
+stripe color, other text at ≥4.5:1, and grid/selection indicators at ≥3:1.
+Maximum selection, matching, and availability shades versus normal require
+≥1.5:1; stripes versus maximum blocker fills require ≥1.3:1. These are product
+targets, not WCAG requirements. Tests also sample all three sliders’ blends
+at 0/25/50/75/100% to retain text/grid contrast.
 [WCAG text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
 and [non-text contrast](https://www.w3.org/WAI/WCAG21/understanding/non-text-contrast.html)
 remain the accessibility references. Token checks do not constitute a full
@@ -67,8 +58,9 @@ cells are brighter and carry a small dot; blocked cells use `/` diagonal stripes
 stripes for other matching-number peers, in the same blue/slate palette.
 Selected-source stripes win overlaps. Drop digits without a selected matching
 occurrence use `\` stripes for all blockers. Filled cells
-retain their original/hint/error/matching treatments. Selecting an empty cell
-in normal mode clears the preview; clearing the Drop digit also clears it.
+retain their original/hint/error/matching treatments. Selecting an empty cell in normal mode shades its row/column/box with the
+selection slider and outside empty cells with the availability slider, without
+claiming a number is valid. Clearing a Drop digit clears the digit preview.
 Matching notes and matching filled cells use the same inspected digit.
 
 There is no visible shading legend. Per-cell accessible labels describe availability and blocker source.
@@ -92,14 +84,24 @@ between each blocker fill and its stripe while preserving readable notes.
 
 ## Configurable highlights
 
-Settings exposes separate 0–100% sliders for selected-source and matching-source
-shading, plus independent dot and stripe checkboxes. At 0% the corresponding
-fill blends fully into the available-cell fill; at 100% it uses the palette
-above. Stripes are controlled independently. Defaults retain full shading,
-dots, and stripes. Lower fill separation is an intentional player preference.
-Tests sample text/grid contrast at 0/25/50/75/100% in both themes.
+Settings has exactly three 0–100% sliders:
 
-Preferences survive saving/loading and new games. Older or partial settings
-use compatible defaults; reset preserves the current game. Browser checks
-verify slider independence, checkbox effects, reload persistence, reset, and
-mobile layout. Board and settings screenshots are in `docs/themes/`.
+1. Selection shading covers the selected cell/number and its row/column/box
+   peers, including when an empty cell is selected.
+2. Matching shading covers other matching filled numbers and empty cells they
+   block; selected-source shading wins overlaps.
+3. Available shading covers empty cells not blocked by the inspected digit,
+   or outside selected units when inspecting an empty cell.
+
+Each slider starts from the normal cell background at zero and reaches a strong
+blue/slate fill at 100. Zero also suppresses that source’s stripes, even with
+stripes enabled. Selection outline, matching underlines, errors/hints, and the
+dot toggle remain independent. Dots/stripes retain their separate checkboxes.
+Default selection/matching values are 100; availability defaults to zero.
+The new availability field defaults to zero in existing two-slider saves.
+
+Preferences survive saving/loading and new games. Older or partial settings use
+compatible defaults; reset preserves the current game. Browser checks verify
+all three sliders independently, entirely unshaded zero values, empty-cell
+selection, checkbox effects, reload persistence, reset, and mobile layout.
+Board and settings screenshots are in `docs/themes/`.
