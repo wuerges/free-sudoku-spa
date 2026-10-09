@@ -27,7 +27,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "• / sombra",
             "Onde o número cabe",
-            "Selecione uma célula preenchida ou um número no modo Drop. Células vazias claras com um ponto permitem esse número; as sombreadas estão bloqueadas por números na mesma linha, coluna ou bloco. Isso indica uma possibilidade pelas regras, não garante a resposta. Números iguais ficam verdes e sublinhados.",
+            "Selecione uma célula preenchida ou um número no modo Drop. Células vazias claras com um ponto permitem esse número; cinza indica bloqueio pela célula selecionada, e violeta por outros números iguais, na mesma linha, coluna ou bloco. Se os bloqueios se sobrepõem, prevalece o cinza. Isso indica uma possibilidade pelas regras, não garante a resposta. Números iguais ficam verdes e sublinhados.",
         ),
         ("⏸/▶", "Pausar", "Pausa ou retoma o cronômetro."),
         (

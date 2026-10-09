@@ -20,6 +20,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             .is_some_and(|n| s.selected != Some((row, col)) && s.get(row, col) == n)
     };
     let placement = move || state.0.get().placement_available(row, col);
+    let blocker = move || state.0.get().placement_blocker(row, col);
     let peer = move || {
         state.0.get().selected.is_some_and(|(r, c)| {
             (r, c) != (row, col) && (r == row || c == col || (r / 3 == row / 3 && c / 3 == col / 3))
@@ -41,6 +42,8 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         } else if let Some(available) = placement() {
             if available {
                 "available"
+            } else if blocker() == Some("matching") {
+                "matching-blocked"
             } else {
                 "blocked"
             }
@@ -78,6 +81,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             data-placement=move || match placement() {
                 Some(true) => "available", Some(false) => "blocked", None => "none",
             }
+            data-blocker=move || blocker().unwrap_or("none")
             data-number-origin=origin
             aria-pressed=move || selected().to_string()
             aria-label=move || format!(
@@ -88,7 +92,8 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 if error() { ", erro ou conflito" } else { "" },
                 match placement() {
                     Some(true) => format!(", disponível para {} pelas regras", state.0.get().active_number().unwrap()),
-                    Some(false) => format!(", bloqueada para {} pelas regras", state.0.get().active_number().unwrap()),
+                    Some(false) => format!(", bloqueada para {} pelas regras, {}", state.0.get().active_number().unwrap(),
+                        if blocker() == Some("selected") { "pela célula selecionada" } else { "por outro número igual" }),
                     None => String::new(),
                 },
             )

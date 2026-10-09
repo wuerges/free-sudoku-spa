@@ -145,6 +145,23 @@ impl GameState {
             .map(|n| sudoku_engine::is_valid_move(&self.board, r, c, n))
     }
 
+    /// Selected-cell blockers take precedence where both sources overlap.
+    /// Without a selected occurrence (e.g. keypad Drop), all blockers are matching.
+    pub fn placement_blocker(&self, r: usize, c: usize) -> Option<&'static str> {
+        if self.placement_available(r, c) != Some(false) {
+            return None;
+        }
+        let number = self.active_number()?;
+        if self.selected.is_some_and(|(sr, sc)| {
+            self.get(sr, sc) == number
+                && (sr == r || sc == c || (sr / 3 == r / 3 && sc / 3 == c / 3))
+        }) {
+            Some("selected")
+        } else {
+            Some("matching")
+        }
+    }
+
     pub fn is_given(&self, r: usize, c: usize) -> bool {
         self.givens[Self::idx(r, c)] != 0
     }
@@ -769,6 +786,30 @@ mod tests {
         s.selected = Some((4, 4));
         assert_eq!(s.active_number(), None);
         assert_eq!(s.placement_available(4, 4), None);
+    }
+
+    #[test]
+    fn placement_blockers_distinguish_selected_matching_and_overlap() {
+        let mut s = GameState::default();
+        s.board = [0; 81];
+        s.board[0] = 5;
+        s.board[42] = 5;
+        s.selected = Some((0, 0));
+        assert_eq!(s.placement_blocker(0, 4), Some("selected"));
+        assert_eq!(s.placement_blocker(1, 1), Some("selected"));
+        assert_eq!(s.placement_blocker(4, 4), Some("matching"));
+        assert_eq!(s.placement_blocker(3, 8), Some("matching"));
+        assert_eq!(s.placement_blocker(7, 6), Some("matching"));
+        assert_eq!(s.placement_blocker(4, 0), Some("selected"));
+        assert_eq!(s.placement_blocker(7, 4), None);
+        assert_eq!(s.placement_blocker(0, 0), None);
+        s.drop_mode = true;
+        s.drop_number = Some(5);
+        s.selected = Some((7, 4));
+        assert_eq!(s.placement_blocker(0, 4), Some("matching"));
+        assert_eq!(s.placement_blocker(4, 4), Some("matching"));
+        s.drop_number = None;
+        assert_eq!(s.placement_blocker(4, 4), None);
     }
 
     #[test]

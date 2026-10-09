@@ -52,7 +52,7 @@ Hosting defaults to revalidation, with immutable caching reserved for hashed Tru
 
 `style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
 v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
-available/blocked (empty cells with an active digit), peer, secondary, default. Selection has a separate 3px outline, including on errors
+available/blocked/matching-blocked (empty cells with an active digit), peer, secondary, default. Selection has a separate 3px outline, including on errors
 and hints. The early theme script in `index.html` applies system preference
 before WASM renders.
 
@@ -69,3 +69,8 @@ the selected filled cell. `placement_available` uses the existing engine
 are added. Matching digits/notes use the same active digit. A selected empty
 cell retains its selection fill/outline, with placement metadata and an available
 dot when inspecting a Drop digit; errors and hints retain precedence.
+
+`placement_blocker` classifies blocked empty cells as selected or matching.
+Selected-source shading wins overlaps; a keypad digit with no selected matching
+occurrence classifies all blockers as matching. Source metadata and Portuguese
+labels expose the distinction without changing persisted state.

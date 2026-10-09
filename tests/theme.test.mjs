@@ -15,7 +15,7 @@ function contrast(a, b) { const [lo, hi] = [luminance(a), luminance(b)].sort((a,
 for (const [theme, p] of Object.entries(palettes)) {
   test(theme + ': readable numbers, notes, hints, errors, and control labels', () => {
     for (const fg of ['text', 'user', 'notes', 'accent']) {
-      for (const bg of ['available','blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for (const bg of ['available','blocked','matching-blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
         assert.ok(contrast(p[fg],p[bg]) >= 5.5, `${fg}/${bg}: ${contrast(p[fg],p[bg])}`);
       }
     }
@@ -25,13 +25,13 @@ for (const [theme, p] of Object.entries(palettes)) {
   });
   test(theme + ': distinct peer, matching, and selected backgrounds', () => {
     // Product hierarchy targets, not WCAG thresholds for every tinted fill.
-    for (const [a,b,min] of [['available','blocked',1.5],['peer','cell',1.2],['matching','cell',1.2],['selected','peer',1.4],['selected','matching',1.4]]) {
+    for (const [a,b,min] of [['available','blocked',1.5],['available','matching-blocked',1.5],['peer','cell',1.2],['matching','cell',1.2],['selected','peer',1.4],['selected','matching',1.4]]) {
       assert.ok(contrast(p[a],p[b]) >= min, `${a}/${b}: ${contrast(p[a],p[b])}`);
     }
   });
   test(theme + ': visible grid boundaries and selection/focus indicators', () => {
     for (const fg of ['grid-thin','grid-strong','accent']) {
-      for(const bg of ['available','blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for(const bg of ['available','blocked','matching-blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
         assert.ok(contrast(p[fg],p[bg]) >= 3, `${fg}/${bg}`);
       }
     }

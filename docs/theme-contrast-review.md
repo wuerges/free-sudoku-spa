@@ -60,7 +60,10 @@ saves, and horizontal overflow. Screenshots are in `docs/themes/`.
 
 A filled-cell selection or active Drop digit previews all empty cells against
 every existing occurrence of that digit, including box restrictions. Available
-cells are brighter and carry a small dot; blocked cells are shaded. Filled cells
+cells are brighter and carry a small dot; blocked cells use neutral shading for selected-occurrence peers and violet
+shading for other matching-number peers. Selected-source shading wins when both
+block a cell. Drop digits without a selected matching occurrence use violet
+for all blockers. Filled cells
 retain their original/hint/error/matching treatments. Selecting an empty cell
 in normal mode clears the preview; clearing the Drop digit also clears it.
 Matching notes and matching filled cells use the same inspected digit.
@@ -69,7 +72,7 @@ The Portuguese legend and per-cell accessible labels explain the preview.
 Availability means legal by current row/column/box rules, not a guaranteed
 answer; neither the preview nor its tests consult the solution. Notes and
 number-entry behavior remain unchanged. Contrast tests include both new fills
-and require at least 1.5:1 available/blocked separation as a product target.
+and require at least 1.5:1 separation between available and each blocked fill as a product target.
 State regression tests check distant occurrences, box-only restrictions, no
-solution dependency, and Drop precedence/reset; browser tests check all 81
+solution dependency, Drop precedence/reset, and blocker-source overlap; browser tests check all 81
 cells for normal selection and multiple Drop digits in both themes.

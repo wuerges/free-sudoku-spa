@@ -48,12 +48,17 @@ try {
     const boxPeer=fixture.s.board.findIndex((v,i)=>v===0 && Math.floor(i/27)===Math.floor(row/3) && Math.floor((i%9)/3)===Math.floor(col/3) && Math.floor(i/9)!==row && i%9!==col);
     if(boxPeer>=0) assert.equal(await cell(boxPeer).getAttribute('data-cell-state'),'blocked');
     async function verifyPreview(board, digit) {
-      const cells=await page.locator('.sudoku-cell').evaluateAll(es=>es.map(e=>({r:Number(e.dataset.row),c:Number(e.dataset.col),placement:e.dataset.placement,label:e.getAttribute('aria-label')})));
+      const cells=await page.locator('.sudoku-cell').evaluateAll(es=>es.map(e=>({r:Number(e.dataset.row),c:Number(e.dataset.col),placement:e.dataset.placement,blocker:e.dataset.blocker,state:e.dataset.cellState,selected:e.dataset.selected==='true',label:e.getAttribute('aria-label')})));
+      const selected=cells.find(e=>e.selected);
       for(const e of cells) {
         const index=e.r*9+e.c;
         const blocked=board.some((v,i)=>v===digit && (Math.floor(i/9)===e.r || i%9===e.c || (Math.floor(i/27)===Math.floor(e.r/3) && Math.floor((i%9)/3)===Math.floor(e.c/3))));
         const expected=board[index]!==0 ? 'none' : blocked ? 'blocked' : 'available';
         assert.equal(e.placement,expected,`${theme} digit ${digit} cell ${index}`);
+        const primary=selected && board[selected.r*9+selected.c]===digit && (selected.r===e.r || selected.c===e.c || (Math.floor(selected.r/3)===Math.floor(e.r/3) && Math.floor(selected.c/3)===Math.floor(e.c/3)));
+        const source=expected==='blocked' ? primary ? 'selected' : 'matching' : 'none';
+        assert.equal(e.blocker,source,`${theme} blocker source ${index}`);
+        if(expected==='blocked' && !e.selected) assert.equal(e.state,source==='matching'?'matching-blocked':'blocked');
         if(expected!=='none') assert.match(e.label,new RegExp(`${expected==='available'?'disponível':'bloqueada'} para ${digit}`));
       }
     }
