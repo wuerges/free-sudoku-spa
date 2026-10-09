@@ -1,6 +1,6 @@
 {
-  "installCommand": "sh build.sh",
-  "buildCommand": "echo built",
+  "installCommand": "sh scripts/setup-build.sh",
+  "buildCommand": "sh build.sh",
   "outputDirectory": "dist",
   "rewrites": [
     {
@@ -31,5 +31,6 @@
         }
       ]
     }
-  ]
+  ],
+  "framework": null
 }

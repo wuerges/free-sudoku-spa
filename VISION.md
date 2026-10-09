@@ -65,7 +65,7 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 5. Build and deployment consistency
 
-**Current behavior:** Local CSS builds use the npm lockfile. `build.sh` installs a standalone Tailwind CLI for Vercel. No GitHub Actions workflow is checked in.
+**Current behavior:** Local and Vercel builds use the npm lockfile for Tailwind. Vercel has separate installation and build phases, with pinned project-local Rust/Trunk tooling and locked Cargo dependencies. No GitHub Actions workflow is checked in.
 
 **Goal:** Use a reproducible toolchain across development and hosting, with suitable compilation, lint, test, and production-build checks.
 

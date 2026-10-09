@@ -12,19 +12,19 @@ Use stable IDs and do not renumber existing issues.
 
 ## ISSUE-003: Make deployment builds reproducible
 
-- Evidence: `build.sh` assumes Rust is available, installs an unpinned Trunk version, downloads Tailwind 4.1.9 without a checksum, and writes it to `/usr/local/bin`. Local CSS uses the npm lockfile instead.
-- Impact: Deployment depends on environment permissions and can differ from local builds.
+- Status: Setup now installs pinned project-local Rust/Trunk, verifies Trunk checksums, and uses the npm lockfile for CSS. Clean Vercel preview acceptance remains pending.
+- Impact: The clean setup/build must still be verified on Vercel's build image.
 - Acceptance: Use pinned build tooling and consistent CSS dependencies, avoid privileged install paths, and verify a clean Vercel preview build.
 
 ## ISSUE-004: Put the build in Vercel's build phase
 
-- Evidence: `vercel.json` runs `sh build.sh` as its install command; its build command is only `echo built`.
-- Impact: Dependency installation and compilation are conflated, making build failures harder to inspect.
+- Status: Vercel now has separate setup and build commands. Preview acceptance remains pending.
+- Impact: Successful output from Vercel's actual build phase still needs verification.
 - Acceptance: Separate dependency setup from compilation and verify that Vercel's build phase produces a complete `dist/` bundle.
 
 ## ISSUE-005: Establish PR deployment checks
 
-- Evidence: No CI workflow is checked in, and `build.sh` does not run formatting, lint, or test checks. Vercel repository connection and GitHub required checks have not been verified.
+- Evidence: Vercel GitHub integration is confirmed by PR #1. The build runs offline worker tests, but no CI workflow supplies Rust formatting/lint/test checks; GitHub required checks remain unverified.
 - Impact: A deployable bundle can pass without correctness checks, and preview automation is unconfirmed.
 - Acceptance: Verify Vercel repository connection and production branch, run appropriate Rust checks for PRs, require applicable checks before merging, and verify a preview for the latest PR commit. Smoke-test gameplay, mobile layout, asset loading, and direct route navigation.
 
@@ -45,3 +45,9 @@ Use stable IDs and do not renumber existing issues.
 - Evidence: Keyboard, screen-reader, touch target, and contrast acceptance checks in `VISION.md` have not been established by a browser audit.
 - Impact: Usability and accessibility on target devices remain unverified.
 - Acceptance: Audit phone/tablet layouts, keyboard navigation, cell/control labels, contrast, and touch targets; resolve findings and record verification in the PR.
+
+## ISSUE-009: Resolve build dependency audit findings
+
+- Evidence: `npm audit` during clean setup reports five high-severity findings in the locked Tailwind build dependency tree, including `braces` (GHSA-vfj7-8cjw-p6xm) and `source-map-js` (GHSA-68fv-2mgg-jv7q).
+- Impact: Build-time pattern/source-map processing uses dependencies with reported denial-of-service vulnerabilities; npm's suggested Tailwind fix changes the selected version.
+- Acceptance: Review applicability, update compatible build dependencies and lockfile, and verify audit results, CSS output, and the production build without a forced unreviewed upgrade.

@@ -6,7 +6,8 @@
     "css": "tailwindcss -i style/input.css -o style/output.css --minify",
     "css:watch": "tailwindcss -i style/input.css -o style/output.css --watch",
     "test": "cargo test",
-    "test:offline": "node tests/offline.test.mjs"
+    "test:offline": "node tests/offline.test.mjs",
+    "test:build": "node tests/build.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,8 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.3.2",
     "tailwindcss": "^4.3.2"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

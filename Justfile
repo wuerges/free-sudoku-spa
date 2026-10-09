@@ -17,8 +17,8 @@ serve: css
     trunk serve
 
 # Release build → dist/
-build: css
-    trunk build --release
+build:
+    sh build.sh
 
 # Check compilation
 check:
