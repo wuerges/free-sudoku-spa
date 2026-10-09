@@ -63,6 +63,11 @@ try {
       }
     }
     await verifyPreview(fixture.s.board,fixture.s.board[fixture.user]);
+    assert.equal(await page.locator('p').filter({hasText:/^Para \d:/}).count(),0);
+    for (const [state,angle] of [['blocked','135deg'],['matching-blocked','45deg']]) {
+      const patterned=page.locator(`[data-cell-state="${state}"]`).first();
+      if(await patterned.count()) assert.ok((await patterned.evaluate(e=>getComputedStyle(e).backgroundImage)).includes(angle));
+    }
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
     await cell(fixture.user).click();await page.getByRole('button',{name:'⌫ Apagar',exact:true}).click();

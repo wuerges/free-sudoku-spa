@@ -9,7 +9,7 @@ The initial shared version is 0.9.0.
 
 ### Added
 
-- Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, separate selected-number and matching-number blocker shades, and a Portuguese legend.
+- Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, opposite diagonal stripe directions for selected-number and matching-number blockers.
 
 - Initial client-side Sudoku PWA with notes, hints, undo/redo, difficulty selection, settings, and saved progress.
 - Semantic light and navy-dark color tokens, visible selection/error cues, and consistent colors across game, settings, help, and loading screens.
@@ -17,7 +17,7 @@ The initial shared version is 0.9.0.
 
 ### Changed
 
-- Stronger board contrast in both themes: neutral peers, green matching numbers, a 3px active outline, clearer grid boundaries, and brighter dark-mode entries/notes.
+- Stronger board contrast in both themes: neutral peers, blue matching numbers, a 3px active outline, clearer grid boundaries, and brighter dark-mode entries/notes.
 
 - Original clues, player entries, and hints have distinct typography and colors; peers include the selected cell's 3×3 box.
 - Package versions now share the 0.9.0 baseline, with explicit saved-game compatibility rules for future PRs.

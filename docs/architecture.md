@@ -71,6 +71,8 @@ cell retains its selection fill/outline, with placement metadata and an availabl
 dot when inspecting a Drop digit; errors and hints retain precedence.
 
 `placement_blocker` classifies blocked empty cells as selected or matching.
-Selected-source shading wins overlaps; a keypad digit with no selected matching
-occurrence classifies all blockers as matching. Source metadata and Portuguese
-labels expose the distinction without changing persisted state.
+Selected-source stripes win overlaps; a keypad digit with no selected matching
+occurrence classifies all blockers as matching. Source metadata and Portuguese accessible
+labels expose the distinction without changing persisted state. The board has
+no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
+matching-source blockers.

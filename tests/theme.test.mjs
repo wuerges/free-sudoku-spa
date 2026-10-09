@@ -15,7 +15,7 @@ function contrast(a, b) { const [lo, hi] = [luminance(a), luminance(b)].sort((a,
 for (const [theme, p] of Object.entries(palettes)) {
   test(theme + ': readable numbers, notes, hints, errors, and control labels', () => {
     for (const fg of ['text', 'user', 'notes', 'accent']) {
-      for (const bg of ['available','blocked','matching-blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for (const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
         assert.ok(contrast(p[fg],p[bg]) >= 5.5, `${fg}/${bg}: ${contrast(p[fg],p[bg])}`);
       }
     }
@@ -31,7 +31,7 @@ for (const [theme, p] of Object.entries(palettes)) {
   });
   test(theme + ': visible grid boundaries and selection/focus indicators', () => {
     for (const fg of ['grid-thin','grid-strong','accent']) {
-      for(const bg of ['available','blocked','matching-blocked','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for(const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
         assert.ok(contrast(p[fg],p[bg]) >= 3, `${fg}/${bg}`);
       }
     }

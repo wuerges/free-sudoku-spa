@@ -23,11 +23,6 @@ pub fn SudokuGrid(state: AppState) -> impl IntoView {
                     }).collect::<Vec<_>>()
                 }).collect::<Vec<_>>()}
             </div>
-            <Show when=move || state.0.get().active_number().is_some()>
-                <p class="text-xs text-muted text-center mt-2 leading-relaxed" aria-live="polite">
-                    {move || format!("Para {}: • disponível · cinza: seleção · violeta: iguais", state.0.get().active_number().unwrap_or(0))}
-                </p>
-            </Show>
         </div>
     }
 }
