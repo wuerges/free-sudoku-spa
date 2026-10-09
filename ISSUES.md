@@ -30,13 +30,13 @@ Use stable IDs and do not renumber existing issues.
 
 ## ISSUE-007: Verify persistence failure handling
 
-- Evidence: `src/state.rs` uses localStorage with errors largely handled silently; compatibility and storage failure scenarios need validation.
+- Evidence: Browser checks verified reload/resume, legacy saves without givens/highlight/rating metadata, undo history, and highlight preference persistence in both themes. `src/state.rs` still handles storage errors largely silently; malformed data and unavailable storage need validation.
 - Impact: Players may lose progress without clear feedback when saved data is malformed or storage fails.
 - Acceptance: Verify reload/resume, malformed data, unavailable storage, and state-format compatibility; provide understandable feedback for failures while keeping gameplay usable.
 
 ## ISSUE-008: Verify mobile accessibility
 
-- Evidence: Keyboard, screen-reader, touch target, and contrast acceptance checks in `VISION.md` have not been established by a browser audit.
+- Evidence: Automated contrast checks and light/dark browser flows passed at 390×844 and 1280×900, including routes, board highlights, shading sliders, and pattern controls. Keyboard navigation, screen-reader labels, touch targets, and physical phone/tablet usability still need an accessibility audit.
 - Impact: Usability and accessibility on target devices remain unverified.
 - Acceptance: Audit phone/tablet layouts, keyboard navigation, cell/control labels, contrast, and touch targets; resolve findings and record verification in the PR.
 
