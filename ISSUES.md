@@ -28,12 +28,6 @@ Use stable IDs and do not renumber existing issues.
 - Impact: A deployable bundle can pass without correctness checks, and preview automation is unconfirmed.
 - Acceptance: Verify Vercel repository connection and production branch, run appropriate Rust checks for PRs, require applicable checks before merging, and verify a preview for the latest PR commit. Smoke-test gameplay, mobile layout, asset loading, and direct route navigation.
 
-## ISSUE-006: Validate difficulty classification
-
-- Evidence: `src/sudoku_engine.rs` grades by clue count and may stop removal before reaching the requested range. It does not grade human solving techniques.
-- Impact: Difficulty labels do not guarantee consistent solving effort or clue ranges.
-- Acceptance: Test generated puzzles across all levels for uniqueness, record achieved clue counts and generation times, and define and validate a consistent difficulty policy.
-
 ## ISSUE-007: Verify persistence failure handling
 
 - Evidence: `src/state.rs` uses localStorage with errors largely handled silently; compatibility and storage failure scenarios need validation.

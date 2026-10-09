@@ -1,8 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { validateVersion, assertTagTarget, publishRelease, selectMergedPR } from '../scripts/release-policy.mjs';
-const files = Object.fromEntries(['Cargo.toml','Cargo.lock','package.json','package-lock.json','CHANGELOG.md'].map(n => [n, readFileSync(n,'utf8')]));
+// Validator fixtures must remain independent of the app's current release.
+const files = {
+  'Cargo.toml': '[package]\nname = "free-sudoku-pwa"\nversion = "0.9.0"\n',
+  'Cargo.lock': '[[package]]\nname = "free-sudoku-pwa"\nversion = "0.9.0"\n',
+  'package.json': JSON.stringify({version:'0.9.0'}),
+  'package-lock.json': JSON.stringify({version:'0.9.0',packages:{'':{version:'0.9.0'}}}),
+  'CHANGELOG.md': '## [0.9.0]\n\n### Added\n\n- Initial release.\n',
+};
 const body = 'Game-state compatibility: compatible';
 test('initial aligned release and compatible minor bump', () => {
   assert.equal(validateVersion(files, undefined, body, true).version, '0.9.0');
