@@ -30,7 +30,7 @@ The npm lockfile supplies Tailwind's CLI. `just css` produces `style/output.css`
 
 `Trunk.toml` configures the bundle. Vercel explicitly uses the Other framework preset and Node.js 22. Its install phase runs `scripts/setup-build.sh` to install locked npm dependencies, Rust 1.98.1 with the WASM target, and checksum-verified Trunk 0.21.14. Rust and Trunk live under ignored `.build-tools/`; the bootstrap supports Linux x86_64 and aarch64 and requires network access on a clean install.
 
-Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. There is no GitHub Actions workflow in this repository.
+Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. `.github/workflows/ci.yml` validates PRs and gates releases on tests and the production build. `scripts/release-policy.mjs` checks synchronized versions, changelog entries, and the declared saved-game compatibility against the PR base. After a merged PR reaches main, a separate job publishes a version tag and release with narrowly scoped write permissions. Reruns verify that any existing tag targets the same commit.
 
 ## Persistence and change boundaries
 
@@ -47,3 +47,43 @@ Updates wait for all controlled tabs to close. Activation removes only obsolete 
 Hosting defaults to revalidation, with immutable caching reserved for hashed Trunk JS/WASM/CSS. Verify actual Vercel response headers on a preview before marking the hosting-cache issue resolved.
 
 `VISION.md` describes product goals, current capabilities, and remaining validation work.
+
+## Theme and clue provenance
+
+`style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
+v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
+available/blocked/matching-blocked (empty cells with an active digit or empty selection), peer, secondary, default. Selection has a separate 3px outline, including on errors
+and hints. The early theme script in `index.html` applies system preference
+before WASM renders.
+
+`GameState.givens` stores the original puzzle cells separately from mutable
+board entries; undo snapshots do not change genuine original clues. Hints remain separately
+locked. The loader migrates saves without `givens` by preserving their old
+correct-number locks, without changing board values, notes, history, or settings. If a historical snapshot changes a
+migrated locked entry, it proves the entry was editable and releases that lock
+so undo cannot leave an empty cell permanently locked.
+
+`GameState.active_number` derives the inspected digit from Drop selection or
+the selected filled cell. `placement_available` uses the existing engine
+`is_valid_move` on empty cells and the current board only. With no digit in normal
+mode, it instead classifies selected-unit peers versus outside empty cells. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. A selected empty
+cell retains its selection fill/outline, with placement metadata and an available
+dot when inspecting a Drop digit; errors and hints retain precedence.
+
+`placement_blocker` classifies blocked empty cells as selected or matching.
+Selected-source stripes win overlaps; a keypad digit with no selected matching
+occurrence classifies all blockers as matching. Source metadata and Portuguese accessible
+labels expose the distinction without persisting the classifications. The board has
+no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
+matching-source blockers.
+
+`GameState.highlights` persists a serde-defaulted `HighlightSettings` object.
+Selection/matching shading default to 100; available shading defaults to zero.
+Dots/stripes default to enabled.
+Partial settings use the same defaults, loading clamps percentages to 0–100,
+new games preserve preferences, and reset restores defaults without changing
+the board. Board CSS variables independently blend selection/peer, matching/blocker, and
+available fills from the normal cell background to strong theme shades.
+Zero restores the normal fill and disables that source’s stripes; selection
+outline, matching underline, errors/hints, and optional dots remain independent.
+Scoped data attributes control dots and each source’s stripe visibility.

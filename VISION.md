@@ -16,7 +16,7 @@ The repository contains:
 - A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
 - A button-based number pad, pencil notes, drop mode, conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
 - Optional domino cascades and sound settings.
-- Game, configuration, and help routes; automatic and manually selectable light/dark themes.
+- Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Game-state serialization to the `sudoku_state` localStorage key.
 - A manifest, icons, installation-prompt bridge, and service worker.
 - Engine and state unit tests, Trunk build configuration, and Vercel static-hosting configuration.
@@ -57,6 +57,8 @@ These statements describe code present in the repository. Browser behavior, perf
 
 **Acceptance:** Verify the affected flows at phone and tablet sizes, check touch target sizes and contrast, and review keyboard and screen-reader behavior. Do not declare compliance based on markup alone.
 
+Color-token tests cover text and indicator contrast in both themes, including a 5.5:1 board-text target and stronger separation of highlight fills. Original clues, player entries, hints, errors, selection, matching numbers, and row/column/box peers have distinct treatments. Selecting a filled cell or Drop digit previews legal empty cells with a brighter fill/dot and uses opposite diagonal stripe directions for empties blocked by the selected occurrence or other matching numbers, using current rules rather than the solution. Three shading sliders (selection/peers, matching blockers, available cells) and dot/stripe checkboxes persist as compatible settings and survive new games. A full keyboard/screen-reader and target-device audit remains open.
+
 ### 4. Persistence and reliability
 
 **Goal:** Resume progress safely and make storage failures understandable without breaking gameplay.
@@ -65,11 +67,11 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 5. Build and deployment consistency
 
-**Current behavior:** Local and Vercel builds use the npm lockfile for Tailwind. Vercel has separate installation and build phases, with pinned project-local Rust/Trunk tooling and locked Cargo dependencies. No GitHub Actions workflow is checked in.
+**Current behavior:** Local and Vercel builds use the npm lockfile for Tailwind. Vercel has separate installation and build phases, with pinned project-local Rust/Trunk tooling and locked Cargo dependencies. GitHub Actions checks PRs and publishes version tags/releases after merged PRs on main pass validation.
 
 **Goal:** Use a reproducible toolchain across development and hosting, with suitable compilation, lint, test, and production-build checks.
 
-**Acceptance:** Verify a clean dependency install and production bundle. Add CI or change hosting only as an explicit implementation task; documentation must describe the workflow actually present.
+**Acceptance:** Verify a clean dependency install and production bundle. Verify required checks and Vercel preview integration; documentation must describe the workflow actually present.
 
 ## Performance goals
 

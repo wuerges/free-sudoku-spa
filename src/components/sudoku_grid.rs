@@ -6,11 +6,16 @@ use leptos::prelude::*;
 pub fn SudokuGrid(state: AppState) -> impl IntoView {
     view! {
         <div class="w-full max-w-[min(90vw,90vh-280px,500px)] mx-auto mt-2">
-            <div class="grid grid-cols-3 gap-0.5 border-2 border-gray-800 dark:border-gray-200 rounded-sm overflow-hidden bg-gray-300 dark:bg-gray-700">
+            <div class="sudoku-board grid grid-cols-3 gap-0.5 border-2 border-grid-strong rounded-sm overflow-hidden bg-grid-strong"
+                data-placement-dots=move || state.0.get().highlights.dots.to_string()
+                data-selected-stripes=move || { let h=state.0.get().highlights; (h.stripes && h.selected_shading > 0).to_string() }
+                data-matching-stripes=move || { let h=state.0.get().highlights; (h.stripes && h.matching_shading > 0).to_string() }
+                style=move || { let h = state.0.get().highlights; format!("--selected-shading: {}%; --matching-shading: {}%; --available-shading: {}%;", h.selected_shading.min(100), h.matching_shading.min(100), h.available_shading.min(100)) }
+            >
                 {(0..3).flat_map(|br| {
                     (0..3).map(move |bc| {
                         view! {
-                            <div class="grid grid-cols-3 bg-white dark:bg-gray-900">
+                            <div class="grid grid-cols-3 bg-cell">
                                 {(0..3).flat_map(move |r| {
                                     (0..3).map(move |c| {
                                         let row = br * 3 + r;

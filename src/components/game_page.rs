@@ -1,4 +1,6 @@
-use crate::components::{game_controls::GameControls, header::Header, number_pad::NumberPad, sudoku_grid::SudokuGrid};
+use crate::components::{
+    game_controls::GameControls, header::Header, number_pad::NumberPad, sudoku_grid::SudokuGrid,
+};
 use crate::state::AppState;
 use leptos::prelude::*;
 
