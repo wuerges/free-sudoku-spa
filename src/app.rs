@@ -1,6 +1,4 @@
-use crate::components::{
-    config_page::ConfigPage, game_page::GamePage, help_page::HelpPage,
-};
+use crate::components::{config_page::ConfigPage, game_page::GamePage, help_page::HelpPage};
 use crate::state::{save_state, AppState};
 use leptos::prelude::*;
 use leptos_router::components::{Route, Router, Routes};
@@ -75,10 +73,7 @@ pub fn App() -> impl IntoView {
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>
         <Router>
-            <div class=move || format!(
-                "min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors {}",
-                if dark_mode.get() { "bg-gray-900 text-white" } else { "bg-white text-gray-900" },
-            )>
+            <div class="min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
                 <Routes fallback=|| "Not found">
                     <Route path=path!("") view=GamePage />
                     <Route path=path!("/help") view=HelpPage />

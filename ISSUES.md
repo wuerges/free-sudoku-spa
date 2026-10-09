@@ -12,19 +12,19 @@ Use stable IDs and do not renumber existing issues.
 
 ## ISSUE-003: Make deployment builds reproducible
 
-- Status: Setup now installs pinned project-local Rust/Trunk, verifies Trunk checksums, and uses the npm lockfile for CSS. Clean Vercel preview acceptance remains pending.
+- Status: Setup now installs pinned project-local Rust/Trunk, verifies Trunk checksums, and uses the npm lockfile for CSS. PR #2’s Vercel build check passed; clean-install build-log verification remains pending.
 - Impact: The clean setup/build must still be verified on Vercel's build image.
 - Acceptance: Use pinned build tooling and consistent CSS dependencies, avoid privileged install paths, and verify a clean Vercel preview build.
 
 ## ISSUE-004: Put the build in Vercel's build phase
 
-- Status: Vercel now has separate setup and build commands. Preview acceptance remains pending.
+- Status: Vercel now has separate setup and build commands. PR #2’s Vercel build check passed; preview runtime acceptance remains pending.
 - Impact: Successful output from Vercel's actual build phase still needs verification.
 - Acceptance: Separate dependency setup from compilation and verify that Vercel's build phase produces a complete `dist/` bundle.
 
 ## ISSUE-005: Establish PR deployment checks
 
-- Evidence: Vercel GitHub integration is confirmed by PR #1. The build runs offline worker tests, but no CI workflow supplies Rust formatting/lint/test checks; GitHub required checks remain unverified.
+- Evidence: Vercel GitHub integration is confirmed by PR #1. CI now supplies Rust formatting/lint/test, color/version, and production-build checks. GitHub required checks and latest preview acceptance remain unverified.
 - Impact: A deployable bundle can pass without correctness checks, and preview automation is unconfirmed.
 - Acceptance: Verify Vercel repository connection and production branch, run appropriate Rust checks for PRs, require applicable checks before merging, and verify a preview for the latest PR commit. Smoke-test gameplay, mobile layout, asset loading, and direct route navigation.
 

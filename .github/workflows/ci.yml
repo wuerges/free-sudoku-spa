@@ -1,0 +1,63 @@
+name: CI
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - run: sh scripts/setup-build.sh
+      - run: npm run test:build && npm run test:theme && npm run test:release
+      - run: |
+          export SUDOKU_PROJECT_ROOT="$GITHUB_WORKSPACE"
+          . scripts/build-env.sh
+          rustup component add rustfmt clippy
+          cargo fmt --check
+          cargo test --locked
+          cargo check --locked --target wasm32-unknown-unknown
+          cargo clippy --locked -- -D warnings
+      - run: sh build.sh
+      - id: version
+        run: node scripts/release-policy.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: steps.version.outputs.release == 'true'
+        with:
+          name: release-metadata
+          path: release-metadata.json
+  release:
+    needs: checks
+    if: needs.checks.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release-${{ needs.checks.outputs.version }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata
+      - run: node scripts/release-policy.mjs publish
+        env:
+          GH_TOKEN: ${{ github.token }}

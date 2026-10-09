@@ -1,13 +1,15 @@
 {
   "name": "free-sudoku-spa",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "main": "index.js",
   "scripts": {
     "css": "tailwindcss -i style/input.css -o style/output.css --minify",
     "css:watch": "tailwindcss -i style/input.css -o style/output.css --watch",
     "test": "cargo test",
     "test:offline": "node tests/offline.test.mjs",
-    "test:build": "node tests/build.test.mjs"
+    "test:build": "node tests/build.test.mjs",
+    "test:theme": "node tests/theme.test.mjs",
+    "test:release": "node tests/release.test.mjs"
   },
   "repository": {
     "type": "git",

@@ -99,7 +99,10 @@ Its install phase runs `sh scripts/setup-build.sh`; its build phase runs
 `sh build.sh`, which checks offline regressions, builds locked Tailwind CSS,
 and runs `trunk build --release --locked`. The output directory is `dist/`.
 Build tooling lives in `.build-tools/`; no privileged install path is needed.
-No GitHub Actions workflow is currently checked in.
+GitHub Actions checks PRs with formatting, tests, compilation, lint, color contrast,
+version policy, and a production build. After a merged PR reaches `main` and
+checks pass, CI publishes its `v<version>` tag and GitHub release. Direct pushes
+and merges into feature branches do not publish releases.
 
 Run `npm run test:build` to verify setup/build failure handling and environment
 consistency. A successful local build does not establish deployed cache headers;
@@ -142,3 +145,33 @@ query string), saved-game resume, new games, puzzle completion, all precached
 assets, and safe multi-tab updates. A
 missing required asset rejected the update while preserving the working bundle.
 Vercel response headers still need verification on a deployed preview.
+
+## Themes and releases
+
+Tailwind v4 consumes semantic CSS custom properties in `style/input.css`. Light
+uses cool slate and blue; dark uses stepped navy backgrounds. Error and hint
+backgrounds take precedence over selection, while an inset blue outline keeps
+the active cell visible. Matching numbers also have an underline; errors have
+an exclamation mark. Original clues use bold text, player entries use blue,
+and notes use a muted color. Same-box peers are highlighted alongside row and
+column peers. Selection has the strongest blue fill and outline; peer and
+matching tints step down in strength to keep attention on the active cell.
+Dark surfaces use layered navy rather than black for long playing sessions.
+
+`npm run test:theme` checks text and indicator contrast; this is a color check,
+not a complete accessibility audit. New saves retain original clue provenance.
+Older saves retain the correct-number locks they already had because original
+clues cannot reliably be reconstructed.
+
+See [CHANGELOG.md](CHANGELOG.md). The initial shared version is `0.9.0`. Future
+PRs bump minor for compatible changes (including added state), or major for
+breaking saved-game changes. Keep both manifest/lockfile pairs synchronized.
+Declare `Game-state compatibility: compatible` or `breaking` in the PR body;
+`npm run test:release` checks the validator and tag protection. Existing release
+tags are never moved. GitHub required checks and Vercel preview acceptance still
+need repository-level verification.
+
+For the optional Chromium audit, install Playwright outside the repository and
+run `node tests/theme-browser.mjs` with `PLAYWRIGHT_MODULE` pointing to its module
+and `CHROMIUM_PATH` to the browser executable. It writes screenshots under
+`/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`).

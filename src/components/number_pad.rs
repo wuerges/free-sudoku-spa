@@ -16,18 +16,18 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
             // Delete + Notas + Drop
             <div class="grid grid-cols-3 gap-1.5">
                 <button
-                    class="flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 active:bg-red-200 transition-colors"
+                    class="flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-medium bg-error text-error-text active:bg-error transition-colors"
                     on:click=move |_| state.place_number(0)
                 >
                     "⌫ Apagar"
                 </button>
                 <button
                     class=move || format!(
-                        "flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-bold active:opacity-70 transition-colors {}",
+                        "flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-bold transition-colors {}",
                         if note_mode() {
-                            "bg-blue-500 text-white"
+                            "bg-primary text-on-primary active:bg-primary-hover"
                         } else {
-                            "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            "bg-control text-text active:bg-control-hover"
                         }
                     )
                     on:click=move |_| state.toggle_note_mode()
@@ -36,11 +36,11 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                 </button>
                 <button
                     class=move || format!(
-                        "flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-bold active:opacity-70 transition-colors {}",
+                        "flex items-center justify-center h-10 sm:h-12 rounded-lg text-sm font-bold transition-colors {}",
                         if drop_mode() {
-                            "bg-blue-500 text-white"
+                            "bg-primary text-on-primary active:bg-primary-hover"
                         } else {
-                            "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            "bg-control text-text active:bg-control-hover"
                         }
                     )
                     on:click=move |_| state.toggle_drop_mode()
@@ -69,11 +69,11 @@ fn NumberBtn(state: AppState, v: u8) -> impl IntoView {
         <button
             class=move || {
                 if drop_active() {
-                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-blue-500 text-white transition-colors"
+                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-primary text-on-primary active:bg-primary-hover transition-colors"
                 } else if remaining() == 0 && !state.0.get().drop_mode {
-                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 transition-colors"
+                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-disabled text-muted transition-colors"
                 } else {
-                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 active:bg-blue-100 dark:active:bg-blue-900 transition-colors"
+                    "flex items-center justify-center aspect-square rounded text-lg sm:text-xl font-medium bg-control text-text active:bg-selected transition-colors"
                 }
             }
             on:click=move |_| {

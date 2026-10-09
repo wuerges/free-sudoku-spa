@@ -5,8 +5,15 @@ use crate::sudoku_engine::{self, Difficulty};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
-const fn yes() -> bool { true }
-const fn no() -> bool { false }
+const fn yes() -> bool {
+    true
+}
+const fn no() -> bool {
+    false
+}
+const fn empty_givens() -> [u8; 81] {
+    [0; 81]
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Default)]
 pub enum SoundType {
@@ -20,6 +27,8 @@ pub enum SoundType {
 pub struct GameState {
     #[serde(with = "u8_81")]
     pub board: [u8; 81],
+    #[serde(with = "u8_81", default = "empty_givens")]
+    pub givens: [u8; 81],
     #[serde(with = "u8_81")]
     pub solution: [u8; 81],
     #[serde(with = "u16_81")]
@@ -52,6 +61,7 @@ pub struct GameState {
     pub paused: bool,
     pub won: bool,
     #[serde(skip)]
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
     pub celebrated: bool,
     #[serde(skip)]
     pub secondary_highlight_value: Option<u8>,
@@ -76,6 +86,7 @@ impl Default for GameState {
         let board = sudoku_engine::generate(40..=45);
         Self {
             board: board.cells,
+            givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
             difficulty: Difficulty::Easy,
@@ -116,8 +127,11 @@ impl GameState {
     }
 
     pub fn is_given(&self, r: usize, c: usize) -> bool {
-        self.solution[Self::idx(r, c)] != 0 && self.get(r, c) != 0
-            && self.get(r, c) == self.solution[Self::idx(r, c)]
+        self.givens[Self::idx(r, c)] != 0
+    }
+
+    pub fn is_locked(&self, r: usize, c: usize) -> bool {
+        self.is_given(r, c) || self.is_hinted(r, c)
     }
 
     pub fn is_hinted(&self, r: usize, c: usize) -> bool {
@@ -132,6 +146,17 @@ impl GameState {
         self.redo_stack.clear();
     }
 
+    // Legacy migration can mark correct player entries as givens. A historical
+    // snapshot that changes one proves it was editable; release that lock.
+    // Genuine original clues are unchanged in every valid history snapshot.
+    fn reconcile_restored_givens(&mut self) {
+        for (given, value) in self.givens.iter_mut().zip(self.board) {
+            if *given != value {
+                *given = 0;
+            }
+        }
+    }
+
     pub fn undo(&mut self) {
         if let Some(snap) = self.history.pop() {
             self.redo_stack.push(Snapshot {
@@ -140,6 +165,7 @@ impl GameState {
             });
             self.board = snap.board;
             self.notes = snap.notes;
+            self.reconcile_restored_givens();
         }
     }
 
@@ -151,6 +177,7 @@ impl GameState {
             });
             self.board = snap.board;
             self.notes = snap.notes;
+            self.reconcile_restored_givens();
         }
     }
 }
@@ -176,6 +203,7 @@ impl AppState {
         self.0.update(|s| {
             *s = GameState {
                 board: board.cells,
+                givens: board.cells,
                 solution: board.solution,
                 notes: [0u16; 81],
                 difficulty,
@@ -196,7 +224,7 @@ impl AppState {
                 timer_seconds: 0,
                 paused: false,
                 won: false,
-            celebrated: false,
+                celebrated: false,
                 secondary_highlight_value: None,
                 secondary_highlight_rows: 0,
                 secondary_highlight_cols: 0,
@@ -210,7 +238,7 @@ impl AppState {
         self.0.update(|s| {
             if s.drop_mode {
                 if let Some(dn) = s.drop_number {
-                    if !s.is_given(r, c) && !s.won {
+                    if !s.is_locked(r, c) && !s.won {
                         if s.note_mode {
                             s.push_snapshot();
                             s.notes[GameState::idx(r, c)] ^= 1 << (dn - 1);
@@ -297,7 +325,7 @@ impl AppState {
         let mut trigger_domino = false;
         self.0.update(|s| {
             if let Some((r, c)) = s.selected {
-                if s.is_given(r, c) || s.won {
+                if s.is_locked(r, c) || s.won {
                     return;
                 }
                 s.push_snapshot();
@@ -372,7 +400,9 @@ impl AppState {
             move || {
                 let mut filled = false;
                 signal.update(|s| {
-                    if s.domino_gen != gen { return; }
+                    if s.domino_gen != gen {
+                        return;
+                    }
                     s.just_filled = None;
                     for i in 0..81 {
                         if s.board[i] == 0 {
@@ -437,7 +467,8 @@ impl AppState {
     }
 
     pub fn toggle_auto_notes(&self) {
-        self.0.update(|s| s.auto_notes_enabled = !s.auto_notes_enabled);
+        self.0
+            .update(|s| s.auto_notes_enabled = !s.auto_notes_enabled);
     }
 
     pub fn toggle_hint(&self) {
@@ -478,9 +509,9 @@ impl AppState {
                 if s.board[i] != s.solution[i] {
                     let r = i / 9;
                     let c = i % 9;
-                    let cands = (1..=9).filter(|&v| {
-                        crate::sudoku_engine::is_valid_move(&s.board, r, c, v)
-                    }).count() as u32;
+                    let cands = (1..=9)
+                        .filter(|&v| crate::sudoku_engine::is_valid_move(&s.board, r, c, v))
+                        .count() as u32;
                     if cands > 0 && best.is_none_or(|(_, n)| cands < n) {
                         best = Some((i, cands));
                     }
@@ -567,7 +598,7 @@ impl AppState {
 #[cfg(target_arch = "wasm32")]
 fn play_sound(sound: SoundType) {
     match sound {
-        SoundType::None => {},
+        SoundType::None => {}
         SoundType::Beep => play_beep(),
         SoundType::Explosion => play_explosion(),
     }
@@ -581,8 +612,9 @@ fn play_beep() {
          o.connect(g);g.connect(a.destination);\
          o.frequency.value=660;o.type='sine';\
          g.gain.value=0.25;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
-         o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()"
-    ).ok();
+         o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()",
+    )
+    .ok();
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -620,7 +652,7 @@ fn play_fireworks(sound: SoundType) {
     ).ok();
     // Audio — varies by sound type
     match sound {
-        SoundType::None => {},
+        SoundType::None => {}
         SoundType::Beep => {
             let _ = js_sys::eval(
             "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;var freqs=[523,659,784];\
@@ -631,7 +663,7 @@ fn play_fireworks(sound: SoundType) {
              g.gain.exponentialRampToValueAtTime(0.001,now+8);\
              o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+8)}}catch(e){}})()"
         );
-        },
+        }
         SoundType::Explosion => {
             let _ = js_sys::eval(
             "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;\
@@ -644,8 +676,25 @@ fn play_fireworks(sound: SoundType) {
              n.connect(f);f.connect(g);g.connect(a.destination);n.start(now+t)}\
              boom(0.05);boom(0.15);boom(0.3);boom(0.5);boom(0.7);boom(0.95);boom(1.2);boom(1.5);boom(1.8);boom(2.1);boom(2.5);boom(2.9);boom(3.3);boom(3.7);boom(4.1);boom(4.5);boom(5.0);boom(5.5);boom(6.0);boom(6.5)}catch(e){}})()"
         );
-        },
+        }
     }
+}
+
+// Legacy saves cannot reliably distinguish original clues from correct entries.
+// Preserve their locked cells, then retain provenance for subsequent player moves.
+#[cfg(any(target_arch = "wasm32", test))]
+fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    let legacy = value.get("givens").is_none();
+    let mut state: GameState = serde_json::from_value(value)?;
+    if legacy {
+        for i in 0..81 {
+            if state.board[i] != 0 && state.board[i] == state.solution[i] {
+                state.givens[i] = state.board[i];
+            }
+        }
+    }
+    Ok(state)
 }
 
 fn load_state() -> Option<GameState> {
@@ -654,7 +703,7 @@ fn load_state() -> Option<GameState> {
         let window = web_sys::window()?;
         let storage = window.local_storage().ok()??;
         let json = storage.get_item("sudoku_state").ok()??;
-        match serde_json::from_str(&json) {
+        match decode_saved_state(&json) {
             Ok(s) => Some(s),
             Err(e) => {
                 web_sys::console::warn_1(&format!("sudoku: failed to load state: {e}").into());
@@ -756,7 +805,7 @@ mod tests {
         state.select_cell(r, c);
         state.place_number(5);
         assert_eq!(state.0.get().notes[i], 1 << 4); // bit 4 for number 5
-        // Toggle same note off
+                                                    // Toggle same note off
         state.place_number(5);
         assert_eq!(state.0.get().notes[i], 0);
     }
@@ -829,9 +878,9 @@ mod tests {
             if s.board[i] != s.solution[i] {
                 let r = i / 9;
                 let c = i % 9;
-                let cands = (1..=9).filter(|&v| {
-                    crate::sudoku_engine::is_valid_move(&s.board, r, c, v)
-                }).count() as u32;
+                let cands = (1..=9)
+                    .filter(|&v| crate::sudoku_engine::is_valid_move(&s.board, r, c, v))
+                    .count() as u32;
                 cands_per_cell[i] = cands;
                 if cands > 0 {
                     min_cands = Some(min_cands.map_or(cands, |m| m.min(cands)));
@@ -871,6 +920,7 @@ mod tests {
         let board = sudoku_engine::generate(40..=45);
         let state1 = GameState {
             board: board.cells,
+            givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
             difficulty: board.difficulty,
@@ -906,12 +956,109 @@ mod tests {
         app1.hint();
         app2.hint();
 
-        assert_eq!(app1.0.get().board, app2.0.get().board,
-            "Same seed should produce same hint cell");
+        assert_eq!(
+            app1.0.get().board,
+            app2.0.get().board,
+            "Same seed should produce same hint cell"
+        );
         // Hint should NOT add to undo history
         assert!(app1.0.get().history.is_empty(), "Hint must not be undoable");
         // Hint should mark the cell
         let hinted_count = app1.0.get().hinted.iter().filter(|&&v| v != 0).count();
         assert_eq!(hinted_count, 1, "Hint should mark exactly one cell");
+    }
+    #[test]
+    fn correct_player_entries_remain_editable_and_survive_history() {
+        let state = AppState::new();
+        let before = state.0.get();
+        let i = (0..81).find(|&i| before.board[i] == 0).unwrap();
+        let original_givens = before.givens;
+        state.select_cell(i / 9, i % 9);
+        state.place_number(before.solution[i]);
+        assert!(!state.0.get().is_given(i / 9, i % 9));
+        state.place_number(0);
+        assert_eq!(state.0.get().board[i], 0);
+        state.undo();
+        assert_eq!(state.0.get().board[i], before.solution[i]);
+        state.redo();
+        assert_eq!(state.0.get().board[i], 0);
+        assert_eq!(state.0.get().givens, original_givens);
+        let loaded = decode_saved_state(&serde_json::to_string(&state.0.get()).unwrap()).unwrap();
+        assert_eq!(loaded.givens, original_givens);
+    }
+
+    #[test]
+    fn hints_lock_without_becoming_original_clues() {
+        let state = AppState::new();
+        state.hint();
+        let s = state.0.get();
+        let i = (0..81).find(|&i| s.hinted[i] != 0).unwrap();
+        assert!(!s.is_given(i / 9, i % 9));
+        state.select_cell(i / 9, i % 9);
+        state.place_number(0);
+        assert_eq!(state.0.get().board[i], s.solution[i]);
+        state.toggle_drop_mode();
+        state.select_drop_number(if s.solution[i] == 1 { 2 } else { 1 });
+        state.select_cell(i / 9, i % 9);
+        assert_eq!(state.0.get().board[i], s.solution[i]);
+    }
+
+    #[test]
+    fn legacy_save_retains_locked_cells_and_tracks_new_entries() {
+        let mut s = GameState::default();
+        let i = (0..81).find(|&i| s.board[i] == 0).unwrap();
+        s.board[i] = s.solution[i];
+        s.notes[(i + 1) % 81] = 5;
+        s.timer_seconds = 123;
+        s.auto_notes_enabled = false;
+        s.push_snapshot();
+        let mut json = serde_json::to_value(&s).unwrap();
+        json.as_object_mut().unwrap().remove("givens");
+        let migrated = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(migrated.board, s.board);
+        assert_eq!(migrated.notes, s.notes);
+        assert_eq!(migrated.timer_seconds, 123);
+        assert!(!migrated.auto_notes_enabled);
+        assert_eq!(migrated.history.len(), 1);
+        assert_eq!(migrated.history[0].board, s.history[0].board);
+        assert!(migrated.is_locked(i / 9, i % 9));
+        let app = AppState(RwSignal::new(migrated));
+        let j = (0..81).find(|&j| s.board[j] == 0).unwrap();
+        app.select_cell(j / 9, j % 9);
+        app.place_number(s.solution[j]);
+        assert!(!app.0.get().is_given(j / 9, j % 9));
+        let saved = decode_saved_state(&serde_json::to_string(&app.0.get()).unwrap()).unwrap();
+        assert!(!saved.is_given(j / 9, j % 9));
+    }
+
+    #[test]
+    fn legacy_history_does_not_leave_erased_player_entries_locked() {
+        let mut s = GameState::default();
+        let original_givens = s.givens;
+        let i = (0..81).find(|&i| s.board[i] == 0).unwrap();
+        s.push_snapshot();
+        s.board[i] = s.solution[i];
+        let mut json = serde_json::to_value(&s).unwrap();
+        json.as_object_mut().unwrap().remove("givens");
+        let mut migrated = decode_saved_state(&json.to_string()).unwrap();
+        assert!(migrated.is_locked(i / 9, i % 9));
+        migrated.undo();
+        assert_eq!(migrated.board[i], 0);
+        assert!(!migrated.is_locked(i / 9, i % 9));
+        assert_eq!(migrated.givens, original_givens);
+        migrated.redo();
+        assert_eq!(migrated.board[i], s.solution[i]);
+        assert!(!migrated.is_locked(i / 9, i % 9));
+        let app = AppState(RwSignal::new(migrated));
+        app.select_cell(i / 9, i % 9);
+        app.place_number(0);
+        assert_eq!(app.0.get().board[i], 0);
+    }
+
+    #[test]
+    fn malformed_given_array_is_rejected() {
+        let mut json = serde_json::to_value(GameState::default()).unwrap();
+        json["givens"] = serde_json::json!([1, 2]);
+        assert!(decode_saved_state(&json.to_string()).is_err());
     }
 }

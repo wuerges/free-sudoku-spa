@@ -10,6 +10,13 @@
 - `VISION.md` defines product direction, current implementation, and known gaps. Verify behavior against the code before changing its status.
 - Track unresolved issues in `ISSUES.md`. Remove issues once their acceptance criteria are verified; keep only open issues in that file and record resolution history in the PR or change description.
 
+## Versions and releases
+
+- The initial shared baseline is `0.9.0`; only the PR introducing `CHANGELOG.md` is exempt from a bump. Subsequent PRs must bump the minor version when saved game state remains compatible, including compatible state additions. Breaking saved-state compatibility requires a major bump. Reset the patch to zero for minor bumps and both minor/patch to zero for major bumps.
+- Keep Cargo/npm manifests, their root lockfile entries, and `CHANGELOG.md` aligned. Add user-visible changes under the new version before opening a PR; use Added, Changed, and Fixed sections as applicable.
+- Declare `Game-state compatibility: compatible` or `Game-state compatibility: breaking` in the PR description. Compatible means existing saves load without losing progress or resetting the game, including through a migration. Explain state changes and test compatibility; CI cannot infer semantic breakage from version numbers.
+- Create and describe changes with `jj`. CI uses GitHub APIs to mark merged versions; tags/releases are published only after main-branch checks pass. Never move an existing release tag.
+
 ## Project conventions
 
 - This is a client-side Rust/Leptos 0.7 Sudoku PWA compiled to WebAssembly with Trunk. Node is used for Tailwind CSS tooling.

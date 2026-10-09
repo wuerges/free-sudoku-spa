@@ -30,7 +30,7 @@ The npm lockfile supplies Tailwind's CLI. `just css` produces `style/output.css`
 
 `Trunk.toml` configures the bundle. Vercel explicitly uses the Other framework preset and Node.js 22. Its install phase runs `scripts/setup-build.sh` to install locked npm dependencies, Rust 1.98.1 with the WASM target, and checksum-verified Trunk 0.21.14. Rust and Trunk live under ignored `.build-tools/`; the bootstrap supports Linux x86_64 and aarch64 and requires network access on a clean install.
 
-Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. There is no GitHub Actions workflow in this repository.
+Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. `.github/workflows/ci.yml` validates PRs and gates releases on tests and the production build. `scripts/release-policy.mjs` checks synchronized versions, changelog entries, and the declared saved-game compatibility against the PR base. After a merged PR reaches main, a separate job publishes a version tag and release with narrowly scoped write permissions. Reruns verify that any existing tag targets the same commit.
 
 ## Persistence and change boundaries
 
@@ -47,3 +47,18 @@ Updates wait for all controlled tabs to close. Activation removes only obsolete 
 Hosting defaults to revalidation, with immutable caching reserved for hashed Trunk JS/WASM/CSS. Verify actual Vercel response headers on a preview before marking the hosting-cache issue resolved.
 
 `VISION.md` describes product goals, current capabilities, and remaining validation work.
+
+## Theme and clue provenance
+
+`style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
+v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
+peer, secondary, default. Selection has a separate outline, including on errors
+and hints. The early theme script in `index.html` applies system preference
+before WASM renders.
+
+`GameState.givens` stores the original puzzle cells separately from mutable
+board entries; undo snapshots do not change genuine original clues. Hints remain separately
+locked. The loader migrates saves without `givens` by preserving their old
+correct-number locks, without changing board values, notes, history, or settings. If a historical snapshot changes a
+migrated locked entry, it proves the entry was editable and releases that lock
+so undo cannot leave an empty cell permanently locked.

@@ -25,14 +25,14 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     {move || {
                         let e = state.0.get().error_count;
                         if e == 0 {
-                            format!("✅ 0")
+                            "✅ 0".to_string()
                         } else {
                             format!("❌ {e}")
                         }
                     }}
                 </span>
                 <button
-                    class="text-sm px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 active:opacity-70"
+                    class="text-sm px-2 py-0.5 rounded bg-control active:bg-control-hover"
                     on:click=move |_| state.toggle_pause()
                 >
                     {move || if paused() { "▶" } else { "⏸" }}
@@ -41,7 +41,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
 
             // Win message
             <Show when=move || won()>
-                <div class="text-center text-green-600 dark:text-green-400 font-bold text-lg animate-pulse">
+                <div class="text-center text-success-text font-bold text-lg animate-pulse">
                     "🎉 Parabéns! Puzzle resolvido!"
                 </div>
             </Show>
@@ -49,7 +49,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
             // New game button + difficulty selection
             <div class="flex flex-col items-center gap-1">
                 <button
-                    class="px-3 py-1 rounded text-sm font-medium bg-blue-500 text-white active:bg-blue-600 transition-colors"
+                    class="px-3 py-1 rounded text-sm font-medium bg-primary text-on-primary active:bg-primary-hover transition-colors"
                     on:click=move |_| show_new_game.update(|v| *v = !*v)
                 >
                     "🔄 Novo Jogo"
@@ -69,9 +69,9 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                                     class=move || format!(
                                         "px-2 py-1 rounded text-xs font-medium transition-colors {}",
                                         if difficulty() == d {
-                                            "bg-blue-500 text-white"
+                                            "bg-primary text-on-primary"
                                         } else {
-                                            "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 active:bg-gray-300"
+                                            "bg-control text-text active:bg-control-hover"
                                         }
                                     )
                                     on:click=move |_| {
@@ -91,7 +91,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
             <div class="flex justify-center gap-1.5">
                 <Show when=move || state.0.get().undo_enabled>
                     <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover disabled:bg-disabled disabled:text-muted"
                         on:click=move |_| state.undo()
                         disabled=move || state.0.get().history.is_empty()
                     >
@@ -100,7 +100,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 </Show>
                 <Show when=move || state.0.get().undo_enabled>
                     <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70 disabled:opacity-30"
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover disabled:bg-disabled disabled:text-muted"
                         on:click=move |_| state.redo()
                         disabled=move || state.0.get().redo_stack.is_empty()
                     >
@@ -109,7 +109,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 </Show>
                 <Show when=move || state.0.get().auto_notes_enabled>
                     <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-gray-200 dark:bg-gray-700 active:opacity-70"
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover"
                         on:click=move |_| state.auto_notes()
                     >
                         "📝 Auto Notas"
@@ -117,7 +117,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                 </Show>
                 <Show when=move || state.0.get().hint_enabled>
                     <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 active:opacity-70 disabled:opacity-30"
+                        class="px-3 py-1.5 rounded text-sm font-medium bg-hint text-hint-text active:bg-hint disabled:bg-disabled disabled:text-muted"
                         on:click=move |_| state.hint()
                         disabled=move || difficulty() == Difficulty::Master
                     >

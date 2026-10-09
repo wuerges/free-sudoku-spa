@@ -69,7 +69,7 @@ pub fn HelpPage() -> impl IntoView {
         <div class="w-full max-w-[min(90vw,500px)] mx-auto pb-8">
             <A
                 href="/"
-                attr:class="flex items-center gap-0.5 text-blue-500 dark:text-blue-400 active:opacity-60 select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
+                attr:class="flex items-center gap-0.5 text-accent active:bg-control select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
             >
                 <span class="text-xl leading-none">"‹"</span>
                 <span class="text-[17px] font-normal">"Voltar"</span>
@@ -80,7 +80,7 @@ pub fn HelpPage() -> impl IntoView {
             <div class="flex flex-col">
                 {items.iter().enumerate().map(|(i, (icon, name, desc))| {
                     let border = if i < items.len() - 1 {
-                        "border-bottom: 0.5px solid #9ca3af;"
+                        "border-bottom: 0.5px solid var(--ui-grid-thin);"
                     } else {
                         ""
                     };
@@ -89,7 +89,7 @@ pub fn HelpPage() -> impl IntoView {
                             <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">{icon.to_string()}</span>
                             <div>
                                 <strong class="text-sm font-semibold">{name.to_string()}</strong>
-                                <p class="text-xs text-gray-500 dark:text-gray-400" style="margin-top: 2px; line-height: 1.5;">{desc.to_string()}</p>
+                                <p class="text-xs text-muted" style="margin-top: 2px; line-height: 1.5;">{desc.to_string()}</p>
                             </div>
                         </div>
                     }
@@ -97,16 +97,16 @@ pub fn HelpPage() -> impl IntoView {
             </div>
 
             <div class="text-center mt-10">
-                <p class="text-sm text-slate-400 dark:text-slate-500 max-w-[280px] mx-auto leading-relaxed">
+                <p class="text-sm text-muted max-w-[280px] mx-auto leading-relaxed">
                     "Sudoku gratuito, sem anúncios e sem rastreadores."
                 </p>
-                <p class="text-xs text-slate-500 dark:text-slate-600 mt-5">
+                <p class="text-xs text-muted mt-5">
                     "Encontrou um problema? "
                     <a
                         href="https://github.com/wuerges/free-sudoku-spa/issues"
                         target="_blank"
                         rel="noopener"
-                        class="text-blue-400 dark:text-blue-400 underline"
+                        class="text-accent underline"
                     >
                         "Abra uma issue no GitHub"
                     </a>

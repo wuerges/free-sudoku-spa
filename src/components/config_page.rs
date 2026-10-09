@@ -51,7 +51,7 @@ pub fn ConfigPage() -> impl IntoView {
         <div class="w-full max-w-[min(90vw,500px)] mx-auto pb-8">
             <A
                 href="/"
-                attr:class="flex items-center gap-0.5 text-blue-500 dark:text-blue-400 active:opacity-60 select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
+                attr:class="flex items-center gap-0.5 text-accent active:bg-control select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
             >
                 <span class="text-xl leading-none">"‹"</span>
                 <span class="text-[17px] font-normal">"Voltar"</span>
@@ -61,31 +61,30 @@ pub fn ConfigPage() -> impl IntoView {
 
             <div class="flex flex-col">
                 {toggles.into_iter().map(|t| {
-                    let state = state;
                     view! {
-                        <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid #9ca3af;">
+                        <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid var(--ui-grid-thin);">
                             <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">{t.icon}</span>
                             <div>
                                 <strong class="text-sm font-semibold">{t.label}</strong>
-                                <p class="text-xs text-gray-500 dark:text-gray-400" style="margin-top: 2px; line-height: 1.5;">{t.desc}</p>
+                                <p class="text-xs text-muted" style="margin-top: 2px; line-height: 1.5;">{t.desc}</p>
                             </div>
                             <label class="flex items-center justify-center cursor-pointer self-stretch">
-                                <input type="checkbox" prop:checked=move || (t.get)(&state.0.get()) on:change=move |_| (t.toggle)(&state) class="accent-blue-500 cursor-pointer" style="transform: scale(2);" />
+                                <input type="checkbox" prop:checked=move || (t.get)(&state.0.get()) on:change=move |_| (t.toggle)(&state) class="accent-accent cursor-pointer" style="transform: scale(2);" />
                             </label>
                         </div>
                     }
                 }).collect::<Vec<_>>()}
 
                 // Sound selector
-                <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid #9ca3af;">
+                <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid var(--ui-grid-thin);">
                     <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">"🔊"</span>
                     <div>
                         <strong class="text-sm font-semibold">"Som"</strong>
-                        <p class="text-xs text-gray-500 dark:text-gray-400" style="margin-top: 2px; line-height: 1.5;">"Som ao acertar uma célula."</p>
+                        <p class="text-xs text-muted" style="margin-top: 2px; line-height: 1.5;">"Som ao acertar uma célula."</p>
                     </div>
                     <button
                         on:click=move |_| state.cycle_sound()
-                        class="flex items-center justify-center text-sm font-medium rounded bg-gray-200 dark:bg-gray-700 active:opacity-70 transition-colors cursor-pointer"
+                        class="flex items-center justify-center text-sm font-medium rounded bg-control active:bg-control-hover transition-colors cursor-pointer"
                         style="padding: 4px 8px;"
                     >
                         {move || match state.0.get().sound_type {
@@ -100,7 +99,7 @@ pub fn ConfigPage() -> impl IntoView {
                 <div class="flex justify-center" style="margin-top: 2rem;">
                     <button
                         on:click=move |_| state.reset_config()
-                        style="padding: 1.25rem 1rem;" class="rounded-lg text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 active:opacity-70 transition-colors cursor-pointer"
+                        style="padding: 1.25rem 1rem;" class="rounded-lg text-sm font-medium bg-error text-error-text active:bg-error transition-colors cursor-pointer"
                     >
                         "↺ Resetar Configurações"
                     </button>

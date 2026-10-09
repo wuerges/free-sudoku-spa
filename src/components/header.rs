@@ -21,9 +21,10 @@ pub fn Header() -> impl IntoView {
         let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
             iv.set(true);
         }) as Box<dyn FnMut()>);
-        let _ = web_sys::window()
-            .unwrap()
-            .add_event_listener_with_callback("sudoku:installavailable", closure.as_ref().unchecked_ref());
+        let _ = web_sys::window().unwrap().add_event_listener_with_callback(
+            "sudoku:installavailable",
+            closure.as_ref().unchecked_ref(),
+        );
         closure.forget();
     }
 
@@ -39,30 +40,33 @@ pub fn Header() -> impl IntoView {
         <header class="w-full max-w-[min(90vw,500px)] mx-auto flex items-center justify-between pt-2">
             <div>
                 <h1 class="text-lg sm:text-xl font-bold">"Sudoku"</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{difficulty_label}</p>
+                <p class="text-xs text-muted">{difficulty_label}</p>
             </div>
             <div class="flex items-center gap-2">
                 <A
                     href="/config"
-                    attr:class="text-xl px-1 active:opacity-70 select-none no-underline text-inherit"
+                    attr:aria-label="Configurações"
+                    attr:class="text-xl px-1 active:bg-control-hover select-none no-underline text-inherit"
                 >
                     "⚙"
                 </A>
                 <A
                     href="/help"
-                    attr:class="text-xl px-1 active:opacity-70 select-none font-bold no-underline text-inherit"
+                    attr:aria-label="Ajuda"
+                    attr:class="text-xl px-1 active:bg-control-hover select-none font-bold no-underline text-inherit"
                 >
                     "?"
                 </A>
                 <button
-                    class="text-2xl active:opacity-70 select-none"
+                    class="text-2xl active:bg-control-hover select-none"
+                    aria-label=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
                     on:click=move |_| dark_mode.update(|d| *d = !*d)
                 >
                     {move || if dark_mode.get() { "☀️" } else { "🌙" }}
                 </button>
                 <Show when=move || install_visible.get()>
                     <button
-                        class="px-3 py-1 rounded-lg text-sm font-medium bg-green-500 text-white active:bg-green-600 select-none"
+                        class="px-3 py-1 rounded-lg text-sm font-medium bg-success text-success-text active:bg-success select-none"
                         on:click=move |_| {
                             let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
                             install_visible.set(false);
