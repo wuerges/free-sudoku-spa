@@ -274,4 +274,76 @@ mod tests {
         assert!(!is_valid_move(&grid, 1, 1, 5)); // same box
         assert!(is_valid_move(&grid, 0, 1, 3)); // ok
     }
+
+    fn assert_generated_invariants(board: &Board) {
+        assert!(board.cells.iter().all(|&v| v <= 9));
+        assert!(board.solution.iter().all(|&v| (1..=9).contains(&v)));
+        for i in 0..81 {
+            assert!(board.cells[i] == 0 || board.cells[i] == board.solution[i]);
+            assert_eq!(board.cells[i] == 0, board.cells[80 - i] == 0);
+            let mut without_cell = board.solution;
+            without_cell[i] = 0;
+            assert!(is_valid_move(
+                &without_cell,
+                i / 9,
+                i % 9,
+                board.solution[i]
+            ));
+        }
+        let mut puzzle = board.cells;
+        assert_eq!(count_solutions(&mut puzzle, 2), 1);
+        assert_eq!(
+            puzzle, board.cells,
+            "Solution counting must restore the grid"
+        );
+    }
+
+    #[test]
+    fn generated_puzzles_preserve_rules_and_uniqueness_at_every_setting() {
+        for range in [40..=45, 32..=38, 26..=31, 20..=25, 17..=19] {
+            for _ in 0..3 {
+                assert_generated_invariants(&generate(range.clone()));
+            }
+        }
+    }
+
+    /// Diagnostic only: requested labels are not assertions of human difficulty.
+    /// Run in release mode; timings measure generation, excluding invariant checks.
+    #[test]
+    #[ignore = "manual generation audit; emits CSV with machine-dependent timings"]
+    fn audit_difficulty_settings() {
+        println!("AUDIT,requested,run,target_min,target_max,clues,engine_label,seed,generation_ms,puzzle,solution");
+        for (requested, range) in [
+            ("Easy", 40..=45),
+            ("Medium", 32..=38),
+            ("Hard", 26..=31),
+            ("Expert", 20..=25),
+            ("Master", 17..=19),
+        ] {
+            for run in 0..20 {
+                let started = std::time::Instant::now();
+                let board = generate(range.clone());
+                let elapsed = started.elapsed().as_secs_f64() * 1000.0;
+                assert_generated_invariants(&board);
+                println!(
+                    "AUDIT,{requested},{run},{},{},{},{:?},{},{elapsed:.3},{},{}",
+                    range.start(),
+                    range.end(),
+                    board.cells.iter().filter(|&&v| v != 0).count(),
+                    board.difficulty,
+                    board.seed,
+                    board
+                        .cells
+                        .iter()
+                        .map(|v| char::from(b'0' + v))
+                        .collect::<String>(),
+                    board
+                        .solution
+                        .iter()
+                        .map(|v| char::from(b'0' + v))
+                        .collect::<String>(),
+                );
+            }
+        }
+    }
 }

@@ -87,3 +87,11 @@ available fills from the normal cell background to strong theme shades.
 Zero restores the normal fill and disables that source’s stripes; selection
 outline, matching underline, errors/hints, and optional dots remain independent.
 Scoped data attributes control dots and each source’s stripe visibility.
+
+## Difficulty audit
+
+Engine tests cover all-setting puzzle invariants. The ignored
+`audit_difficulty_settings` test emits native release-mode CSV;
+`tests/difficulty-browser.mjs` measures WASM new-game selections.
+[The review](difficulty-review.md) records current bounds/label limitations,
+primary-source comparisons, raw datasets, and a proposed grading policy.

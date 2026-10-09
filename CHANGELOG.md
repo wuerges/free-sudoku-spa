@@ -5,6 +5,17 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.10.0]
+
+### Added
+
+- Difficulty/generation review comparing established solver-based rating systems and outlining a technique-based policy.
+- All-setting generation invariants and a manual release-mode audit with clue counts, classifications, and timing data.
+
+### Fixed
+
+- Release-policy unit tests use independent fixtures so future version bumps do not invalidate the initial-release tests.
+
 ## [0.9.0]
 
 ### Added

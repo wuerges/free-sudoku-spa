@@ -30,7 +30,7 @@ Use stable IDs and do not renumber existing issues.
 
 ## ISSUE-006: Validate difficulty classification
 
-- Evidence: `src/sudoku_engine.rs` grades by clue count and may stop removal before reaching the requested range. It does not grade human solving techniques.
+- Evidence: [The difficulty review](docs/difficulty-review.md) records 100 native puzzles and 100 WASM selections. Easy/Medium overshoot their lower bounds; harder settings overlap. The upper bound is unused, the center is always given, and the state stores the requested label regardless of the engine category. All native audit samples passed validity, uniqueness, and symmetry checks; human-technique grading remains absent.
 - Impact: Difficulty labels do not guarantee consistent solving effort or clue ranges.
 - Acceptance: Test generated puzzles across all levels for uniqueness, record achieved clue counts and generation times, and define and validate a consistent difficulty policy.
 

@@ -47,6 +47,8 @@ These statements describe code present in the repository. Browser behavior, perf
 
 **Current behavior:** Difficulty uses clue-count targets. The generator may stop before reaching the requested range when further removals would violate uniqueness; it does not grade human solving techniques. The stored seed is not a reproducible puzzle-generation API.
 
+**Measured:** A 100-puzzle native audit and 100-selection WASM audit found Easy/Medium lower-bound overshoot and substantial overlap among harder selections. Native samples passed validity, uniqueness, and rotational-symmetry checks. See [the difficulty review](docs/difficulty-review.md) and its raw data. The UI stores the requested label even when generation misses its range; the upper bound is currently unused and the center is always given.
+
 **Goal:** Keep unique solutions while making difficulty labels consistent with solving effort.
 
 **Acceptance:** Validate generated puzzles across all levels, record actual clue counts and generation times, and introduce technique-based grading only with meaningful tests. Do not promise a guaranteed clue range or a reproducible daily puzzle with the current generator.

@@ -190,3 +190,14 @@ For the optional Chromium audit, install Playwright outside the repository and
 run `node tests/theme-browser.mjs` with `PLAYWRIGHT_MODULE` pointing to its module
 and `CHROMIUM_PATH` to the browser executable. It writes screenshots under
 `/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`).
+
+## Difficulty review
+
+Current difficulty selection targets clue counts; generation can miss the
+requested range and does not grade solving techniques. See the
+[difficulty and generation review](docs/difficulty-review.md) for engine
+comparisons, recorded native/WASM samples, and the recommended next policy.
+
+Run `cargo test --release audit_difficulty_settings -- --ignored --nocapture`
+for the manual generation audit. `tests/difficulty-browser.mjs` measures actual
+new-game selections using the optional Playwright environment described above.
