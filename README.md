@@ -161,7 +161,12 @@ Dark surfaces use layered navy rather than black for long playing sessions.
 Selecting a filled cell or a Drop number previews every empty cell: brighter
 with a dot means legal by current row/column/box rules; diagonal `/` stripes mean
 blocked by the selected number, and `\` stripes by another matching number.
+Both blocker sources retain nearby blue/slate fills beneath the 2px stripes,
+and matching filled numbers have a stronger blue highlight and underline.
 Selected-number shading takes precedence when both block a cell.
+Settings has separate 0–100% shading sliders for both blocker sources, plus
+independent dot/stripe toggles. Preferences survive reloads and new games;
+reset restores full shading with dots and stripes enabled.
 This preview does not reveal the solution or prevent entering a number.
 
 `npm run test:theme` checks text and indicator contrast; this is a color check,

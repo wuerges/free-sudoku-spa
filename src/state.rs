@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 const fn yes() -> bool {
     true
 }
+const fn full_shading() -> u8 {
+    100
+}
 const fn no() -> bool {
     false
 }
@@ -21,6 +24,26 @@ pub enum SoundType {
     #[default]
     Explosion,
     None,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct HighlightSettings {
+    pub selected_shading: u8,
+    pub matching_shading: u8,
+    pub dots: bool,
+    pub stripes: bool,
+}
+
+impl Default for HighlightSettings {
+    fn default() -> Self {
+        Self {
+            selected_shading: full_shading(),
+            matching_shading: full_shading(),
+            dots: true,
+            stripes: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,6 +76,8 @@ pub struct GameState {
     pub domino_enabled: bool,
     #[serde(default)]
     pub sound_type: SoundType,
+    #[serde(default)]
+    pub highlights: HighlightSettings,
     pub domino_gen: u32,
     #[serde(skip)]
     pub just_filled: Option<(usize, usize)>,
@@ -102,6 +127,7 @@ impl Default for GameState {
             domino_enabled: false,
             domino_gen: 0,
             sound_type: SoundType::default(),
+            highlights: HighlightSettings::default(),
             just_filled: None,
             selected: None,
             timer_seconds: 0,
@@ -255,6 +281,7 @@ impl AppState {
                 domino_enabled: s.domino_enabled,
                 domino_gen: s.domino_gen,
                 sound_type: s.sound_type,
+                highlights: s.highlights,
                 just_filled: None,
                 selected: None,
                 timer_seconds: 0,
@@ -522,6 +549,7 @@ impl AppState {
             s.hint_enabled = true;
             s.domino_enabled = false;
             s.sound_type = SoundType::default();
+            s.highlights = HighlightSettings::default();
         });
     }
 
@@ -723,6 +751,8 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     let legacy = value.get("givens").is_none();
     let mut state: GameState = serde_json::from_value(value)?;
+    state.highlights.selected_shading = state.highlights.selected_shading.min(100);
+    state.highlights.matching_shading = state.highlights.matching_shading.min(100);
     if legacy {
         for i in 0..81 {
             if state.board[i] != 0 && state.board[i] == state.solution[i] {
@@ -766,6 +796,48 @@ pub fn save_state(_state: &GameState) {
 mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
+
+    #[test]
+    fn highlight_preferences_round_trip_and_old_saves_keep_progress() {
+        let mut s = GameState::default();
+        s.highlights = HighlightSettings {
+            selected_shading: 25,
+            matching_shading: 70,
+            dots: false,
+            stripes: false,
+        };
+        s.push_snapshot();
+        let mut saved = serde_json::to_value(&s).unwrap();
+        let restored = decode_saved_state(&saved.to_string()).unwrap();
+        assert_eq!(restored.highlights, s.highlights);
+        saved.as_object_mut().unwrap().remove("highlights");
+        let legacy = decode_saved_state(&saved.to_string()).unwrap();
+        assert_eq!(legacy.highlights, HighlightSettings::default());
+        assert_eq!(legacy.board, s.board);
+        assert_eq!(legacy.notes, s.notes);
+        assert_eq!(legacy.history.len(), s.history.len());
+        saved["highlights"] = serde_json::json!({"selected_shading": 200});
+        let partial = decode_saved_state(&saved.to_string()).unwrap();
+        assert_eq!(partial.highlights, HighlightSettings::default());
+    }
+
+    #[test]
+    fn highlight_preferences_survive_new_games_and_reset_without_changing_board() {
+        let state = AppState::new();
+        let preferences = HighlightSettings {
+            selected_shading: 0,
+            matching_shading: 45,
+            dots: false,
+            stripes: false,
+        };
+        state.0.update(|s| s.highlights = preferences);
+        state.new_game(Difficulty::Easy);
+        assert_eq!(state.0.get().highlights, preferences);
+        let board = state.0.get().board;
+        state.reset_config();
+        assert_eq!(state.0.get().highlights, HighlightSettings::default());
+        assert_eq!(state.0.get().board, board);
+    }
 
     #[test]
     fn placement_preview_checks_every_occurrence_without_using_solution() {
@@ -1036,6 +1108,7 @@ mod tests {
             domino_enabled: false,
             domino_gen: 0,
             sound_type: SoundType::default(),
+            highlights: HighlightSettings::default(),
             just_filled: None,
             selected: None,
             timer_seconds: 0,

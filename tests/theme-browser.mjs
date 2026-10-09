@@ -75,7 +75,7 @@ try {
     await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // A selected error keeps its error fill and selection outline.
-    const wrong=fixture.s.solution[fixture.user]%9+1;
+    const wrong=[1,2,3,4,5,6,7,8,9].find(n=>n!==fixture.s.solution[fixture.user] && n!==fixture.s.solution[fixture.hint]);
     await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${wrong}$`)}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-cell-state'),'error');
     assert.equal(await cell(fixture.user).getAttribute('data-selected'),'true');
@@ -107,7 +107,7 @@ try {
     await page.getByRole('button',{name:'🎯 Drop ON',exact:true}).click();
     // Load a real legacy save whose history predates a correct player entry.
     await page.evaluate(({s,user})=>{
-      const legacy=structuredClone(s);delete legacy.givens;
+      const legacy=structuredClone(s);delete legacy.givens;delete legacy.highlights;
       const previous=[...legacy.board];previous[user]=0;
       legacy.history=[{board:previous,notes:[...legacy.notes]}];legacy.redo_stack=[];
       localStorage.setItem('sudoku_state',JSON.stringify(legacy));
@@ -119,6 +119,45 @@ try {
     await cell(fixture.user).click();
     await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${fixture.s.solution[fixture.user]}$`)}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
+    // Preferences persist, affect each source independently, and reset safely.
+    await page.setViewportSize({width:390,height:844});
+    await page.goto(url+'/config');
+    await page.getByRole('slider',{name:'Sombreamento pela seleção'}).waitFor();
+    for(const [label,value] of [['Sombreamento pela seleção','0'],['Sombreamento pelos iguais','65']]) {
+      await page.getByRole('slider',{name:label}).evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));},value);
+    }
+    await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).uncheck();
+    await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).uncheck();
+    await page.waitForFunction(()=>{const h=JSON.parse(localStorage.getItem('sudoku_state')).highlights;return h.selected_shading===0 && h.matching_shading===65 && !h.dots && !h.stripes});
+    await page.reload();
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'0');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'65');
+    assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),false);
+    await page.locator('#loading').waitFor({state:'detached'});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:path.join(output,`${theme}-settings.png`),fullPage:true});
+    await page.goto(url);await page.locator('.sudoku-cell').first().waitFor();
+    const boardRoot=page.locator('.sudoku-board');
+    assert.equal(await boardRoot.getAttribute('data-blocked-stripes'),'false');
+    assert.equal(await boardRoot.getAttribute('data-placement-dots'),'false');
+    assert.equal(await boardRoot.evaluate(e=>e.style.getPropertyValue('--selected-shading')),'0%');
+    assert.equal(await boardRoot.evaluate(e=>e.style.getPropertyValue('--matching-shading')),'65%');
+    const availableCell=page.locator('[data-cell-state="available"]').first();
+    const selectedBlocked=page.locator('[data-cell-state="blocked"]').first();
+    if(await selectedBlocked.count() && await availableCell.count()) {
+      const colorPixel=async locator=>locator.evaluate(e=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');ctx.fillStyle=getComputedStyle(e).backgroundColor;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]});
+      assert.deepEqual(await colorPixel(selectedBlocked),await colorPixel(availableCell));
+      assert.equal(await selectedBlocked.evaluate(e=>getComputedStyle(e).backgroundImage),'none');
+      assert.equal(await availableCell.evaluate(e=>getComputedStyle(e,'::after').content),'none');
+    }
+    const matchingBlocked=page.locator('[data-cell-state="matching-blocked"]').first();
+    if(await matchingBlocked.count()) assert.equal(await matchingBlocked.evaluate(e=>getComputedStyle(e).backgroundImage),'none');
+    await page.goto(url+'/config');
+    await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'100');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'100');
+    assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),true);
+    assert.equal(await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).isChecked(),true);
     assert.deepEqual(errors,[]);
     await context.close();
     console.log(`PASS ${theme}: mobile/desktop routes, highlights, editable correct entry, undo, error/hint overlaps, legacy history unlock; screenshots ${output}`);

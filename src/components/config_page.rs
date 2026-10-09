@@ -95,6 +95,35 @@ pub fn ConfigPage() -> impl IntoView {
                     </button>
                 </div>
 
+                <section class="py-5 border-b border-grid-thin space-y-3" aria-labelledby="highlight-settings">
+                    <h2 id="highlight-settings" class="text-sm font-semibold">"Destaques do tabuleiro"</h2>
+                    {[(false, "Sombreamento pela seleção"), (true, "Sombreamento pelos iguais")].into_iter().map(|(matching, label)| {
+                        let id = if matching { "matching-shading" } else { "selected-shading" };
+                        view! {
+                            <div>
+                                <label for=id class="flex justify-between gap-2 text-sm">
+                                    <span>{label}</span>
+                                    <span>{move || { let h = state.0.get().highlights; format!("{}%", if matching { h.matching_shading } else { h.selected_shading }) }}</span>
+                                </label>
+                                <input id=id type="range" min="0" max="100" step="1" class="w-full h-12 accent-accent cursor-pointer"
+                                    prop:value=move || { let h = state.0.get().highlights; (if matching { h.matching_shading } else { h.selected_shading }).to_string() }
+                                    on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() { state.0.update(|s| { if matching { s.highlights.matching_shading = value.min(100); } else { s.highlights.selected_shading = value.min(100); } }); } }
+                                />
+                            </div>
+                        }
+                    }).collect::<Vec<_>>()}
+                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
+                        <span>"Pontos nas células disponíveis"</span>
+                        <input type="checkbox" class="accent-accent w-5 h-5" prop:checked=move || state.0.get().highlights.dots
+                            on:change=move |ev| state.0.update(|s| s.highlights.dots = event_target_checked(&ev)) />
+                    </label>
+                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
+                        <span>"Listras nas células bloqueadas"</span>
+                        <input type="checkbox" class="accent-accent w-5 h-5" prop:checked=move || state.0.get().highlights.stripes
+                            on:change=move |ev| state.0.update(|s| s.highlights.stripes = event_target_checked(&ev)) />
+                    </label>
+                </section>
+
                 // Reset button
                 <div class="flex justify-center" style="margin-top: 2rem;">
                     <button

@@ -65,14 +65,20 @@ so undo cannot leave an empty cell permanently locked.
 
 `GameState.active_number` derives the inspected digit from Drop selection or
 the selected filled cell. `placement_available` uses the existing engine
-`is_valid_move` on empty cells and the current board only. No serialized fields
-are added. Matching digits/notes use the same active digit. A selected empty
+`is_valid_move` on empty cells and the current board only. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. A selected empty
 cell retains its selection fill/outline, with placement metadata and an available
 dot when inspecting a Drop digit; errors and hints retain precedence.
 
 `placement_blocker` classifies blocked empty cells as selected or matching.
 Selected-source stripes win overlaps; a keypad digit with no selected matching
 occurrence classifies all blockers as matching. Source metadata and Portuguese accessible
-labels expose the distinction without changing persisted state. The board has
+labels expose the distinction without persisting the classifications. The board has
 no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
 matching-source blockers.
+
+`GameState.highlights` persists a serde-defaulted `HighlightSettings` object.
+Both shading percentages default to 100; dots/stripes default to enabled.
+Partial settings use the same defaults, loading clamps percentages to 0–100,
+new games preserve preferences, and reset restores defaults without changing
+the board. Board CSS variables independently blend each blocker fill toward
+the available-cell fill; scoped data attributes control dots and stripes.

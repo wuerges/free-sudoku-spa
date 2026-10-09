@@ -6,7 +6,11 @@ use leptos::prelude::*;
 pub fn SudokuGrid(state: AppState) -> impl IntoView {
     view! {
         <div class="w-full max-w-[min(90vw,90vh-280px,500px)] mx-auto mt-2">
-            <div class="grid grid-cols-3 gap-0.5 border-2 border-grid-strong rounded-sm overflow-hidden bg-grid-strong">
+            <div class="sudoku-board grid grid-cols-3 gap-0.5 border-2 border-grid-strong rounded-sm overflow-hidden bg-grid-strong"
+                data-placement-dots=move || state.0.get().highlights.dots.to_string()
+                data-blocked-stripes=move || state.0.get().highlights.stripes.to_string()
+                style=move || { let h = state.0.get().highlights; format!("--selected-shading: {}%; --matching-shading: {}%;", h.selected_shading.min(100), h.matching_shading.min(100)) }
+            >
                 {(0..3).flat_map(|br| {
                     (0..3).map(move |bc| {
                         view! {

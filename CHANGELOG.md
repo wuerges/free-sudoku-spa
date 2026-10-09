@@ -9,7 +9,9 @@ The initial shared version is 0.9.0.
 
 ### Added
 
-- Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, opposite diagonal stripe directions for selected-number and matching-number blockers.
+- Saved board-highlight preferences: separate shading sliders for selected-number and matching-number blockers, plus independent dot and stripe toggles.
+
+- Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, solid blue/slate fills with stronger opposite diagonal stripes for selected-number and matching-number blockers.
 
 - Initial client-side Sudoku PWA with notes, hints, undo/redo, difficulty selection, settings, and saved progress.
 - Semantic light and navy-dark color tokens, visible selection/error cues, and consistent colors across game, settings, help, and loading screens.
