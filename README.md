@@ -158,6 +158,9 @@ column peers. Selection has a strong blue fill and 3px outline; neutral peers an
 matching highlights separate location from digit scanning. Board text/notes
 meet a 5.5:1 product contrast target, above the 4.5:1 WCAG minimum.
 Dark surfaces use layered navy rather than black for long playing sessions.
+Selecting a filled cell or a Drop number previews every empty cell: brighter
+with a dot means legal by current row/column/box rules; shaded means blocked.
+This preview does not reveal the solution or prevent entering a number.
 
 `npm run test:theme` checks text and indicator contrast; this is a color check,
 not a complete accessibility audit. New saves retain original clue provenance.

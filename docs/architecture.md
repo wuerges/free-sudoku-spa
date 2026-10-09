@@ -52,7 +52,7 @@ Hosting defaults to revalidation, with immutable caching reserved for hashed Tru
 
 `style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
 v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
-peer, secondary, default. Selection has a separate 3px outline, including on errors
+available/blocked (empty cells with an active digit), peer, secondary, default. Selection has a separate 3px outline, including on errors
 and hints. The early theme script in `index.html` applies system preference
 before WASM renders.
 
@@ -62,3 +62,10 @@ locked. The loader migrates saves without `givens` by preserving their old
 correct-number locks, without changing board values, notes, history, or settings. If a historical snapshot changes a
 migrated locked entry, it proves the entry was editable and releases that lock
 so undo cannot leave an empty cell permanently locked.
+
+`GameState.active_number` derives the inspected digit from Drop selection or
+the selected filled cell. `placement_available` uses the existing engine
+`is_valid_move` on empty cells and the current board only. No serialized fields
+are added. Matching digits/notes use the same active digit. A selected empty
+cell retains its selection fill/outline, with placement metadata and an available
+dot when inspecting a Drop digit; errors and hints retain precedence.

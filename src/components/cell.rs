@@ -16,10 +16,10 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
     };
     let matching = move || {
         let s = state.0.get();
-        s.selected.is_some_and(|(r, c)| {
-            (r, c) != (row, col) && s.get(row, col) != 0 && s.get(row, col) == s.get(r, c)
-        })
+        s.active_number()
+            .is_some_and(|n| s.selected != Some((row, col)) && s.get(row, col) == n)
     };
+    let placement = move || state.0.get().placement_available(row, col);
     let peer = move || {
         state.0.get().selected.is_some_and(|(r, c)| {
             (r, c) != (row, col) && (r == row || c == col || (r / 3 == row / 3 && c / 3 == col / 3))
@@ -38,6 +38,12 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             "selected"
         } else if matching() {
             "matching"
+        } else if let Some(available) = placement() {
+            if available {
+                "available"
+            } else {
+                "blocked"
+            }
         } else if peer() {
             "peer"
         } else if secondary() {
@@ -69,14 +75,22 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             data-cell-state=cell_state
             data-selected=move || selected().to_string()
             data-matching=move || matching().to_string()
+            data-placement=move || match placement() {
+                Some(true) => "available", Some(false) => "blocked", None => "none",
+            }
             data-number-origin=origin
             aria-pressed=move || selected().to_string()
             aria-label=move || format!(
-                "Linha {}, coluna {}, {}{}{}",
+                "Linha {}, coluna {}, {}{}{}{}",
                 row + 1, col + 1,
                 if value() == 0 { "vazia".to_string() } else { format!("número {}", value()) },
                 match origin() { "given" => ", número original", "hint" => ", dica", _ => "" },
                 if error() { ", erro ou conflito" } else { "" },
+                match placement() {
+                    Some(true) => format!(", disponível para {} pelas regras", state.0.get().active_number().unwrap()),
+                    Some(false) => format!(", bloqueada para {} pelas regras", state.0.get().active_number().unwrap()),
+                    None => String::new(),
+                },
             )
             on:click=move |_| state.select_cell(row, col)
             style="min-width: 0; min-height: 0;"
@@ -88,7 +102,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                         view! {
                             <span class=move || {
                                 let s = state.0.get();
-                                let matches = s.selected.is_some_and(|(r, c)| s.get(r, c) == note);
+                                let matches = s.active_number() == Some(note);
                                 format!("flex items-center justify-center text-[8px] sm:text-[10px] leading-none {}",
                                     if matches { "text-accent font-bold underline" } else { "text-notes" })
                             }>{move || if active() { note.to_string() } else { String::new() }}</span>

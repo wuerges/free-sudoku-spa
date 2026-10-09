@@ -4,6 +4,8 @@
 :root {
   --ui-page: #f8fafc;
   --ui-cell: #ffffff;
+  --ui-available: #ffffff;
+  --ui-blocked: #c8d2df;
   --ui-control: #e2e8f0;
   --ui-control-hover: #cbd5e1;
   --ui-cell-hover: #f1f5f9;
@@ -34,6 +36,8 @@
 .dark {
   --ui-page: #0f172a;
   --ui-cell: #162338;
+  --ui-available: #304b63;
+  --ui-blocked: #17253b;
   --ui-control: #334155;
   --ui-control-hover: #475569;
   --ui-cell-hover: #26374d;
@@ -102,6 +106,13 @@
 
 @layer components {
   .sudoku-cell { background: var(--ui-cell); border-color: var(--ui-grid-thin); }
+  .sudoku-cell[data-cell-state="available"] { background: var(--ui-available); }
+  .sudoku-cell[data-cell-state="blocked"] { background: var(--ui-blocked); }
+  .sudoku-cell[data-placement="available"]::after {
+    content: ""; position: absolute; right: 2px; bottom: 2px;
+    width: 3px; height: 3px; border-radius: 50%; background: var(--ui-accent);
+    pointer-events: none;
+  }
   .sudoku-cell[data-cell-state="secondary"] { background: var(--ui-secondary); }
   .sudoku-cell[data-cell-state="peer"] { background: var(--ui-peer); }
   .sudoku-cell[data-cell-state="matching"] { background: var(--ui-matching); }

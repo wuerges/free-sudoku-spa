@@ -126,6 +126,25 @@ impl GameState {
         self.board[Self::idx(r, c)]
     }
 
+    /// The digit being inspected; Drop mode owns the preview while enabled.
+    pub fn active_number(&self) -> Option<u8> {
+        let number = if self.drop_mode {
+            self.drop_number
+        } else {
+            self.selected.map(|(r, c)| self.get(r, c))
+        };
+        number.filter(|n| (1..=9).contains(n))
+    }
+
+    /// Rule-based preview for empty cells only. Never consults the solution.
+    pub fn placement_available(&self, r: usize, c: usize) -> Option<bool> {
+        if self.get(r, c) != 0 {
+            return None;
+        }
+        self.active_number()
+            .map(|n| sudoku_engine::is_valid_move(&self.board, r, c, n))
+    }
+
     pub fn is_given(&self, r: usize, c: usize) -> bool {
         self.givens[Self::idx(r, c)] != 0
     }
@@ -730,6 +749,46 @@ pub fn save_state(_state: &GameState) {
 mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
+
+    #[test]
+    fn placement_preview_checks_every_occurrence_without_using_solution() {
+        let mut s = GameState::default();
+        s.board = [0; 81];
+        s.board[0] = 5;
+        s.board[80] = 5;
+        s.selected = Some((0, 0));
+        s.solution = [1; 81];
+        assert_eq!(s.active_number(), Some(5));
+        for (r, c) in [(0, 4), (4, 0), (1, 1), (7, 7), (8, 4)] {
+            assert_eq!(s.placement_available(r, c), Some(false));
+        }
+        assert_eq!(s.placement_available(4, 4), Some(true));
+        assert_eq!(s.placement_available(0, 0), None);
+        s.solution = [9; 81];
+        assert_eq!(s.placement_available(4, 4), Some(true));
+        s.selected = Some((4, 4));
+        assert_eq!(s.active_number(), None);
+        assert_eq!(s.placement_available(4, 4), None);
+    }
+
+    #[test]
+    fn drop_preview_overrides_selection_and_clears_with_number() {
+        let mut s = GameState::default();
+        s.board = [0; 81];
+        s.board[0] = 5;
+        s.board[80] = 7;
+        s.selected = Some((0, 0));
+        s.drop_mode = true;
+        assert_eq!(s.active_number(), None);
+        s.drop_number = Some(7);
+        assert_eq!(s.active_number(), Some(7));
+        assert_eq!(s.placement_available(7, 7), Some(false));
+        assert_eq!(s.placement_available(0, 4), Some(true));
+        s.drop_number = None;
+        assert_eq!(s.placement_available(7, 7), None);
+        s.drop_mode = false;
+        assert_eq!(s.active_number(), Some(5));
+    }
 
     #[test]
     fn test_new_game_resets_state() {

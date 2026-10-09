@@ -46,7 +46,18 @@ try {
     // A same-box cell outside the selected row and column is also a peer.
     const row=Math.floor(fixture.user/9),col=fixture.user%9;
     const boxPeer=fixture.s.board.findIndex((v,i)=>v===0 && Math.floor(i/27)===Math.floor(row/3) && Math.floor((i%9)/3)===Math.floor(col/3) && Math.floor(i/9)!==row && i%9!==col);
-    if(boxPeer>=0) assert.equal(await cell(boxPeer).getAttribute('data-cell-state'),'peer');
+    if(boxPeer>=0) assert.equal(await cell(boxPeer).getAttribute('data-cell-state'),'blocked');
+    async function verifyPreview(board, digit) {
+      const cells=await page.locator('.sudoku-cell').evaluateAll(es=>es.map(e=>({r:Number(e.dataset.row),c:Number(e.dataset.col),placement:e.dataset.placement,label:e.getAttribute('aria-label')})));
+      for(const e of cells) {
+        const index=e.r*9+e.c;
+        const blocked=board.some((v,i)=>v===digit && (Math.floor(i/9)===e.r || i%9===e.c || (Math.floor(i/27)===Math.floor(e.r/3) && Math.floor((i%9)/3)===Math.floor(e.c/3))));
+        const expected=board[index]!==0 ? 'none' : blocked ? 'blocked' : 'available';
+        assert.equal(e.placement,expected,`${theme} digit ${digit} cell ${index}`);
+        if(expected!=='none') assert.match(e.label,new RegExp(`${expected==='available'?'disponível':'bloqueada'} para ${digit}`));
+      }
+    }
+    await verifyPreview(fixture.s.board,fixture.s.board[fixture.user]);
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
     await cell(fixture.user).click();await page.getByRole('button',{name:'⌫ Apagar',exact:true}).click();
@@ -73,6 +84,17 @@ try {
     await page.goto(url);await page.locator('.sudoku-cell').first().waitFor();
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-desktop.png`),fullPage:true});
+    // Drop preview uses the keypad digit rather than the selected cell's value.
+    await page.getByRole('button',{name:'🎯 Drop',exact:true}).click();
+    assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
+    for(const digit of [1,7]) {
+      await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${digit}$`)}).click();
+      const board=await page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')).board);
+      await verifyPreview(board,digit);
+    }
+    await page.locator('.grid-cols-9 > button').filter({hasText:/^7$/}).click();
+    assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
+    await page.getByRole('button',{name:'🎯 Drop ON',exact:true}).click();
     // Load a real legacy save whose history predates a correct player entry.
     await page.evaluate(({s,user})=>{
       const legacy=structuredClone(s);delete legacy.givens;

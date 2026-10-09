@@ -9,6 +9,8 @@ The initial shared version is 0.9.0.
 
 ### Added
 
+- Number-placement preview from filled cells and the Drop keypad: brighter legal empty cells with a dot, shaded blocked cells, and a Portuguese legend.
+
 - Initial client-side Sudoku PWA with notes, hints, undo/redo, difficulty selection, settings, and saved progress.
 - Semantic light and navy-dark color tokens, visible selection/error cues, and consistent colors across game, settings, help, and loading screens.
 - CI checks for versions, contrast, game-state regressions, and builds; automatic version tags and GitHub releases after qualifying merges into main.
