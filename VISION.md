@@ -45,13 +45,11 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 2. Difficulty quality
 
-**Current behavior:** Difficulty uses clue-count targets. The generator may stop before reaching the requested range when further removals would violate uniqueness; it does not grade human solving techniques. The stored seed is not a reproducible puzzle-generation API.
+**Current behavior:** Grader v1 records a deterministic logical solve trace and rates its strongest technique. New selections accept only matching measured levels, with bounded fresh generation and a bundled verified fallback bank. Unsupported puzzles stay unrated. Seed replay uses one nonzero RNG stream and is deterministic for the same generator/grader/corpus version. Clue bounds are secondary density constraints; failure is explicit.
 
-**Measured:** A 100-puzzle native audit and 100-selection WASM audit found Easy/Medium lower-bound overshoot and substantial overlap among harder selections. Native samples passed validity, uniqueness, and rotational-symmetry checks. See [the difficulty review](docs/difficulty-review.md) and its raw data. The UI stores the requested label even when generation misses its range; the upper bound is currently unused and the center is always given.
+**Verified:** Fixed puzzle fixtures and trace soundness checks cover all five levels. Native and offline WASM audits each exercised 100 selections, with actual ratings matching every selection. The bank was independently compared with Sukaku Explainer 1.18.1. See [the policy and measurements](docs/difficulty-policy.md). Existing saves retain progress and their previous labels; new rating metadata has compatible defaults.
 
-**Goal:** Keep unique solutions while making difficulty labels consistent with solving effort.
-
-**Acceptance:** Validate generated puzzles across all levels, record actual clue counts and generation times, and introduce technique-based grading only with meaningful tests. Do not promise a guaranteed clue range or a reproducible daily puzzle with the current generator.
+**Remaining validation:** Check generation/grading latency on representative Android hardware and collect player feedback to refine the local technique bands. Ratings describe this solver's chosen path; they are not a universal or minimal-difficulty guarantee. Daily-puzzle semantics and cross-version seed replay remain future work.
 
 ### 3. Mobile usability and accessibility
 

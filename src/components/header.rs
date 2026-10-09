@@ -28,17 +28,24 @@ pub fn Header() -> impl IntoView {
         closure.forget();
     }
 
-    let difficulty_label = move || match state.0.get().difficulty {
-        Difficulty::Easy => "Fácil",
-        Difficulty::Medium => "Médio",
-        Difficulty::Hard => "Difícil",
-        Difficulty::Expert => "Expert",
-        Difficulty::Master => "Mestre",
+    let difficulty_label = move || {
+        let s = state.0.get();
+        let label = match s.difficulty {
+            Difficulty::Easy => "Fácil",
+            Difficulty::Medium => "Médio",
+            Difficulty::Hard => "Difícil",
+            Difficulty::Expert => "Expert",
+            Difficulty::Master => "Mestre",
+        };
+        match &s.rating {
+            Some(rating) => format!("{label} · {}", rating.strongest.label()),
+            None => format!("{label} · jogo anterior"),
+        }
     };
 
     view! {
         <header class="w-full max-w-[min(90vw,500px)] mx-auto flex items-center justify-between pt-2">
-            <div>
+            <div class="min-w-0 pr-2">
                 <h1 class="text-lg sm:text-xl font-bold">"Sudoku"</h1>
                 <p class="text-xs text-muted">{difficulty_label}</p>
             </div>

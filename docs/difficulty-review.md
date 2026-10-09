@@ -1,5 +1,7 @@
 # Sudoku difficulty and generation review
 
+Historical baseline; see [the implemented v1 policy](difficulty-policy.md).
+
 Reviewed 2026-10-09 against PR #3 (`107ad240`). This PR adds measurements and
 invariant tests; it preserves generation, labels, assistance settings, and saves.
 The release is `0.10.0` under the compatible-change version policy.
