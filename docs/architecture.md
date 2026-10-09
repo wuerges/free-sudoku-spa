@@ -28,7 +28,9 @@
 
 The npm lockfile supplies Tailwind's CLI. `just css` produces `style/output.css`; Trunk bundles Rust/WASM and the linked assets into `dist/`. These outputs are ignored by version control.
 
-`Trunk.toml` configures the bundle. `vercel.json` invokes `build.sh` and configures static hosting with SPA rewrites. The deployment script currently installs its own standalone Tailwind CLI; local builds use the npm dependency. There is no GitHub Actions workflow in this repository.
+`Trunk.toml` configures the bundle. Vercel explicitly uses the Other framework preset and Node.js 22. Its install phase runs `scripts/setup-build.sh` to install locked npm dependencies, Rust 1.98.1 with the WASM target, and checksum-verified Trunk 0.21.14. Rust and Trunk live under ignored `.build-tools/`; the bootstrap supports Linux x86_64 and aarch64 and requires network access on a clean install.
+
+Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. There is no GitHub Actions workflow in this repository.
 
 ## Persistence and change boundaries
 

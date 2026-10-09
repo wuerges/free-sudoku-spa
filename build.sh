@@ -1,9 +1,17 @@
 #!/bin/sh
-set -e
-rustup target add wasm32-unknown-unknown
-cargo install trunk --locked
-curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.9/tailwindcss-linux-x64
-chmod +x tailwindcss-linux-x64
-mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
-tailwindcss -i style/input.css -o style/output.css --minify
-trunk build --release
+set -eu
+SUDOKU_PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$SUDOKU_PROJECT_ROOT"
+. "$SUDOKU_PROJECT_ROOT/scripts/build-env.sh"
+
+if [ ! -x "$CARGO_HOME/bin/rustup" ] || [ ! -x "$SUDOKU_TOOLS/bin/trunk" ]; then
+    echo 'Missing build tools; run sh scripts/setup-build.sh first' >&2
+    exit 1
+fi
+if [ "$("$SUDOKU_TOOLS/bin/trunk" --version)" != "trunk $SUDOKU_TRUNK_VERSION" ]; then
+    echo 'Unexpected Trunk version; rerun sh scripts/setup-build.sh' >&2
+    exit 1
+fi
+npm run test:offline
+npm run css
+"$SUDOKU_TOOLS/bin/trunk" build --release --locked

@@ -12,14 +12,25 @@ Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Supports of
 
 ## Setup
 
-```bash
-# Prerequisites
-rustup target add wasm32-unknown-unknown
-cargo install trunk
+Use Node.js 22 and npm. On Linux x86_64 or aarch64, install the pinned build
+stack and locked CSS dependencies without global Rust or Trunk installations:
 
-# CSS tooling (versions locked in package-lock.json)
-npm ci
+```bash
+sh scripts/setup-build.sh
+just build
 ```
+
+Setup installs Rust 1.98.1 with the WASM target and checksum-verified Trunk
+0.21.14 under the ignored `.build-tools/` directory. It runs `npm ci`; both
+Vercel and `just build` use these project-local tools and the same npm lockfile.
+Network access is required for a clean setup. Rerunning setup reuses installed
+build tools while reinstalling the locked npm dependencies.
+
+For development commands (`just serve`, `just test`, `just check`), install
+Rust with rustup and Trunk 0.21.14 in your normal shell. `rust-toolchain.toml`
+pins the compiler and WASM target; Node/npm supply CSS tooling. The project-local
+bootstrap supports Linux only; normal development tooling can be used on other
+platforms.
 
 ## Run
 
@@ -83,8 +94,16 @@ src/
 
 ## Deploy
 
-Vercel configuration is in `vercel.json`; its install command runs `build.sh`
-and publishes `dist/`. No GitHub Actions workflow is currently checked in.
+Vercel uses the Other framework preset (`framework: null`) and Node.js 22.
+Its install phase runs `sh scripts/setup-build.sh`; its build phase runs
+`sh build.sh`, which checks offline regressions, builds locked Tailwind CSS,
+and runs `trunk build --release --locked`. The output directory is `dist/`.
+Build tooling lives in `.build-tools/`; no privileged install path is needed.
+No GitHub Actions workflow is currently checked in.
+
+Run `npm run test:build` to verify setup/build failure handling and environment
+consistency. A successful local build does not establish deployed cache headers;
+check the PR's Vercel preview before merging.
 
 
 ## Working with Codex
