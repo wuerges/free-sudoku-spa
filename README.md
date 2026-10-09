@@ -1,6 +1,6 @@
 # Sudoku PWA
 
-Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Works offline, installable on Android.
+Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Targets offline play and installation on Android; see [known gaps](VISION.md#1-offline-play-and-updates).
 
 ## Tech
 
@@ -17,10 +17,8 @@ Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Works offli
 rustup target add wasm32-unknown-unknown
 cargo install trunk
 
-# Tailwind CSS CLI (standalone, no Node.js needed)
-curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.9/tailwindcss-linux-x64
-chmod +x tailwindcss-linux-x64
-sudo mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
+# CSS tooling (versions locked in package-lock.json)
+npm ci
 ```
 
 ## Run
@@ -28,7 +26,7 @@ sudo mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
 ```bash
 just serve     # dev server + hot reload
 # or manually:
-tailwindcss -i style/input.css -o style/output.css --watch &
+npm run css:watch &
 trunk serve
 ```
 
@@ -50,7 +48,6 @@ src/
 ├── sudoku_engine.rs      # generation, solving, validation
 ├── state.rs              # reactive game state (RwSignal)
 ├── serde_helpers.rs      # serde for large arrays
-├── utils.rs              # format_time
 └── components/
     ├── cell.rs           # single grid cell
     ├── sudoku_grid.rs    # 9×9 grid
@@ -75,16 +72,29 @@ src/
 - Hint system (disables on Master difficulty)
 - Win detection with fireworks + balloons animation
 - Dark/light mode (auto + manual toggle)
-- PWA: installable on Android, works offline
-```
+- PWA manifest and install prompt; complete offline caching remains unfinished
+
 
 ## PWA
 
 - `manifest.json` — installable, standalone, portrait
-- `sw.js` — cache-first, auto-update
+- `sw.js` — network-first navigation, cache lookup for assets; currently precaches only the manifest
 - Install prompt via `beforeinstallprompt` (Android Chrome/Edge)
 
 ## Deploy
 
-Push to `main` → GitHub Actions builds and deploys to Vercel.
-Set `VERCEL_TOKEN` secret in repo settings.
+Vercel configuration is in `vercel.json`; its install command runs `build.sh`
+and publishes `dist/`. No GitHub Actions workflow is currently checked in.
+
+
+## Working with Codex
+
+Repository instructions live in [AGENTS.md](AGENTS.md), following the
+[official Codex instructions guide](https://developers.openai.com/codex/guides/agents-md).
+Use `jj` for version control. See [the architecture guide](docs/architecture.md)
+for source responsibilities and [VISION.md](VISION.md) for product direction and known gaps.
+Track unresolved work in [ISSUES.md](ISSUES.md); remove issues when they are solved and verified.
+
+Run `just css-watch` in a second terminal when changing Tailwind styles during
+`just serve`. Run `cargo fmt --check`, `just test`, and `just check` for Rust
+changes, and `just build` to verify the production bundle.

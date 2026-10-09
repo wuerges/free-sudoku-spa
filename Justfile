@@ -1,18 +1,18 @@
-# Sudoku PWA — ponytail: just serve / just build / just test. That's it.
+# Local development and validation commands
 
 default:
     @just --list
 
-# Build CSS (Tailwind v4 standalone CLI)
+# Build CSS using the locked npm tooling
 css:
-    tailwindcss -i style/input.css -o style/output.css --minify
+    npm run css
 
 # Dev CSS watcher
 css-watch:
-    tailwindcss -i style/input.css -o style/output.css --watch
+    npm run css:watch
 
 # Dev server
-serve:
+serve: css
     @echo "→ http://localhost:8080"
     trunk serve
 

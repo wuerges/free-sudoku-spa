@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "css": "tailwindcss -i style/input.css -o style/output.css --minify",
+    "css:watch": "tailwindcss -i style/input.css -o style/output.css --watch",
+    "test": "cargo test"
   },
   "repository": {
     "type": "git",
