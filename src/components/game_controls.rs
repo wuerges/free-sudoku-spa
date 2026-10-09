@@ -119,7 +119,6 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                     <button
                         class="px-3 py-1.5 rounded text-sm font-medium bg-hint text-hint-text active:bg-hint disabled:bg-disabled disabled:text-muted"
                         on:click=move |_| state.hint()
-                        disabled=move || difficulty() == Difficulty::Master
                     >
                         "💡 Dica"
                     </button>

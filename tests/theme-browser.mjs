@@ -107,13 +107,14 @@ try {
     await page.getByRole('button',{name:'🎯 Drop ON',exact:true}).click();
     // Load a real legacy save whose history predates a correct player entry.
     await page.evaluate(({s,user})=>{
-      const legacy=structuredClone(s);delete legacy.givens;delete legacy.highlights;
+      const legacy=structuredClone(s);delete legacy.givens;delete legacy.highlights;delete legacy.rating;delete legacy.requested_difficulty;
       const previous=[...legacy.board];previous[user]=0;
       legacy.history=[{board:previous,notes:[...legacy.notes]}];legacy.redo_stack=[];
       localStorage.setItem('sudoku_state',JSON.stringify(legacy));
     },fixture);
     await page.reload();await page.locator('.sudoku-cell').first().waitFor();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'given');
+    assert.match(await page.locator('header p').innerText(),/jogo anterior/);
     await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
     await cell(fixture.user).click();

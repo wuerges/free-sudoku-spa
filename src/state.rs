@@ -59,6 +59,10 @@ pub struct GameState {
     #[serde(with = "u16_81")]
     pub notes: [u16; 81],
     pub difficulty: Difficulty,
+    #[serde(default)]
+    pub requested_difficulty: Option<Difficulty>,
+    #[serde(default)]
+    pub rating: Option<sudoku_engine::Rating>,
     pub seed: u64,
     #[serde(with = "u8_81")]
     pub hinted: [u8; 81],
@@ -110,13 +114,15 @@ pub struct Snapshot {
 
 impl Default for GameState {
     fn default() -> Self {
-        let board = sudoku_engine::generate(40..=45);
+        let board = sudoku_engine::generate(Difficulty::Easy);
         Self {
             board: board.cells,
             givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
-            difficulty: Difficulty::Easy,
+            difficulty: board.difficulty,
+            requested_difficulty: Some(Difficulty::Easy),
+            rating: board.rating,
             seed: board.seed,
             hinted: [0u8; 81],
             error_count: 0,
@@ -265,20 +271,16 @@ impl AppState {
     }
 
     pub fn new_game(&self, difficulty: Difficulty) {
-        let board = match difficulty {
-            Difficulty::Easy => sudoku_engine::generate(40..=45),
-            Difficulty::Medium => sudoku_engine::generate(32..=38),
-            Difficulty::Hard => sudoku_engine::generate(26..=31),
-            Difficulty::Expert => sudoku_engine::generate(20..=25),
-            Difficulty::Master => sudoku_engine::generate(17..=19),
-        };
+        let board = sudoku_engine::generate(difficulty);
         self.0.update(|s| {
             *s = GameState {
                 board: board.cells,
                 givens: board.cells,
                 solution: board.solution,
                 notes: [0u16; 81],
-                difficulty,
+                difficulty: board.difficulty,
+                requested_difficulty: Some(difficulty),
+                rating: board.rating,
                 seed: board.seed,
                 hinted: [0u8; 81],
                 error_count: 0,
@@ -565,6 +567,9 @@ impl AppState {
 
     pub fn hint(&self) {
         self.0.update(|s| {
+            if !s.hint_enabled || s.won {
+                return;
+            }
             // Hint: pick the unsolved cell with fewest candidates.
             // Deterministic pseudo-random traversal order from puzzle seed.
             let mut order: Vec<usize> = (0..81).collect();
@@ -1130,13 +1135,15 @@ mod tests {
     #[test]
     fn test_hint_deterministic_from_seed() {
         // Same board + same seed = same hint result
-        let board = sudoku_engine::generate(40..=45);
+        let board = sudoku_engine::generate(Difficulty::Easy);
         let state1 = GameState {
             board: board.cells,
             givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
             difficulty: board.difficulty,
+            requested_difficulty: Some(board.difficulty),
+            rating: board.rating,
             seed: board.seed,
             hinted: [0u8; 81],
             error_count: 0,
@@ -1274,5 +1281,41 @@ mod tests {
         let mut json = serde_json::to_value(GameState::default()).unwrap();
         json["givens"] = serde_json::json!([1, 2]);
         assert!(decode_saved_state(&json.to_string()).is_err());
+    }
+    #[test]
+    fn old_saves_keep_progress_and_new_ratings_round_trip() {
+        let app = AppState::new();
+        app.new_game(Difficulty::Master);
+        let state = app.0.get();
+        assert_eq!(state.requested_difficulty, Some(Difficulty::Master));
+        assert_eq!(state.rating.as_ref().unwrap().difficulty, state.difficulty);
+        let mut json = serde_json::to_value(&state).unwrap();
+        let restored = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(restored.rating, state.rating);
+        json.as_object_mut().unwrap().remove("rating");
+        json.as_object_mut().unwrap().remove("requested_difficulty");
+        let legacy = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(legacy.board, state.board);
+        assert_eq!(legacy.givens, state.givens);
+        assert_eq!(legacy.solution, state.solution);
+        assert_eq!(legacy.difficulty, state.difficulty);
+        assert_eq!(legacy.notes, state.notes);
+        assert!(legacy.rating.is_none());
+        assert!(legacy.requested_difficulty.is_none());
+        app.hint();
+        assert!(app.0.get().hinted.iter().any(|&v| v != 0));
+        assert_eq!(
+            app.0.get().rating,
+            state.rating,
+            "Moves must not regrade the original puzzle"
+        );
+        app.toggle_hint();
+        let board = app.0.get().board;
+        app.hint();
+        assert_eq!(
+            app.0.get().board,
+            board,
+            "Hint preference applies at every level"
+        );
     }
 }
