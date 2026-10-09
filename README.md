@@ -80,7 +80,7 @@ src/
 - Real-time conflict highlighting
 - Undo/Redo with full history (cleared on hint)
 - Timer with pause
-- Hint system (disables on Master difficulty)
+- Hint system available at every level according to player settings
 - Win detection with fireworks + balloons animation
 - Dark/light mode (auto + manual toggle)
 - PWA manifest, install prompt, and versioned offline app-shell caching
@@ -191,13 +191,20 @@ run `node tests/theme-browser.mjs` with `PLAYWRIGHT_MODULE` pointing to its modu
 and `CHROMIUM_PATH` to the browser executable. It writes screenshots under
 `/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`).
 
-## Difficulty review
+## Difficulty
 
-Current difficulty selection targets clue counts; generation can miss the
-requested range and does not grade solving techniques. See the
-[difficulty and generation review](docs/difficulty-review.md) for engine
-comparisons, recorded native/WASM samples, and the recommended next policy.
+Levels are graded from a deterministic logical solve trace: singles (Fácil),
+locked candidates (Médio), pairs/triples (Difícil), fish/wings/coloring/short
+chains (Expert), and longer alternating chains (Mestre). A limited grader that
+stalls reports unrated. These are app-specific bands, not SE rating numbers.
 
-Run `cargo test --release audit_difficulty_settings -- --ignored --nocapture`
-for the manual generation audit. `tests/difficulty-browser.mjs` measures actual
-new-game selections using the optional Playwright environment described above.
+New games accept only a matching measured level. Fresh generation is bounded;
+verified variations from the bundled bank keep all levels available offline.
+The header shows the strongest technique. Older games keep their saved level
+and display “jogo anterior”; their progress is preserved.
+
+See [the implemented policy and measurements](docs/difficulty-policy.md) and
+[the historical review](docs/difficulty-review.md). Run
+`cargo test --release audit_difficulty_settings -- --ignored --nocapture` for
+native measurements, or `tests/difficulty-browser.mjs` with the optional
+Playwright environment above for offline WASM measurements.

@@ -95,3 +95,18 @@ Engine tests cover all-setting puzzle invariants. The ignored
 `tests/difficulty-browser.mjs` measures WASM new-game selections.
 [The review](difficulty-review.md) records current bounds/label limitations,
 primary-source comparisons, raw datasets, and a proposed grading policy.
+
+## Logical rating and generation
+
+`src/sudoku_engine.rs` owns grader v1, deterministic deduction traces, bounded
+MRV verification, density-constrained clue removal, and seeded selection.
+`src/puzzle_bank.csv` contains self-generated verified fallback puzzles compiled
+into WASM. `grade` never reads a solution; an unsupported/stalled puzzle has no
+rating. Only matching ratings enter a new game.
+
+`GameState.requested_difficulty` and `rating` are optional, serde-defaulted
+metadata. New games store the actual engine difficulty and immutable original
+puzzle rating. Loading old saves preserves their existing difficulty and state;
+it does not regrade a partially played board. Undo, hints, and entries do not
+change the puzzle's rating. The header distinguishes older ungraded games.
+See [the implemented policy](difficulty-policy.md) for bounds and calibration.

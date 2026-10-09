@@ -14,12 +14,16 @@ const server=createServer(async(req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
 try {
-  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+  const context=await browser.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator('.sudoku-cell').first().waitFor();
   await page.locator('#loading').waitFor({state:'detached'});
-  console.log('AUDIT,requested,run,clues,handler_ms');
+  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
+  await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.locator('#loading').waitFor({state:'detached'});
+  await context.setOffline(true);
+  console.log('AUDIT,requested,run,clues,handler_ms,measured,technique,grader_version');
   for(const [requested,label] of [['Easy','Fácil'],['Medium','Médio'],['Hard','Difícil'],['Expert','Expert'],['Master','Mestre']]) {
     for(let run=0;run<20;run++) {
       await page.getByRole('button',{name:/Novo Jogo/}).click();
@@ -30,12 +34,17 @@ try {
         // Persistence effects flush after the synchronous click handler.
         await new Promise(resolve=>setTimeout(resolve,0));
         const s=JSON.parse(localStorage.getItem('sudoku_state'));
-        return {elapsed,clues:s.givens.filter(v=>v!==0).length,difficulty:s.difficulty,board:s.board,givens:s.givens};
+        return {elapsed,clues:s.givens.filter(v=>v!==0).length,difficulty:s.difficulty,board:s.board,givens:s.givens,rating:s.rating,requested:s.requested_difficulty};
       },label);
       assert.equal(result.difficulty,requested);
       assert.deepEqual(result.board,result.givens);
-      assert.equal(await page.locator('header p').innerText(),label);
-      console.log(`AUDIT,${requested},${run},${result.clues},${result.elapsed.toFixed(3)}`);
+      assert.ok((await page.locator('header p').innerText()).startsWith(label+' · '));
+      assert.equal(result.requested,requested);
+      assert.equal(result.rating.difficulty,requested);
+      assert.equal(result.rating.grader_version,1);
+      assert.ok(result.rating.step_counts.some(n=>n>0));
+      if(requested==='Master') assert.equal(await page.getByRole('button',{name:/Dica/}).isEnabled(),true);
+      console.log(`AUDIT,${requested},${run},${result.clues},${result.elapsed.toFixed(3)},${result.rating.difficulty},${result.rating.strongest},${result.rating.grader_version}`);
     }
   }
   assert.deepEqual(errors,[]);

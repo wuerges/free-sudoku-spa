@@ -5,6 +5,25 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.11.0]
+
+### Added
+
+- Versioned logical difficulty ratings and deduction traces, from singles through alternating chains.
+- A self-generated, independently calibrated offline puzzle bank for reliable level selection.
+- Deterministic seed replay and regression coverage for ratings, deductions, bounds, budgets, and saved games.
+
+### Changed
+
+- Difficulty selection accepts only puzzles with the requested measured rating; the header shows the strongest solving technique.
+- Hints are available at every level according to the player's preference.
+
+### Fixed
+
+- Clue removal respects both range bounds, can remove the center, and explicitly rejects unreachable density targets.
+- Bounded search and generation attempts prevent endless retries; verified fallback puzzles keep every level available offline.
+- Existing saves load with their progress and previous labels intact; new rating metadata defaults to absent for older saves.
+
 ## [0.10.0]
 
 ### Added

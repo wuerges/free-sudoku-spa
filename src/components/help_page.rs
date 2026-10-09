@@ -33,7 +33,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "🔄 Novo Jogo",
             "Novo jogo",
-            "Inicia um novo jogo. Escolha entre Fácil, Médio, Difícil, Expert ou Mestre.",
+            "Inicia um novo jogo. A dificuldade vem das técnicas usadas para resolver: Fácil (candidatos únicos), Médio (candidatos bloqueados), Difícil (pares/trios), Expert (X-Wing/XY-Wing e cadeias curtas) e Mestre (cadeias alternadas). O cabeçalho mostra a técnica mais avançada. Jogos antigos mantêm o nível anterior.",
         ),
         ("↩ Desfazer", "Desfazer", "Desfaz a última ação. O histórico é apagado ao usar uma dica."),
         ("↪ Refazer", "Refazer", "Refaz a ação desfeita. O histórico é apagado ao usar uma dica."),
@@ -45,7 +45,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "💡 Dica",
             "Dica",
-            "Revela a célula com menos candidatos, limpa as notas relacionadas e apaga o histórico de desfazer. Células reveladas ficam amarelas. Desabilitada no nível Mestre.",
+            "Revela a célula com menos candidatos, limpa as notas relacionadas e apaga o histórico de desfazer. Células reveladas ficam amarelas. Disponível em todos os níveis quando ativada nas Configurações.",
         ),
         (
             "🀄 Efeito Dominó",
