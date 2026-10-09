@@ -5,7 +5,8 @@
   "scripts": {
     "css": "tailwindcss -i style/input.css -o style/output.css --minify",
     "css:watch": "tailwindcss -i style/input.css -o style/output.css --watch",
-    "test": "cargo test"
+    "test": "cargo test",
+    "test:offline": "node tests/offline.test.mjs"
   },
   "repository": {
     "type": "git",

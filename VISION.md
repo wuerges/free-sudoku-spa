@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Build a free, open-source Sudoku game with no ads or trackers, designed first for phones and tablets. Players should be able to start quickly, resume their game, and eventually play reliably offline after the app has loaded once.
+Build a free, open-source Sudoku game with no ads or trackers, designed first for phones and tablets. Players should be able to start quickly, resume their game, and play offline after a successful online app installation.
 
 The primary interface language is Brazilian Portuguese. Rust and Leptos provide the client-side game and UI, compiled to WebAssembly. Static hosting serves the app; game generation and play do not require a backend.
 
@@ -37,11 +37,11 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 1. Offline play and updates
 
-**Current behavior:** `sw.js` precaches only `/manifest.json`. It uses network-first navigation and cache-first asset lookup, but does not store fetched HTML, WASM, JS, CSS, or icons. Full offline play after an initial visit is therefore not established.
+**Current behavior:** Trunk generates a content-versioned worker that precaches the complete app shell and assets. Controlled navigation serves the cached HTML for every SPA route, while assets come from the same bundle. Updates wait until all app tabs close; failed installations preserve the previous bundle.
 
-**Goal:** Cache a complete app shell and its required assets, provide an offline navigation fallback, and make deployed updates reach returning players without mixing incompatible bundle versions.
+**Verified:** Local Chromium checks at a phone-sized viewport cover offline reload on `/`, `/help`, and `/config`, query-string navigation, saved-game resume, new-game generation and completion, all precached assets, multi-tab updates, and failed-update recovery. The production build and worker regression tests pass.
 
-**Acceptance:** After a successful online load, reload and navigate the app offline, start and finish a puzzle, and resume saved progress. Then deploy a changed bundle and verify that returning players receive a consistent update. Check hosting cache headers alongside service-worker behavior.
+**Remaining validation:** Verify deployed cache headers and returning-player updates on a Vercel preview, and installation behavior on target Android devices. Offline operation requires successful installation and retained browser storage.
 
 ### 2. Difficulty quality
 
