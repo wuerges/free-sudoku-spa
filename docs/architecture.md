@@ -150,3 +150,14 @@ Layout changes do not alter serialization or saved preferences.
 `tests/ui-browser.mjs` covers responsive layouts, control sizing, keyboard
 operation, disclosure, sound, mode states, installation, reset, and reload.
 Screenshots under `docs/screenshots/ui-ux/` document the verified production UI.
+
+`GameState.drop_pick_solved` is a saved preference with a true serde default.
+In Drop mode, `select_cell` picks a nonzero correct value before attempting
+an entry, without creating history or editing the board. Normal selection
+and disabled-preference Drop entries keep their existing behavior. New games
+preserve the preference; configuration reset enables it.
+
+`number_is_solved` counts nine board/solution matches for a digit. Drop keypad
+buttons disable completed digits outside notes mode, and `enter_number` also
+blocks placement so picking a completed digit from a cell cannot bypass the
+rule. Notes remain editable; incorrect duplicates do not count as solved.

@@ -102,6 +102,8 @@ pub struct GameState {
     #[serde(skip)]
     pub drop_number: Option<u8>,
     #[serde(default = "yes")]
+    pub drop_pick_solved: bool,
+    #[serde(default = "yes")]
     pub undo_enabled: bool,
     #[serde(default = "yes")]
     pub auto_notes_enabled: bool,
@@ -161,6 +163,7 @@ impl Default for GameState {
             note_mode: false,
             drop_mode: false,
             drop_number: None,
+            drop_pick_solved: true,
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
@@ -191,6 +194,18 @@ impl GameState {
 
     pub fn get(&self, r: usize, c: usize) -> u8 {
         self.board[Self::idx(r, c)]
+    }
+
+    /// Completion counts only correct occurrences, never incorrect duplicates.
+    pub fn number_is_solved(&self, value: u8) -> bool {
+        (1..=9).contains(&value)
+            && self
+                .board
+                .iter()
+                .zip(self.solution.iter())
+                .filter(|(cell, solution)| **cell == value && cell == solution)
+                .count()
+                == 9
     }
 
     /// The digit being inspected; Drop mode owns the preview while enabled.
@@ -275,6 +290,9 @@ impl GameState {
     /// Apply a player entry; both normal and Drop mode use this transition.
     fn enter_number(&mut self, row: usize, col: usize, value: u8) -> bool {
         if self.is_locked(row, col) || self.won || self.paused || value > 9 {
+            return false;
+        }
+        if self.drop_mode && !self.note_mode && self.number_is_solved(value) {
             return false;
         }
         self.push_snapshot();
@@ -412,6 +430,7 @@ impl AppState {
                 note_mode: s.note_mode,
                 drop_mode: false,
                 drop_number: None,
+                drop_pick_solved: s.drop_pick_solved,
                 undo_enabled: s.undo_enabled,
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
@@ -439,7 +458,15 @@ impl AppState {
         let mut trigger_domino = false;
         self.0.update(|s| {
             if s.drop_mode {
-                if let Some(number) = s.drop_number {
+                let value = s.get(r, c);
+                if s.drop_pick_solved
+                    && !s.paused
+                    && !s.won
+                    && value != 0
+                    && value == s.solution[GameState::idx(r, c)]
+                {
+                    s.drop_number = Some(value);
+                } else if let Some(number) = s.drop_number {
                     trigger_domino = s.enter_number(r, c, number);
                 }
             }
@@ -481,6 +508,10 @@ impl AppState {
             s.drop_mode = !s.drop_mode;
             s.drop_number = None;
         });
+    }
+
+    pub fn toggle_drop_pick_solved(&self) {
+        self.0.update(|s| s.drop_pick_solved = !s.drop_pick_solved);
     }
 
     pub fn select_drop_number(&self, v: u8) {
@@ -587,6 +618,7 @@ impl AppState {
 
     pub fn reset_config(&self) {
         self.0.update(|s| {
+            s.drop_pick_solved = true;
             s.undo_enabled = true;
             s.auto_notes_enabled = true;
             s.hint_enabled = true;
@@ -862,6 +894,163 @@ mod tests {
         s.domino.empty_cell_threshold = 0;
         s.sound_type = SoundType::None;
         s
+    }
+
+    #[test]
+    fn drop_picks_solved_digits_without_editing_any_source_or_history() {
+        for source in ["given", "hint", "player"] {
+            for notes in [false, true] {
+                let mut s = domino_fixture();
+                s.board[17] = 0;
+                s.givens[17] = 0; // Keep the picked digit incomplete for placement.
+                if source != "given" {
+                    s.givens[2] = 0;
+                }
+                if source == "hint" {
+                    s.hinted[2] = s.board[2];
+                }
+                s.note_mode = notes;
+                s.history.push(Snapshot {
+                    board: s.board,
+                    notes: s.notes,
+                });
+                s.redo_stack = s.history.clone();
+                let before = serde_json::to_value(&s).unwrap();
+                let generation = s.domino_gen;
+                let app = AppState(RwSignal::new(s));
+                app.toggle_drop_mode();
+                app.select_drop_number(9);
+                for _ in 0..2 {
+                    app.select_cell(0, 2);
+                }
+                let after = app.0.get();
+                assert_eq!(after.drop_number, Some(after.solution[2]));
+                assert_eq!(after.selected, Some((0, 2)));
+                assert_eq!(after.domino_gen, generation);
+                let mut encoded = serde_json::to_value(&after).unwrap();
+                encoded["selected"] = before["selected"].clone();
+                assert_eq!(
+                    encoded, before,
+                    "picking must not mutate persisted gameplay"
+                );
+                app.select_cell(0, 0);
+                let entered = app.0.get();
+                if notes {
+                    assert_eq!(entered.notes[0], 511 ^ (1 << (after.solution[2] - 1)));
+                } else {
+                    assert_eq!(entered.board[0], after.solution[2]);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn solved_digit_pick_respects_mode_preference_and_game_guards() {
+        let mut s = domino_fixture();
+        s.givens[2] = 0;
+        s.board[8] = 0;
+        s.givens[8] = 0; // Nine must remain available for the legacy entry path.
+        let app = AppState(RwSignal::new(s));
+        app.select_cell(0, 2);
+        assert_eq!(app.0.get().drop_number, None);
+        assert!(!app.0.get().drop_mode);
+        app.toggle_drop_mode();
+        app.select_drop_number(9);
+        app.toggle_drop_pick_solved();
+        app.select_cell(0, 2);
+        assert_eq!(app.0.get().board[2], 9);
+        assert_eq!(app.0.get().drop_number, Some(9));
+        assert_eq!(app.0.get().history.len(), 1);
+        app.undo();
+        assert_eq!(app.0.get().board[2], 3);
+        app.toggle_drop_pick_solved();
+        app.0.update(|s| s.board[2] = 8); // Incorrect entries remain editable.
+        app.select_cell(0, 2);
+        assert_eq!(app.0.get().board[2], 9);
+        assert_eq!(app.0.get().drop_number, Some(9));
+        for won in [false, true] {
+            app.0.update(|s| {
+                s.board[2] = 3;
+                s.paused = !won;
+                s.won = won;
+            });
+            app.select_cell(0, 2);
+            assert_eq!(app.0.get().drop_number, Some(9));
+            assert_eq!(app.0.get().board[2], 3);
+        }
+    }
+
+    #[test]
+    fn completed_digits_block_drop_placement_but_allow_notes() {
+        let mut s = domino_fixture();
+        s.board = s.solution.map(|v| if v == 1 { 1 } else { 0 });
+        s.givens = s.board;
+        s.notes = [0; 81];
+        assert!(s.number_is_solved(1));
+        assert!(!s.number_is_solved(0));
+        assert!(!s.number_is_solved(2));
+        let app = AppState(RwSignal::new(s));
+        app.toggle_drop_mode();
+        app.select_cell(0, 0); // Picking a complete digit cannot bypass the guard.
+        assert_eq!(app.0.get().drop_number, Some(1));
+        let before = app.0.get();
+        app.select_cell(0, 1);
+        assert_eq!(app.0.get().board, before.board);
+        assert_eq!(app.0.get().history.len(), 0);
+        assert_eq!(app.0.get().error_count, before.error_count);
+        app.toggle_note_mode();
+        app.select_cell(0, 1);
+        assert_eq!(app.0.get().notes[1], 1);
+        app.select_cell(0, 1);
+        assert_eq!(app.0.get().notes[1], 0);
+        app.toggle_note_mode();
+        app.select_cell(0, 1);
+        assert_eq!(app.0.get().board[1], 0);
+        assert_eq!(app.0.get().history.len(), 2);
+        app.0.update(|s| {
+            s.board[0] = 0; // Eight correct ones plus one incorrect one is incomplete.
+            s.givens[0] = 0;
+            s.board[1] = 1;
+        });
+        assert!(!app.0.get().number_is_solved(1));
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().board[0], 1);
+        assert!(app.0.get().number_is_solved(1));
+        app.toggle_drop_pick_solved();
+        app.select_cell(0, 2);
+        assert_eq!(app.0.get().board[2], 0);
+    }
+
+    #[test]
+    fn solved_digit_pick_preference_is_compatible_persistent_and_resettable() {
+        let mut s = domino_fixture();
+        s.timer_seconds = 123;
+        s.error_count = 2;
+        s.selected = Some((0, 0));
+        s.history.push(Snapshot {
+            board: s.board,
+            notes: s.notes,
+        });
+        let mut legacy = serde_json::to_value(&s).unwrap();
+        legacy.as_object_mut().unwrap().remove("drop_pick_solved");
+        let loaded = decode_saved_state(&legacy.to_string()).unwrap();
+        assert!(loaded.drop_pick_solved);
+        assert_eq!(
+            serde_json::to_value(&loaded).unwrap(),
+            serde_json::to_value(&s).unwrap()
+        );
+        s.drop_pick_solved = false;
+        let loaded = decode_saved_state(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert!(!loaded.drop_pick_solved);
+        let app = AppState(RwSignal::new(loaded));
+        app.reset_config();
+        assert!(app.0.get().drop_pick_solved);
+        assert_eq!(app.0.get().board, s.board);
+        assert_eq!(app.0.get().timer_seconds, 123);
+        assert_eq!(app.0.get().history.len(), 1);
+        app.toggle_drop_pick_solved();
+        app.new_game(Difficulty::Easy);
+        assert!(!app.0.get().drop_pick_solved);
     }
 
     #[test]
@@ -1483,6 +1672,7 @@ mod tests {
             note_mode: false,
             drop_mode: false,
             drop_number: None,
+            drop_pick_solved: true,
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,

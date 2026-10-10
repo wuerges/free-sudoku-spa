@@ -39,17 +39,24 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
 
 #[component]
 fn NumberBtn(state: AppState, v: u8) -> impl IntoView {
-    let remaining = move || 9 - state.0.get().board.iter().filter(|&&c| c == v).count();
+    let disabled = move || {
+        let s = state.0.get();
+        if s.drop_mode {
+            !s.note_mode && s.number_is_solved(v)
+        } else {
+            s.board.iter().filter(|&&c| c == v).count() >= 9
+        }
+    };
     let drop_active = move || state.0.get().drop_mode && state.0.get().drop_number == Some(v);
 
     view! {
         <button
             aria-pressed=move || drop_active().to_string()
             class=move || {
-                if drop_active() {
-                    "flex items-center justify-center number-choice w-full rounded font-medium bg-primary text-on-primary active:bg-primary-hover transition-colors"
-                } else if remaining() == 0 && !state.0.get().drop_mode {
+                if disabled() {
                     "flex items-center justify-center number-choice w-full rounded font-medium bg-disabled text-muted transition-colors"
+                } else if drop_active() {
+                    "flex items-center justify-center number-choice w-full rounded font-medium bg-primary text-on-primary active:bg-primary-hover transition-colors"
                 } else {
                     "flex items-center justify-center number-choice w-full rounded font-medium bg-control text-text active:bg-selected transition-colors"
                 }
@@ -61,7 +68,7 @@ fn NumberBtn(state: AppState, v: u8) -> impl IntoView {
                     state.place_number(v);
                 }
             }
-            disabled=move || remaining() == 0 && !state.0.get().drop_mode
+            disabled=disabled
         >
             {v.to_string()}
         </button>

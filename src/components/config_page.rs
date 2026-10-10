@@ -113,7 +113,7 @@ pub fn ConfigPage() -> impl IntoView {
 
             <section class="settings-section" aria-labelledby="assistance-settings">
                 <h2 id="assistance-settings">"Assistências"</h2>
-                <p class="section-description">"Escolha quais botões aparecem durante o jogo."</p>
+                <p class="section-description">"Personalize os controles e as assistências durante o jogo."</p>
                 <PreferenceToggle id="undo-enabled" label="Desfazer / Refazer"
                     description="Mostrar os botões para voltar ou repetir uma jogada." icon=IconName::Undo
                     get=|s| s.undo_enabled toggle=|s| s.toggle_undo() />
@@ -123,6 +123,10 @@ pub fn ConfigPage() -> impl IntoView {
                 <PreferenceToggle id="hint-enabled" label="Dica"
                     description="Mostrar o botão que revela uma célula." icon=IconName::Hint
                     get=|s| s.hint_enabled toggle=|s| s.toggle_hint() />
+
+                <PreferenceToggle id="drop-pick-solved" label="Selecionar número pelas células resolvidas"
+                    description="No modo Drop, tocar em uma célula preenchida corretamente seleciona o número dela sem alterar a célula."
+                    icon=IconName::Drop get=|s| s.drop_pick_solved toggle=|s| s.toggle_drop_pick_solved() />
 
                 <div class="domino-preferences" aria-labelledby="domino-settings">
                     <h3 id="domino-settings">"Efeito dominó"</h3>
