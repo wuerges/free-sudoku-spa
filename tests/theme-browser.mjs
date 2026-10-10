@@ -70,13 +70,13 @@ try {
     }
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
-    await cell(fixture.user).click();await page.getByRole('button',{name:'⌫ Apagar',exact:true}).click();
+    await cell(fixture.user).click();await page.getByRole('button',{name:'Apagar',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
-    await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
+    await page.getByRole('button',{name:'Desfazer',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // A selected error keeps its error fill and selection outline.
     const wrong=[1,2,3,4,5,6,7,8,9].find(n=>n!==fixture.s.solution[fixture.user] && n!==fixture.s.solution[fixture.hint]);
-    await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${wrong}$`)}).click();
+    await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${wrong}$`)}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-cell-state'),'error');
     assert.equal(await cell(fixture.user).getAttribute('data-selected'),'true');
     assert.equal(await cell(fixture.user).locator('.cell-error-marker').innerText(),'!');
@@ -95,16 +95,16 @@ try {
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-desktop.png`),fullPage:true});
     // Drop preview uses the keypad digit rather than the selected cell's value.
-    await page.getByRole('button',{name:'🎯 Drop',exact:true}).click();
+    await page.getByRole('button',{name:'Drop',exact:true}).click();
     assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
     for(const digit of [1,7]) {
-      await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${digit}$`)}).click();
+      await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${digit}$`)}).click();
       const board=await page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')).board);
       await verifyPreview(board,digit);
     }
-    await page.locator('.grid-cols-9 > button').filter({hasText:/^7$/}).click();
+    await page.locator('.number-choices > button').filter({hasText:/^7$/}).click();
     assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
-    await page.getByRole('button',{name:'🎯 Drop ON',exact:true}).click();
+    await page.getByRole('button',{name:'Drop',exact:true}).click();
     // Load a real legacy save whose history predates a correct player entry.
     await page.evaluate(({s,user})=>{
       const legacy=structuredClone(s);delete legacy.givens;delete legacy.highlights;delete legacy.rating;delete legacy.requested_difficulty;
@@ -115,10 +115,10 @@ try {
     await page.reload();await page.locator('.sudoku-cell').first().waitFor();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'given');
     assert.match(await page.locator('header p').innerText(),/jogo anterior/);
-    await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
+    await page.getByRole('button',{name:'Desfazer',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
     await cell(fixture.user).click();
-    await page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${fixture.s.solution[fixture.user]}$`)}).click();
+    await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${fixture.s.solution[fixture.user]}$`)}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // Preferences persist, affect each source independently, and reset safely.
     await page.setViewportSize({width:390,height:844});
@@ -188,7 +188,7 @@ try {
       assert.equal(e.blocker,related?'selected':'none');
     }
     await page.goto(url+'/config');
-    await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
+    await page.getByRole('button',{name:'Restaurar padrões',exact:true}).click();
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'20');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'20');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'100');

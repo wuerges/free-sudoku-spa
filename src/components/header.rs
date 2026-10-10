@@ -1,3 +1,4 @@
+use crate::components::icon::{Icon, IconName};
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
@@ -44,45 +45,34 @@ pub fn Header() -> impl IntoView {
     };
 
     view! {
-        <header class="w-full max-w-[min(90vw,500px)] mx-auto flex items-center justify-between pt-2">
-            <div class="min-w-0 pr-2">
-                <h1 class="text-lg sm:text-xl font-bold">"Sudoku"</h1>
-                <p class="text-xs text-muted">{difficulty_label}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <A
-                    href="/config"
-                    attr:aria-label="Configurações"
-                    attr:class="text-xl px-1 active:bg-control-hover select-none no-underline text-inherit"
-                >
-                    "⚙"
-                </A>
-                <A
-                    href="/help"
-                    attr:aria-label="Ajuda"
-                    attr:class="text-xl px-1 active:bg-control-hover select-none font-bold no-underline text-inherit"
-                >
-                    "?"
-                </A>
-                <button
-                    class="text-2xl active:bg-control-hover select-none"
-                    aria-label=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
-                    on:click=move |_| dark_mode.update(|d| *d = !*d)
-                >
-                    {move || if dark_mode.get() { "☀️" } else { "🌙" }}
-                </button>
-                <Show when=move || install_visible.get()>
-                    <button
-                        class="px-3 py-1 rounded-lg text-sm font-medium bg-success text-success-text active:bg-success select-none"
-                        on:click=move |_| {
-                            let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
-                            install_visible.set(false);
-                        }
-                    >
-                        "📲 Instalar"
+        <header class="game-header">
+            <div class="header-main">
+                <div class="min-w-0 pr-2">
+                    <h1 class="text-xl font-bold">"Sudoku"</h1>
+                    <p class="text-xs text-muted leading-relaxed">{difficulty_label}</p>
+                </div>
+                <nav class="header-tools" aria-label="Opções do jogo">
+                    <A href="/config" attr:aria-label="Configurações" attr:title="Configurações" attr:class="ui-icon-button">
+                        <Icon name=IconName::Settings />
+                    </A>
+                    <A href="/help" attr:aria-label="Ajuda" attr:title="Ajuda" attr:class="ui-icon-button">
+                        <Icon name=IconName::Help />
+                    </A>
+                    <button class="ui-icon-button" aria-label=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
+                        title=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
+                        on:click=move |_| dark_mode.update(|d| *d = !*d)>
+                        {move || view! { <Icon name=if dark_mode.get() { IconName::Sun } else { IconName::Moon } /> }}
                     </button>
-                </Show>
+                </nav>
             </div>
+            <Show when=move || install_visible.get()>
+                <div class="install-row">
+                    <button class="ui-action" on:click=move |_| {
+                        let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
+                        install_visible.set(false);
+                    }><Icon name=IconName::Install />"Instalar aplicativo"</button>
+                </div>
+            </Show>
         </header>
     }
 }

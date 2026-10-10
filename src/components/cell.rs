@@ -71,7 +71,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
         <button
             type="button"
             class=move || format!(
-                "sudoku-cell relative flex items-center justify-center w-full aspect-square text-lg sm:text-2xl select-none border-[0.5px] transition-colors {}",
+                "sudoku-cell relative flex items-center justify-center w-full aspect-square select-none border-[0.5px] transition-colors {}",
                 if state.0.get().just_filled == Some((row, col)) { "cell-flash" } else { "" },
             )
             data-row=row data-col=col
@@ -108,7 +108,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                             <span class=move || {
                                 let s = state.0.get();
                                 let matches = s.active_number() == Some(note);
-                                format!("flex items-center justify-center text-[8px] sm:text-[10px] leading-none {}",
+                                format!("cell-note flex items-center justify-center leading-none {}",
                                     if matches { "text-accent font-bold underline" } else { "text-notes" })
                             }>{move || if active() { note.to_string() } else { String::new() }}</span>
                         }

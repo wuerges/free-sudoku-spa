@@ -26,7 +26,7 @@ try {
   console.log('AUDIT,requested,run,clues,handler_ms,measured,technique,grader_version');
   for(const [requested,label] of [['Easy','Fácil'],['Medium','Médio'],['Hard','Difícil'],['Expert','Expert'],['Master','Mestre']]) {
     for(let run=0;run<20;run++) {
-      await page.getByRole('button',{name:/Novo Jogo/}).click();
+      await page.getByRole('button',{name:/Novo jogo/}).click();
       await page.getByRole('button',{name:label,exact:true}).waitFor();
       const result=await page.evaluate(async label=>{
         const button=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);

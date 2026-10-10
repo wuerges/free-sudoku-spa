@@ -59,6 +59,18 @@ These statements describe code present in the repository. Browser behavior, perf
 
 Color-token tests cover text and indicator contrast in both themes, including a 5.5:1 board-text target and stronger separation of highlight fills. Original clues, player entries, hints, errors, selection, matching numbers, and row/column/box peers have distinct treatments. Selecting a filled cell or Drop digit previews legal empty cells with a brighter fill/dot and uses opposite diagonal stripe directions for empties blocked by the selected occurrence or other matching numbers, using current rules rather than the solution. Three shading sliders (selection/peers, matching blockers, available cells) and dot/stripe checkboxes persist as compatible settings and survive new games. A full keyboard/screen-reader and target-device audit remains open.
 
+The control review adds consistent local line icons, larger action targets,
+above-board game status, and a two-column assistance group. Settings groups
+highlights, assistances, and sound, with timing behind a native disclosure and
+explicit sound choices. Tablet layouts enlarge the board with controls below
+it; the installed PWA stays locked to portrait. Chromium audits cover
+320–1280px layouts, including tablet portrait and browser resizing, in both themes,
+control sizing, keyboard focus/tab order, radio/slider/disclosure operation,
+mode states, settings persistence/reset, and installation placement. The
+[screenshot gallery](docs/screenshots/ui-ux/README.md) records the production UI.
+These checks do not replace a full board keyboard, screen-reader, or physical
+phone/tablet audit.
+
 ### 4. Persistence and reliability
 
 **Goal:** Resume progress safely and make storage failures understandable without breaking gameplay.
