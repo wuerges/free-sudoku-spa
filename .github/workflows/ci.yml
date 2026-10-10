@@ -20,13 +20,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: '24'
       - run: sh scripts/setup-build.sh
-      - run: npm run test:build && npm run test:theme && npm run test:release
+      - run: npm run test:build && npm run test:dev && npm run test:theme && npm run test:release
       - run: |
           export SUDOKU_PROJECT_ROOT="$GITHUB_WORKSPACE"
           . scripts/build-env.sh
-          rustup component add rustfmt clippy
           cargo fmt --check
           cargo test --locked
           cargo check --locked --target wasm32-unknown-unknown
@@ -54,7 +53,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: '24'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: release-metadata

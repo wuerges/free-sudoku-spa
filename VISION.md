@@ -79,7 +79,7 @@ phone/tablet audit.
 
 ### 5. Build and deployment consistency
 
-**Current behavior:** Local and Vercel builds use the npm lockfile for Tailwind. Vercel has separate installation and build phases, with pinned project-local Rust/Trunk tooling and locked Cargo dependencies. GitHub Actions checks PRs and publishes version tags/releases after merged PRs on main pass validation.
+**Current behavior:** Local and Vercel builds use Node 24 and the npm lockfile for Tailwind. Vercel has separate installation and build phases, with pinned project-local Rust/Trunk tooling and locked Cargo dependencies. Just development/validation targets share the pinned toolchain; `just dev` supplies debug builds with Rust/CSS reload and isolated output. GitHub Actions checks PRs and publishes version tags/releases after merged PRs on main pass validation.
 
 **Goal:** Use a reproducible toolchain across development and hosting, with suitable compilation, lint, test, and production-build checks.
 

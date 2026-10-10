@@ -29,9 +29,9 @@
 
 The npm lockfile supplies Tailwind's CLI. `just css` produces `style/output.css`; Trunk bundles Rust/WASM and the linked assets into `dist/`. These outputs are ignored by version control.
 
-`Trunk.toml` configures the bundle. Vercel explicitly uses the Other framework preset and Node.js 22. Its install phase runs `scripts/setup-build.sh` to install locked npm dependencies, Rust 1.98.1 with the WASM target, and checksum-verified Trunk 0.21.14. Rust and Trunk live under ignored `.build-tools/`; the bootstrap supports Linux x86_64 and aarch64 and requires network access on a clean install.
+`Trunk.toml` configures the bundle. Vercel explicitly uses the Other framework preset and Node.js 24. Its install phase runs `scripts/setup-build.sh` to install locked npm dependencies, Rust 1.98.1 with the WASM target, and checksum-verified Trunk 0.21.14. Rust and Trunk live under ignored `.build-tools/`; the bootstrap supports Linux x86_64 and aarch64 and requires network access on a clean install.
 
-Both setup and `build.sh` source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Standard development commands still use shell-installed Rust/Trunk; the compiler is pinned by `rust-toolchain.toml`. Static hosting retains SPA rewrites and the versioned offline hook. `.github/workflows/ci.yml` validates PRs and gates releases on tests and the production build. `scripts/release-policy.mjs` checks synchronized versions, changelog entries, and the declared saved-game compatibility against the PR base. After a merged PR reaches main, a separate job publishes a version tag and release with narrowly scoped write permissions. Reruns verify that any existing tag targets the same commit.
+Setup, `build.sh`, and the Just command wrapper source `scripts/build-env.sh` for identical project-local tool paths. The build phase runs offline regression tests, uses npm's locked Tailwind CLI, and runs Trunk with `--release --locked`. `just build` invokes the same build script. Just development and validation commands use the same project-local tools; setup includes rustfmt and Clippy. `.nvmrc`, npm engine metadata and CI select Node 24, and scripts reject other Node majors. Static hosting retains SPA rewrites and the versioned offline hook. `.github/workflows/ci.yml` validates PRs and gates releases on tests and the production build. `scripts/release-policy.mjs` checks synchronized versions, changelog entries, and the declared saved-game compatibility against the PR base. After a merged PR reaches main, a separate job publishes a version tag and release with narrowly scoped write permissions. Reruns verify that any existing tag targets the same commit.
 
 ## Persistence and change boundaries
 
@@ -161,3 +161,14 @@ preserve the preference; configuration reset enables it.
 buttons disable completed digits outside notes mode, and `enter_number` also
 blocks placement so picking a completed digit from a cell cannot bypass the
 rule. Notes remain editable; incorrect duplicates do not count as solved.
+
+## Local development
+
+`just dev` (also `just serve`) invokes `scripts/with-build-env.sh` and
+`trunk serve --config Trunk.dev.toml --locked`. The development configuration
+uses debug builds in `.dev-dist/` and watches source inputs rather than
+installed tools, generated CSS, or build outputs. A pre-build npm hook rebuilds
+Tailwind when Rust/CSS input changes. The post-build development hook stages a
+network-only worker that takes over older local Sudoku workers and clears only
+Sudoku caches. Production `Trunk.toml` keeps the content-versioned offline hook
+and `dist/` output. Saved-game storage is unchanged in both modes.

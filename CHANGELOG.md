@@ -5,6 +5,18 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.16.0]
+
+### Added
+
+- `just dev` provides a single-command debug server with Rust/CSS reload, isolated development output, and a network-only development worker.
+- Setup, formatting and tooling-validation targets use the pinned project-local tools.
+
+### Changed
+
+- Local setup, npm engine metadata and CI use Node.js 24.
+- `just serve` aliases `just dev`; the local CI target includes formatting and tooling regressions, and cleanup includes development output.
+
 ## [0.15.0]
 
 ### Added
