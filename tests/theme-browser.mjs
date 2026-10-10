@@ -134,7 +134,7 @@ try {
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'0');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'65');
     assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'35');
-    assert.equal(await page.getByRole('slider').count(),3);
+    assert.equal(await page.locator('section[aria-labelledby="highlight-settings"]').getByRole('slider').count(),3);
     assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),false);
     await page.locator('#loading').waitFor({state:'detached'});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -189,9 +189,9 @@ try {
     }
     await page.goto(url+'/config');
     await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
-    assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'100');
-    assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'100');
-    assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'0');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pela seleção'}).inputValue(),'20');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento pelos iguais'}).inputValue(),'20');
+    assert.equal(await page.getByRole('slider',{name:'Sombreamento das células disponíveis'}).inputValue(),'100');
     assert.equal(await page.getByRole('checkbox',{name:'Pontos nas células disponíveis'}).isChecked(),true);
     assert.equal(await page.getByRole('checkbox',{name:'Listras nas células bloqueadas'}).isChecked(),true);
     assert.deepEqual(errors,[]);

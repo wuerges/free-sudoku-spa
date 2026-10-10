@@ -73,7 +73,7 @@ src/
 ## Features
 
 - 5 difficulty levels (Easy → Master) with unique-solution puzzles generated client-side in Rust/WASM
-- **Efeito Dominó**: after a correct normal or Drop entry, auto-fills empty cells with exactly one candidate from a simple row/column/3×3 box scan. Saved settings control initial delay, acceleration, minimum delay (defaults: 600ms → *0.8 → min 100ms), and an empty-cell threshold (0: no limit; positive: at most that many empties after the entry). Cascades stop on pause, game replacement, settings changes, or further board/note edits
+- **Efeito Dominó**: after a correct normal or Drop entry, auto-fills empty cells with exactly one candidate from a simple row/column/3×3 box scan. Saved settings control initial delay, acceleration, minimum delay (defaults: 600ms → *0.8 → min 100ms), and an empty-cell threshold (enabled by default at 10 empty cells; 0: no limit; positive: at most that many empties after the entry). Cascades stop on pause, game replacement, settings changes, or further board/note edits
 - Sound on correct guess: beep, explosion (default), or off
 - Pencil-mark notes mode with per-cell candidates
 - **🎯 Drop mode**: select a number, then tap cells to place or note it in bulk
@@ -169,7 +169,8 @@ matching-number blockers, and available empty cells. Zero uses the normal cell
 background without stripes; 100 uses a strong shade. An empty selection also
 highlights its row/column/box and available empties outside those groups.
 Dots/stripes have independent toggles. Preferences survive reloads/new games;
-reset restores 100% selection/matching, 0% available shading, and both toggles.
+defaults and reset use 20% selection/matching, 100% available shading, and both toggles.
+Explicit saved preferences remain unchanged.
 This preview does not reveal the solution or prevent entering a number.
 
 `npm run test:theme` checks text and indicator contrast; this is a color check,

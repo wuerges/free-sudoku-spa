@@ -8,12 +8,6 @@ use serde::{Deserialize, Serialize};
 const fn yes() -> bool {
     true
 }
-const fn full_shading() -> u8 {
-    100
-}
-const fn no() -> bool {
-    false
-}
 const fn empty_givens() -> [u8; 81] {
     [0; 81]
 }
@@ -39,9 +33,9 @@ pub struct HighlightSettings {
 impl Default for HighlightSettings {
     fn default() -> Self {
         Self {
-            selected_shading: full_shading(),
-            matching_shading: full_shading(),
-            available_shading: 0,
+            selected_shading: 20,
+            matching_shading: 20,
+            available_shading: 100,
             dots: true,
             stripes: true,
         }
@@ -64,7 +58,7 @@ impl Default for DominoSettings {
             initial_delay_ms: 600,
             acceleration_percent: 20,
             minimum_delay_ms: 100,
-            empty_cell_threshold: 0,
+            empty_cell_threshold: 10,
         }
     }
 }
@@ -113,7 +107,7 @@ pub struct GameState {
     pub auto_notes_enabled: bool,
     #[serde(default = "yes")]
     pub hint_enabled: bool,
-    #[serde(default = "no")]
+    #[serde(default = "yes")]
     pub domino_enabled: bool,
     #[serde(default)]
     pub sound_type: SoundType,
@@ -170,7 +164,7 @@ impl Default for GameState {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
-            domino_enabled: false,
+            domino_enabled: true,
             domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),
@@ -597,7 +591,7 @@ impl AppState {
             s.auto_notes_enabled = true;
             s.hint_enabled = true;
             s.cancel_domino();
-            s.domino_enabled = false;
+            s.domino_enabled = true;
             s.domino = DominoSettings::default();
             s.sound_type = SoundType::default();
             s.highlights = HighlightSettings::default();
@@ -871,6 +865,7 @@ mod tests {
         s.givens = s.board;
         s.notes = [511; 81];
         s.domino_enabled = true;
+        s.domino.empty_cell_threshold = 0;
         s.sound_type = SoundType::None;
         s
     }
@@ -1116,7 +1111,43 @@ mod tests {
         app.reset_config();
         assert_eq!(app.0.get().board, board);
         assert_eq!(app.0.get().domino, DominoSettings::default());
-        assert!(!app.0.get().domino_enabled);
+        assert!(app.0.get().domino_enabled);
+    }
+
+    #[test]
+    fn config_defaults_preserve_explicit_saved_preferences() {
+        let mut s = GameState::default();
+        assert_eq!(s.highlights.selected_shading, 20);
+        assert_eq!(s.highlights.matching_shading, 20);
+        assert_eq!(s.highlights.available_shading, 100);
+        assert!(s.domino_enabled);
+        assert_eq!(s.domino.empty_cell_threshold, 10);
+        // The previous release's defaults are explicit saved preferences too.
+        s.highlights = HighlightSettings {
+            selected_shading: 100,
+            matching_shading: 100,
+            available_shading: 0,
+            dots: false,
+            stripes: false,
+        };
+        s.domino_enabled = false;
+        s.domino.empty_cell_threshold = 0;
+        s.push_snapshot();
+        let mut saved = serde_json::to_value(&s).unwrap();
+        let restored = decode_saved_state(&saved.to_string()).unwrap();
+        assert_eq!(restored.highlights, s.highlights);
+        assert!(!restored.domino_enabled);
+        assert_eq!(restored.domino.empty_cell_threshold, 0);
+        for field in ["highlights", "domino_enabled", "domino"] {
+            saved.as_object_mut().unwrap().remove(field);
+        }
+        let restored = decode_saved_state(&saved.to_string()).unwrap();
+        assert_eq!(restored.highlights, HighlightSettings::default());
+        assert!(restored.domino_enabled);
+        assert_eq!(restored.domino.empty_cell_threshold, 10);
+        assert_eq!(restored.board, s.board);
+        assert_eq!(restored.notes, s.notes);
+        assert_eq!(restored.history[0].board, s.history[0].board);
     }
 
     #[test]
@@ -1141,7 +1172,7 @@ mod tests {
         let migrated = decode_saved_state(&two_slider_save.to_string()).unwrap();
         assert_eq!(migrated.highlights.selected_shading, 25);
         assert_eq!(migrated.highlights.matching_shading, 70);
-        assert_eq!(migrated.highlights.available_shading, 0);
+        assert_eq!(migrated.highlights.available_shading, 100);
         assert!(!migrated.highlights.dots && !migrated.highlights.stripes);
         assert_eq!(migrated.board, s.board);
         saved.as_object_mut().unwrap().remove("highlights");
@@ -1152,7 +1183,9 @@ mod tests {
         assert_eq!(legacy.history.len(), s.history.len());
         saved["highlights"] = serde_json::json!({"selected_shading": 200});
         let partial = decode_saved_state(&saved.to_string()).unwrap();
-        assert_eq!(partial.highlights, HighlightSettings::default());
+        assert_eq!(partial.highlights.selected_shading, 100);
+        assert_eq!(partial.highlights.matching_shading, 20);
+        assert_eq!(partial.highlights.available_shading, 100);
     }
 
     #[test]
@@ -1459,7 +1492,7 @@ mod tests {
             undo_enabled: true,
             auto_notes_enabled: true,
             hint_enabled: true,
-            domino_enabled: false,
+            domino_enabled: true,
             domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),

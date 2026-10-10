@@ -44,7 +44,7 @@ try {
       await page.reload(); await ready();
     }
     await seed({legacy:true});
-    assert.deepEqual((await read()).domino, {initial_delay_ms:600, acceleration_percent:20, minimum_delay_ms:100, empty_cell_threshold:0});
+    assert.deepEqual((await read()).domino, {initial_delay_ms:600, acceleration_percent:20, minimum_delay_ms:100, empty_cell_threshold:10});
     assert.equal((await read()).board.filter(v=>v===0).length,3); // Reload does not start a chain.
     await page.goto(url+'/config'); await ready();
     for(const [id,value] of [['domino-initial','1000'],['domino-acceleration','10'],['domino-minimum','250'],['domino-threshold','2']]) {
@@ -61,8 +61,9 @@ try {
     assert.equal((await read()).domino.empty_cell_threshold,2);
     await page.goto(url+'/config'); await ready();
     await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
-    assert.equal((await read()).domino_enabled,false);
-    assert.equal((await read()).domino.empty_cell_threshold,0);
+    assert.equal((await read()).domino_enabled,true);
+    assert.equal((await read()).domino.empty_cell_threshold,10);
+    assert.deepEqual((await read()).highlights, {selected_shading:20, matching_shading:20, available_shading:100, dots:true, stripes:true});
 
     for(const drop of [false,true]) {
       await seed({threshold:2});

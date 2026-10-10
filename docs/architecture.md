@@ -78,7 +78,7 @@ no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
 matching-source blockers.
 
 `GameState.highlights` persists a serde-defaulted `HighlightSettings` object.
-Selection/matching shading default to 100; available shading defaults to zero.
+Selection/matching shading default to 20; available shading defaults to 100.
 Dots/stripes default to enabled.
 Partial settings use the same defaults, loading clamps percentages to 0–100,
 new games preserve preferences, and reset restores defaults without changing
@@ -113,8 +113,10 @@ See [the implemented policy](difficulty-policy.md) for bounds and calibration.
 
 ## Domino cascades
 
-`GameState.domino` stores serde-defaulted `DominoSettings`; existing saves keep
-600ms initial delay, 20% acceleration, 100ms minimum, and no empty-cell limit.
+`GameState.domino` stores serde-defaulted `DominoSettings`. Defaults use
+600ms initial delay, 20% acceleration, 100ms minimum, and a 10-empty-cell limit,
+with domino enabled. Explicit saved settings remain unchanged; missing settings
+and configuration reset use these defaults.
 Settings are normalized on load and through the setter and survive new games.
 Normal and Drop entries share one transition. Only correct entries start a
 cascade; enabling, loading, or changing settings does not auto-start it.
