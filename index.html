@@ -5,7 +5,7 @@
     document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
   </script>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <link rel="manifest" href="/manifest.json" />
   <link data-trunk rel="copy-file" href="manifest.json" />
   <link data-trunk rel="copy-file" href="sw.js" />
@@ -49,6 +49,15 @@
     }
   </style>
   <script>
+    if (window.__SUDOKU_NATIVE__) {
+      document.addEventListener('click', function(event) {
+        const link = event.target.closest('a[href]');
+        if (link && new URL(link.href, location.href).origin !== location.origin) {
+          event.preventDefault();
+          location.href = link.href;
+        }
+      });
+    }
     window.__sudoku = window.__sudoku || {};
     window.__sudoku._installPrompt = null;
     window.__sudoku.showInstall = function() {
@@ -57,12 +66,12 @@
         window.__sudoku._installPrompt = null;
       }
     };
-    window.addEventListener('beforeinstallprompt', function(e) {
+    if (!window.__SUDOKU_NATIVE__) window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       window.__sudoku._installPrompt = e;
       window.dispatchEvent(new CustomEvent('sudoku:installavailable'));
     });
-    if ('serviceWorker' in navigator) {
+    if (!window.__SUDOKU_NATIVE__ && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
         .catch(error => console.warn('Offline installation failed:', error));
     }

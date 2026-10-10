@@ -1,0 +1,6 @@
+{
+  "appId": "io.github.wuerges.sudoku",
+  "appName": "Sudoku",
+  "webDir": ".android-web",
+  "server": { "hostname": "localhost", "androidScheme": "https" }
+}

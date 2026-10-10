@@ -270,3 +270,10 @@ See [the implemented policy and measurements](docs/difficulty-policy.md) and
 `cargo test --release audit_difficulty_settings -- --ignored --nocapture` for
 native measurements, or `tests/difficulty-browser.mjs` with the optional
 Playwright environment above for offline WASM measurements.
+
+## Android APK distribution
+
+See [Android setup and release acceptance](docs/android.md) for bundled offline APKs,
+`just android-*` commands, private signing secrets, saves and GitHub release retries.
+Web development does not require an Android SDK. Build support is implemented;
+signed publication and physical-device acceptance remain pending.
