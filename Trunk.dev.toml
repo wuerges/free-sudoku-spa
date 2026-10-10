@@ -1,0 +1,18 @@
+[build]
+target = "index.html"
+dist = ".dev-dist"
+release = false
+filehash = true
+
+[watch]
+watch = ["src", "style/input.css", "index.html", "manifest.json", "public", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Trunk.dev.toml", "scripts/dev-bundle.mjs", "scripts/dev-worker.js"]
+
+[[hooks]]
+stage = "pre_build"
+command = "npm"
+command_arguments = ["run", "css"]
+
+[[hooks]]
+stage = "post_build"
+command = "node"
+command_arguments = ["scripts/dev-bundle.mjs"]

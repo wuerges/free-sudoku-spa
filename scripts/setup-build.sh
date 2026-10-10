@@ -33,6 +33,7 @@ if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
 fi
 "$CARGO_HOME/bin/rustup" toolchain install "$SUDOKU_RUST_VERSION" --profile minimal --no-self-update
 "$CARGO_HOME/bin/rustup" target add --toolchain "$SUDOKU_RUST_VERSION" wasm32-unknown-unknown
+"$CARGO_HOME/bin/rustup" component add --toolchain "$SUDOKU_RUST_VERSION" rustfmt clippy
 
 if [ ! -x "$SUDOKU_TOOLS/bin/trunk" ] || [ "$("$SUDOKU_TOOLS/bin/trunk" --version)" != "trunk $SUDOKU_TRUNK_VERSION" ]; then
     SUDOKU_TRUNK_URL="https://github.com/trunk-rs/trunk/releases/download/v$SUDOKU_TRUNK_VERSION/trunk-$SUDOKU_TRUNK_ARCH.tar.gz"

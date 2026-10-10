@@ -12,43 +12,66 @@ Sudoku Progressive Web App built with Rust, Leptos, and WebAssembly. Supports of
 
 ## Setup
 
-Use Node.js 22 and npm. On Linux x86_64 or aarch64, install the pinned build
-stack and locked CSS dependencies without global Rust or Trunk installations:
+Use Node.js 24 and npm. With nvm, the checked-in `.nvmrc` selects Node 24:
 
 ```bash
-sh scripts/setup-build.sh
-just build
+nvm install
+nvm use
+just setup
+just dev
 ```
 
-Setup installs Rust 1.98.1 with the WASM target and checksum-verified Trunk
-0.21.14 under the ignored `.build-tools/` directory. It runs `npm ci`; both
-Vercel and `just build` use these project-local tools and the same npm lockfile.
-Network access is required for a clean setup. Rerunning setup reuses installed
-build tools while reinstalling the locked npm dependencies.
-
-For development commands (`just serve`, `just test`, `just check`), install
-Rust with rustup and Trunk 0.21.14 in your normal shell. `rust-toolchain.toml`
-pins the compiler and WASM target; Node/npm supply CSS tooling. The project-local
-bootstrap supports Linux only; normal development tooling can be used on other
-platforms.
+`just setup` installs the pinned Rust 1.98.1 compiler, WASM target, rustfmt,
+Clippy and checksum-verified Trunk 0.21.14 under `.build-tools/`, then uses
+locked npm dependencies. Setup requires network access and supports Linux
+x86_64/aarch64. `just` itself must be installed. If you do not use nvm, select
+Node 24 with your preferred version manager first.
 
 ## Run
 
+`just dev` is the local development target at http://localhost:8080. It uses
+debug builds and rebuilds Tailwind CSS on Rust/CSS changes before Trunk reloads
+the browser. No separate CSS watcher is needed. `just serve` is an alias for
+this same command. Both accept Trunk options, for example:
+
 ```bash
-just serve     # dev server + hot reload
-# or manually:
-npm run css:watch &
-trunk serve
+just dev --port 8081
+just dev --address 0.0.0.0 --port 8081  # access from a tablet on your LAN
 ```
+
+Development assets go to `.dev-dist/`; `just build` produces the release PWA
+in `dist/`. The development worker clears older Sudoku caches on that local
+origin and lets requests use the network, so cached production assets cannot
+hide edits. It preserves saved games. If you previously installed a release
+on the same localhost origin, reload once after the development worker activates.
+Use a different port when previewing a release alongside the development app.
+
+All Just Rust targets use the project-local toolchain installed by `just setup`.
+For platforms unsupported by setup, install the pinned Rust/Trunk tools and
+Node 24 manually, then use `npm ci` and `trunk serve --config Trunk.dev.toml --locked`.
 
 ## Commands
 
 ```bash
-just build     # release build → dist/
-just test      # cargo test
-just check     # cargo check + clippy
-just serve     # dev server
+just setup        # install project-local tools and locked npm dependencies
+just dev          # debug server + Rust/CSS reload → .dev-dist/
+just serve        # alias for dev
+just build        # release PWA build → dist/
+just fmt          # check Rust formatting
+just test         # engine/state tests
+just check        # WASM compilation + Clippy
+just test-tooling # build/dev/offline/contrast/release regression tests
+just ci           # all validation above + release build
+just css          # standalone CSS build
+just css-watch    # optional standalone CSS watcher
+just clean        # remove dist/, .dev-dist/ and target/; preserve tools/dependencies
 ```
+
+With Playwright available, run `node tests/dev-browser.mjs` after `just build`
+to check offline release routes, development cache takeover, saved progress,
+mobile/tablet layouts and automatic Rust/CSS reload. The audit temporarily edits
+two source files and restores them; run it without concurrent source edits.
+Set `PLAYWRIGHT_MODULE` to the module path if Playwright is installed elsewhere.
 
 ## Project
 
@@ -97,7 +120,7 @@ src/
 
 ## Deploy
 
-Vercel uses the Other framework preset (`framework: null`) and Node.js 22.
+Vercel uses the Other framework preset (`framework: null`) and Node.js 24.
 Its install phase runs `sh scripts/setup-build.sh`; its build phase runs
 `sh build.sh`, which checks offline regressions, builds locked Tailwind CSS,
 and runs `trunk build --release --locked`. The output directory is `dist/`.
@@ -120,9 +143,9 @@ Use `jj` for version control. See [the architecture guide](docs/architecture.md)
 for source responsibilities and [VISION.md](VISION.md) for product direction and known gaps.
 Track unresolved work in [ISSUES.md](ISSUES.md); remove issues when they are solved and verified.
 
-Run `just css-watch` in a second terminal when changing Tailwind styles during
-`just serve`. Run `cargo fmt --check`, `just test`, and `just check` for Rust
-changes, and `just build` to verify the production bundle.
+`just dev` rebuilds CSS automatically on relevant source changes. Run `just fmt`,
+`just test`, and `just check` for Rust changes, and `just build` to verify the
+production bundle.
 
 ## Offline reload and updates
 
