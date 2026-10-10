@@ -91,8 +91,8 @@ try {
     assert.equal(await number(1).isDisabled(),true);await cell(1).click();assert.equal((await read()).board[1],0);
     s.board[0]=0;s.givens[0]=0;s.board[1]=1; // Nine visible ones, only eight correct.
     await seed();await page.getByRole('button',{name:'Drop',exact:true}).click();
-    assert.equal(await number(1).isEnabled(),true);await number(1).click();await cell(0).click();
-    assert.equal((await read()).board[0],1);assert.equal(await number(1).isDisabled(),true);
+    assert.equal(await number(1).isEnabled(),true);assert.equal(await number(1).getAttribute('data-completed'),'false');await number(1).click();await cell(0).click();
+    assert.equal((await read()).board[0],1);assert.equal(await number(1).isDisabled(),true);assert.equal(await number(1).getAttribute('data-completed'),'true');
     assert.deepEqual(errors,[]);await context.close();
     console.log(`PASS solved-cell Drop selection: ${theme}, ${width}px; legacy save, picking, notes, disabled behavior, reload, new game, reset and completed-number placement/notes`);
   }

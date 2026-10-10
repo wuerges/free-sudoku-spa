@@ -185,3 +185,16 @@ opens external origins through Android intents. Gradle derives version metadata
 from npm and requires private credentials for release signing. State serialization
 is unchanged. Android checks and publication use separate workflows; see
 [Android documentation](android.md) for acceptance limits and signing setup.
+
+## Completed keypad contrast
+
+`HighlightSettings.completed_contrast` is a serde-defaulted 0–100 percentage,
+with a default of 100 and load-time clamping. Existing saves gain only this
+preference; board, notes and history are unchanged. New games retain the setting
+and configuration reset restores its default. `NumberPad` exposes it as the
+`--completed-contrast` CSS property. `NumberBtn` uses `number_is_solved` for its
+completion marker and accessible description independently of disabling/Drop
+selection, so incorrect duplicates never gain the completed style. A dedicated
+settings slider controls the fill and outline; text remains readable throughout
+the range, and the checkmark remains present at zero. Selected Drop buttons use
+the existing selected colors. Styling does not change entry rules.
