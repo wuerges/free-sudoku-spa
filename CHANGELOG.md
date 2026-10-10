@@ -5,6 +5,22 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.12.0]
+
+### Added
+
+- Saved domino preferences for initial delay, acceleration, minimum delay, and the empty-cell activation threshold (zero means no limit).
+
+### Changed
+
+- Correct normal and Drop-mode entries trigger the same domino behavior, using only single candidates from row, column, and 3×3 box constraints.
+
+### Fixed
+
+- Queued cascades stop after disabling/resetting/changing settings, pausing, starting a new game, undo/redo, hints, or further board/note edits.
+- Domino skips candidates inconsistent with the solution instead of propagating incorrect player entries.
+- Settings and help describe the actual configurable timing; existing saves retain progress and receive compatible defaults.
+
 ## [0.11.0]
 
 ### Added

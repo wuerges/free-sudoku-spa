@@ -73,7 +73,7 @@ src/
 ## Features
 
 - 5 difficulty levels (Easy → Master) with unique-solution puzzles generated client-side in Rust/WASM
-- **Efeito Dominó**: after a correct guess, auto-fills cells with a single candidate in a timed cascade (600ms → *0.8 → min 100ms)
+- **Efeito Dominó**: after a correct normal or Drop entry, auto-fills empty cells with exactly one candidate from a simple row/column/3×3 box scan. Saved settings control initial delay, acceleration, minimum delay (defaults: 600ms → *0.8 → min 100ms), and an empty-cell threshold (0: no limit; positive: at most that many empties after the entry). Cascades stop on pause, game replacement, settings changes, or further board/note edits
 - Sound on correct guess: beep, explosion (default), or off
 - Pencil-mark notes mode with per-cell candidates
 - **🎯 Drop mode**: select a number, then tap cells to place or note it in bulk
@@ -186,10 +186,13 @@ Declare `Game-state compatibility: compatible` or `breaking` in the PR body;
 tags are never moved. GitHub required checks and Vercel preview acceptance still
 need repository-level verification.
 
-For the optional Chromium audit, install Playwright outside the repository and
-run `node tests/theme-browser.mjs` with `PLAYWRIGHT_MODULE` pointing to its module
+For the optional Chromium audits, install Playwright outside the repository and
+run `node tests/theme-browser.mjs` or `node tests/domino-browser.mjs` with
+`PLAYWRIGHT_MODULE` pointing to its module
 and `CHROMIUM_PATH` to the browser executable. It writes screenshots under
-`/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`).
+`/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`); the domino audit writes
+settings screenshots under `/tmp/sudoku-domino` and checks timing, activation,
+cancellation, undo/redo, and persistence at phone and desktop widths.
 
 ## Difficulty
 

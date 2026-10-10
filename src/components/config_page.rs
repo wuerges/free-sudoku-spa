@@ -38,13 +38,6 @@ pub fn ConfigPage() -> impl IntoView {
             get: |s| s.hint_enabled,
             toggle: |s| s.toggle_hint(),
         },
-        Toggle {
-            icon: "🀄",
-            label: "Efeito Dominó",
-            desc: "Após acertar um número, abre automaticamente células com apenas um candidato. O primeiro após 400ms, cada vez mais rápido.",
-            get: |s| s.domino_enabled,
-            toggle: |s| s.toggle_domino(),
-        },
     ];
 
     view! {
@@ -74,6 +67,52 @@ pub fn ConfigPage() -> impl IntoView {
                         </div>
                     }
                 }).collect::<Vec<_>>()}
+
+                <section class="py-5 border-b border-grid-thin space-y-3" aria-labelledby="domino-settings">
+                    <h2 id="domino-settings" class="text-sm font-semibold">"🀄 Efeito Dominó"</h2>
+                    <p class="text-xs text-muted">"Após acertar um número, preenche células vazias com apenas um candidato pela linha, coluna e bloco 3×3."</p>
+                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
+                        <span>"Ativar efeito dominó"</span>
+                        <input id="domino-enabled" type="checkbox" class="accent-accent w-5 h-5"
+                            prop:checked=move || state.0.get().domino_enabled
+                            on:change=move |_| state.toggle_domino() />
+                    </label>
+                    {[(0, "Intervalo inicial", "domino-initial"),
+                      (1, "Aceleração por célula", "domino-acceleration"),
+                      (2, "Intervalo mínimo", "domino-minimum"),
+                      (3, "Ativar com até quantas células vazias", "domino-threshold")].into_iter().map(|(target, label, id)| {
+                        view! {
+                            <div>
+                                <label for=id class="flex justify-between gap-2 text-sm">
+                                    <span>{label}</span>
+                                    <span class="whitespace-nowrap">{move || {
+                                        let d = state.0.get().domino;
+                                        match target {
+                                            0 => format!("{} ms", d.initial_delay_ms),
+                                            1 => format!("{}%", d.acceleration_percent),
+                                            2 => format!("{} ms", d.minimum_delay_ms),
+                                            _ if d.empty_cell_threshold == 0 => "Sem limite".to_string(),
+                                            _ => d.empty_cell_threshold.to_string(),
+                                        }
+                                    }}</span>
+                                </label>
+                                <input id=id type="range" class="w-full h-12 accent-accent cursor-pointer"
+                                    min=match target { 0 => 100, 2 => 50, _ => 0 }
+                                    max=move || match target { 0 => 2000, 1 => 50, 2 => state.0.get().domino.initial_delay_ms, _ => 81 }
+                                    step=match target { 0 | 2 => 50, _ => 1 }
+                                    prop:value=move || { let d = state.0.get().domino; match target { 0 => d.initial_delay_ms, 1 => d.acceleration_percent, 2 => d.minimum_delay_ms, _ => d.empty_cell_threshold }.to_string() }
+                                    on:input=move |ev| {
+                                        if let Ok(value) = event_target_value(&ev).parse::<u32>() {
+                                            let mut d = state.0.get_untracked().domino;
+                                            match target { 0 => d.initial_delay_ms = value, 1 => d.acceleration_percent = value, 2 => d.minimum_delay_ms = value, _ => d.empty_cell_threshold = value }
+                                            state.set_domino_settings(d);
+                                        }
+                                    } />
+                            </div>
+                        }
+                    }).collect::<Vec<_>>()}
+                    <p class="text-xs text-muted">"0 células: sem limite. Outros valores: o efeito começa após um acerto quando restarem até essa quantidade de células vazias. Aceleração 0% mantém o intervalo constante."</p>
+                </section>
 
                 // Sound selector
                 <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid var(--ui-grid-thin);">

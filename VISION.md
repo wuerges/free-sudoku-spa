@@ -15,7 +15,7 @@ The repository contains:
 - A 9×9 board with five selectable difficulty labels: Fácil, Médio, Difícil, Expert, and Mestre.
 - A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
 - A button-based number pad, pencil notes, drop mode, conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
-- Optional domino cascades and sound settings.
+- Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Game-state serialization to the `sudoku_state` localStorage key.
 - A manifest, icons, installation-prompt bridge, and service worker.

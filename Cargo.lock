@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "free-sudoku-pwa"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
