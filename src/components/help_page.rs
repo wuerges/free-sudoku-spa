@@ -23,7 +23,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             Some(IconName::Drop),
             "Modo drop",
-            "Ative, clique num número para selecioná-lo, depois clique nas células para adicionar/remover notas ou colocar o número (dependendo se o modo notas está ligado).",
+            "Ative, escolha um número no teclado ou toque em uma célula preenchida corretamente, depois toque nas células vazias para colocar o número ou alternar notas. Quando as nove ocorrências de um número estiverem corretas, ele fica desativado para preencher pelo Drop, mas continua disponível no modo notas. Desative a seleção pelas células resolvidas nas Configurações para manter o comportamento anterior.",
         ),
         (Some(IconName::Pause), "Pausar", "Pausa ou retoma o cronômetro."),
         (

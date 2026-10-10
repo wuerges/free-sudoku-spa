@@ -5,6 +5,16 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.15.0]
+
+### Added
+
+- Optional selection of the Drop number by tapping a correctly filled cell, enabled by default and saved across reloads and new games. Picking a number leaves progress, notes, errors, and undo/redo history intact.
+
+### Changed
+
+- Completed numbers (nine correct occurrences) are disabled for Drop placement while remaining available for notes. Incorrect duplicates do not count toward completion.
+
 ## [0.14.0]
 
 ### Changed

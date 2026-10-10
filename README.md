@@ -78,6 +78,8 @@ src/
 - Sound on correct guess: beep, explosion (default), or off
 - Pencil-mark notes mode with per-cell candidates
 - **🎯 Drop mode**: select a number, then tap cells to place or note it in bulk
+- In Drop mode, tap a correctly filled cell to pick its number without editing it. Disable “Selecionar número pelas células resolvidas” in Settings to keep the previous behavior. The preference defaults to enabled and survives reloads/new games.
+- Completed numbers (nine correct occurrences) are disabled for Drop placement, but remain available in Drop notes mode. Incorrect duplicates do not count toward completion.
 - Real-time conflict highlighting
 - Undo/Redo with full history (cleared on hint)
 - Timer with pause
@@ -201,6 +203,12 @@ checks phone layouts and tablet portrait layouts and browser resizing
 from 320 to 1280 pixels in both themes. It writes ten production screenshots
 to `docs/screenshots/ui-ux/`
 (override with `UI_SCREENSHOTS` to keep ad hoc outputs outside the repository).
+`node tests/drop-selection-browser.mjs` checks solved-cell Drop number picking,
+completed-number placement/notes, the configuration toggle, old-save loading,
+persistence and reset at
+phone/tablet sizes in both themes. It writes review captures under
+`/tmp/sudoku-drop-selection`.
+
 See [the screenshot gallery](docs/screenshots/ui-ux/README.md).
 
 ## Controls and settings layout

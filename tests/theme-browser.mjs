@@ -97,6 +97,8 @@ try {
     // Drop preview uses the keypad digit rather than the selected cell's value.
     await page.getByRole('button',{name:'Drop',exact:true}).click();
     assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
+    // Completed digits still support preview and selection in Drop notes mode.
+    await page.getByRole('button',{name:'Notas',exact:true}).click();
     for(const digit of [1,7]) {
       await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${digit}$`)}).click();
       const board=await page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')).board);
@@ -105,6 +107,7 @@ try {
     await page.locator('.number-choices > button').filter({hasText:/^7$/}).click();
     assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
     await page.getByRole('button',{name:'Drop',exact:true}).click();
+    await page.getByRole('button',{name:'Notas',exact:true}).click();
     // Load a real legacy save whose history predates a correct player entry.
     await page.evaluate(({s,user})=>{
       const legacy=structuredClone(s);delete legacy.givens;delete legacy.highlights;delete legacy.rating;delete legacy.requested_difficulty;
