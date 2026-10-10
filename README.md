@@ -277,3 +277,18 @@ See [Android setup and release acceptance](docs/android.md) for bundled offline 
 `just android-*` commands, private signing secrets, saves and GitHub release retries.
 Web development does not require an Android SDK. Build support is implemented;
 signed publication and physical-device acceptance remain pending.
+
+## Completed keypad digits
+
+A keypad digit is marked with a check when all nine occurrences are correct.
+Settings → “Números concluídos” offers “Contraste dos números concluídos” from
+0–100% (default 100%), adjusting its shading and outline in both themes. At zero,
+the check still identifies completion. Selected Drop digits retain their selected
+appearance, and completed digits remain usable in Drop notes mode. The setting
+survives reloads and new games; restoring defaults preserves board progress.
+Older saves receive the default without changing notes, history or settings.
+
+With the optional Playwright environment described above, run
+`node tests/completed-contrast-browser.mjs` after `just build` to check legacy
+saves, slider endpoints/midpoint, notes/Drop, persistence, reset and phone/tablet
+layouts in both themes. Captures go to `/tmp/sudoku-completed-contrast`.

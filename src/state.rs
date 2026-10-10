@@ -26,6 +26,7 @@ pub struct HighlightSettings {
     pub selected_shading: u8,
     pub matching_shading: u8,
     pub available_shading: u8,
+    pub completed_contrast: u8,
     pub dots: bool,
     pub stripes: bool,
 }
@@ -36,6 +37,7 @@ impl Default for HighlightSettings {
             selected_shading: 20,
             matching_shading: 20,
             available_shading: 100,
+            completed_contrast: 100,
             dots: true,
             stripes: true,
         }
@@ -833,6 +835,7 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
     state.highlights.available_shading = state.highlights.available_shading.min(100);
+    state.highlights.completed_contrast = state.highlights.completed_contrast.min(100);
     if legacy {
         for i in 0..81 {
             if state.board[i] != 0 && state.board[i] == state.solution[i] {
@@ -1303,6 +1306,7 @@ mod tests {
         assert_eq!(s.highlights.selected_shading, 20);
         assert_eq!(s.highlights.matching_shading, 20);
         assert_eq!(s.highlights.available_shading, 100);
+        assert_eq!(s.highlights.completed_contrast, 100);
         assert!(s.domino_enabled);
         assert_eq!(s.domino.empty_cell_threshold, 10);
         // The previous release's defaults are explicit saved preferences too.
@@ -1310,6 +1314,7 @@ mod tests {
             selected_shading: 100,
             matching_shading: 100,
             available_shading: 0,
+            completed_contrast: 35,
             dots: false,
             stripes: false,
         };
@@ -1340,6 +1345,7 @@ mod tests {
             selected_shading: 25,
             matching_shading: 70,
             available_shading: 40,
+            completed_contrast: 65,
             dots: false,
             stripes: false,
         };
@@ -1347,6 +1353,24 @@ mod tests {
         let mut saved = serde_json::to_value(&s).unwrap();
         let restored = decode_saved_state(&saved.to_string()).unwrap();
         assert_eq!(restored.highlights, s.highlights);
+        let mut previous_save = saved.clone();
+        previous_save["highlights"]
+            .as_object_mut()
+            .unwrap()
+            .remove("completed_contrast");
+        let migrated = decode_saved_state(&previous_save.to_string()).unwrap();
+        assert_eq!(migrated.highlights.completed_contrast, 100);
+        assert_eq!(
+            migrated.highlights.selected_shading,
+            s.highlights.selected_shading
+        );
+        assert_eq!(
+            migrated.highlights.matching_shading,
+            s.highlights.matching_shading
+        );
+        assert_eq!(migrated.board, s.board);
+        assert_eq!(migrated.notes, s.notes);
+        assert_eq!(migrated.history[0].board, s.history[0].board);
         let mut two_slider_save = saved.clone();
         two_slider_save["highlights"]
             .as_object_mut()
@@ -1364,11 +1388,13 @@ mod tests {
         assert_eq!(legacy.board, s.board);
         assert_eq!(legacy.notes, s.notes);
         assert_eq!(legacy.history.len(), s.history.len());
-        saved["highlights"] = serde_json::json!({"selected_shading": 200});
+        saved["highlights"] =
+            serde_json::json!({"selected_shading": 200, "completed_contrast": 255});
         let partial = decode_saved_state(&saved.to_string()).unwrap();
         assert_eq!(partial.highlights.selected_shading, 100);
         assert_eq!(partial.highlights.matching_shading, 20);
         assert_eq!(partial.highlights.available_shading, 100);
+        assert_eq!(partial.highlights.completed_contrast, 100);
     }
 
     #[test]
@@ -1378,6 +1404,7 @@ mod tests {
             selected_shading: 0,
             matching_shading: 45,
             available_shading: 60,
+            completed_contrast: 80,
             dots: false,
             stripes: false,
         };

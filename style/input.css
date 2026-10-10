@@ -32,6 +32,7 @@
   --ui-success: #dcfce7;
   --ui-success-text: #166534;
   --ui-disabled: #f1f5f9;
+  --ui-completed: #8a9ab0;
   color-scheme: light;
 }
 
@@ -66,6 +67,7 @@
   --ui-success: #143529;
   --ui-success-text: #bbf7d0;
   --ui-disabled: #202f43;
+  --ui-completed: #020617;
   color-scheme: dark;
 }
 
@@ -168,7 +170,16 @@
   .game-status { display: flex; align-items: center; justify-content: space-between; min-height: 44px; gap: 8px; margin-top: 4px; }
   .number-pad { margin-top: 8px; }
   .number-choices { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-  .number-choice { min-height: 52px; font-size: 24px; }
+  .number-choice { min-height: 52px; font-size: 24px; background: var(--ui-control); color: var(--ui-text); border: 2px solid transparent; }
+  .number-choice:disabled { background: var(--ui-disabled); color: var(--ui-muted); }
+  .number-choice[data-completed="true"] {
+    background: color-mix(in srgb, var(--ui-completed) var(--completed-contrast, 100%), var(--ui-control));
+    color: var(--ui-text);
+    border-color: color-mix(in srgb, var(--ui-text) var(--completed-contrast, 100%), transparent);
+  }
+  .number-choice[aria-pressed="true"] { background: var(--ui-primary); color: var(--ui-on-primary); }
+  .number-choice:not(:disabled):active { background: var(--ui-selected); color: var(--ui-text); }
+  .number-complete-marker { position: absolute; top: 2px; right: 3px; font-size: 12px; font-weight: 700; line-height: 1; pointer-events: none; }
   @media (min-width: 640px) {
     .number-choices { grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; }
   }

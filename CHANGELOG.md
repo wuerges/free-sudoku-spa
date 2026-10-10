@@ -5,6 +5,12 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.18.0]
+
+### Added
+
+- Saved 0–100% contrast slider for completed keypad digits, with stronger default shading, outlines and checkmarks in both themes. Completion counts nine correct occurrences; notes remain available.
+
 ## [0.17.0]
 
 ### Added

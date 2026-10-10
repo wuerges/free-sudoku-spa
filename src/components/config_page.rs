@@ -111,6 +111,23 @@ pub fn ConfigPage() -> impl IntoView {
                 </label>
             </section>
 
+            <section class="settings-section" aria-labelledby="completed-settings">
+                <h2 id="completed-settings">"Números concluídos"</h2>
+                <p id="completed-contrast-description" class="section-description">"Destaque no teclado os números com nove ocorrências corretas. A marca de conclusão permanece visível; no modo Drop com Notas, eles continuam disponíveis."</p>
+                <div class="preference-slider">
+                    <label for="completed-contrast" class="slider-label"><span>"Contraste dos números concluídos"</span>
+                        <output for="completed-contrast">{move || format!("{}%", state.0.get().highlights.completed_contrast)}</output>
+                    </label>
+                    <input id="completed-contrast" type="range" min="0" max="100" step="1"
+                        aria-describedby="completed-contrast-description"
+                        aria-valuetext=move || format!("{}%", state.0.get().highlights.completed_contrast)
+                        prop:value=move || state.0.get().highlights.completed_contrast.to_string()
+                        on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() {
+                            state.0.update(|s| s.highlights.completed_contrast = value.min(100));
+                        } } />
+                </div>
+            </section>
+
             <section class="settings-section" aria-labelledby="assistance-settings">
                 <h2 id="assistance-settings">"Assistências"</h2>
                 <p class="section-description">"Personalize os controles e as assistências durante o jogo."</p>

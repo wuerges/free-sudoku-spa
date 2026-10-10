@@ -32,6 +32,14 @@ for (const [theme, p] of Object.entries(palettes)) {
       }
     }
   });
+  test(theme + ': completed keypad slider preserves readable digits and checkmarks', () => {
+    for (let percent = 0; percent <= 100; percent++) {
+      const mixed = '#'+[1,3,5].map(i=>Math.round(parseInt(p.completed.slice(i,i+2),16)*percent/100+parseInt(p.control.slice(i,i+2),16)*(1-percent/100)).toString(16).padStart(2,'0')).join('');
+      assert.ok(contrast(p.text,mixed)>=5.5, `completed ${percent}%: ${contrast(p.text,mixed)}`);
+    }
+    assert.ok(contrast(p.completed,p.control)>=1.9, 'completed fill differs from remaining digits');
+    assert.ok(contrast(p.text,p.completed)>=3, 'completed outline remains visible');
+  });
   test(theme + ': distinct peer, matching, and selected backgrounds', () => {
     // Product hierarchy targets, not WCAG thresholds for every tinted fill.
     for (const [a,b,min] of [['selected','cell',1.5],['peer','cell',1.5],['matching','cell',1.5],['available','cell',1.5],['blocked-stripe','blocked',1.3],['blocked-stripe','matching-blocked',1.3]]) {
