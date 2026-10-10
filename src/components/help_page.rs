@@ -50,7 +50,7 @@ pub fn HelpPage() -> impl IntoView {
         (
             "🀄 Efeito Dominó",
             "Efeito Dominó",
-            "Após um acerto normal ou no modo Drop, preenche células vazias com apenas um candidato pela linha, coluna e bloco 3×3. Configure o intervalo inicial, a aceleração, o intervalo mínimo e o limite de células vazias nas Configurações. Limite 0 significa sem limite; outros valores permitem o efeito quando restarem até essa quantidade. Desligado por padrão.",
+            "Após um acerto normal ou no modo Drop, preenche células vazias com apenas um candidato pela linha, coluna e bloco 3×3. Configure o intervalo inicial, a aceleração, o intervalo mínimo e o limite de células vazias nas Configurações. Limite 0 significa sem limite; outros valores permitem o efeito quando restarem até essa quantidade. Ativado por padrão quando restarem até 10 células vazias.",
         ),
         (
             "🔊 Som",

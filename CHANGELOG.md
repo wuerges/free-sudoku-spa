@@ -5,6 +5,14 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.13.0]
+
+### Changed
+
+- Default selection and matching shading to 20%, and available-cell shading to 100%.
+- Enable domino by default with an activation threshold of 10 empty cells.
+- Configuration reset and missing saved settings use these defaults; explicit saved preferences remain unchanged.
+
 ## [0.12.0]
 
 ### Added
