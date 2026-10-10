@@ -44,5 +44,12 @@ Use stable IDs and do not renumber existing issues.
 ## ISSUE-009: Resolve build dependency audit findings
 
 - Evidence: `npm audit` during clean setup reports five high-severity findings in the locked Tailwind build dependency tree, including `braces` (GHSA-vfj7-8cjw-p6xm) and `source-map-js` (GHSA-68fv-2mgg-jv7q).
+- Android dependency install also reports three moderate findings; review the expanded locked dependency tree.
 - Impact: Build-time pattern/source-map processing uses dependencies with reported denial-of-service vulnerabilities; npm's suggested Tailwind fix changes the selected version.
 - Acceptance: Review applicability, update compatible build dependencies and lockfile, and verify audit results, CSS output, and the production build without a forced unreviewed upgrade.
+
+## ISSUE-010: Verify Android APK release and device acceptance
+
+- Evidence: Capacitor packaging, native PWA suppression, version/signing regressions and separate Android build/publication workflows are implemented. Local Rust/tooling/web builds, phone/tablet web audits, native-staging offline routes/reload, debug APK compilation, Android lint and a disposable-key signed release build pass. The smoke-test APK compiles; no /dev/kvm is available, so emulator execution remains unverified.
+- Impact: Build support does not establish successful signed publication, first-launch offline operation, system-bar/Back behavior or saved progress through an APK upgrade.
+- Acceptance: Configure and privately back up the production keystore/secrets; require Android checks in branch protection; pass debug build/lint and phone/API-36 tablet smoke CI. Execute every checklist item in `docs/android.md`, including all difficulties, notes/Drop/domino/sound, lifecycle, a same-key two-version upgrade retaining board/notes/history/settings, published certificate/checksum verification, and a physical Xiaomi 11-inch tablet portrait/layout check. Record results before declaring Android release acceptance.

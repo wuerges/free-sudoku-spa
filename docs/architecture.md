@@ -172,3 +172,16 @@ Tailwind when Rust/CSS input changes. The post-build development hook stages a
 network-only worker that takes over older local Sudoku workers and clears only
 Sudoku caches. Production `Trunk.toml` keeps the content-versioned offline hook
 and `dist/` output. Saved-game storage is unchanged in both modes.
+
+## Android wrapper
+
+`capacitor.config.json` fixes the native origin to `https://localhost`. The tracked
+`android/` template supplies the Gradle wrapper and native activity.
+`scripts/android.mjs` builds release assets into `.android-dist/`, stages a native
+marker and removes the worker in `.android-web/`, then syncs Capacitor.
+`index.html` gates browser installation/worker registration on that marker.
+The activity handles system-bar insets, portrait and Back navigation; Capacitor
+opens external origins through Android intents. Gradle derives version metadata
+from npm and requires private credentials for release signing. State serialization
+is unchanged. Android checks and publication use separate workflows; see
+[Android documentation](android.md) for acceptance limits and signing setup.

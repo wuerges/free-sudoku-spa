@@ -5,6 +5,17 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.17.0]
+
+### Added
+
+- Bundled offline Android APK packaging, portrait Sudoku app, debug builds, lint and emulator CI.
+- Signed GitHub release APK and checksum publication with immutable-commit retries and private signing credentials.
+
+### Changed
+
+- Native installations suppress browser PWA prompts and service workers. Android saves use the existing state format in separate app storage.
+
 ## [0.16.0]
 
 ### Added

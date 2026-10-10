@@ -104,3 +104,11 @@ Prioritize correctness, saved-game compatibility, offline reliability, and usabi
 ## Maintaining this vision
 
 Update this document when product decisions change. Move verified behavior into the existing-implementation section and retain remaining work as explicit goals. Keep setup commands and file maps in their linked documents rather than duplicating scaffolding examples here.
+
+## Android distribution
+
+A Capacitor wrapper and separate GitHub APK workflows provide bundled Android
+build support with the existing saved-state format, native portrait settings and
+separate app storage. Signed release publication, in-place upgrade preservation,
+all native gameplay acceptance flows and the physical Xiaomi 11-inch tablet check
+remain unverified. See [Android acceptance](docs/android.md) and ISSUE-010.

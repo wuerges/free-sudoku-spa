@@ -46,6 +46,7 @@ test-tooling:
     npm run test:offline
     npm run test:theme
     npm run test:release
+    npm run test:android
 
 # Full local validation pipeline
 ci: fmt test check test-tooling build
@@ -53,3 +54,18 @@ ci: fmt test check test-tooling build
 # Remove build outputs; keep installed tools and dependencies
 clean:
     rm -rf dist/ .dev-dist/ target/
+
+android-doctor:
+    node scripts/android.mjs doctor
+
+android-sync:
+    node scripts/android.mjs sync
+
+android-debug:
+    node scripts/android.mjs debug
+
+android-install:
+    node scripts/android.mjs install
+
+android-release:
+    node scripts/android.mjs release

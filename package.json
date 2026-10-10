@@ -1,6 +1,6 @@
 {
   "name": "free-sudoku-spa",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "main": "index.js",
   "scripts": {
     "css": "tailwindcss -i style/input.css -o style/output.css --minify",
@@ -10,7 +10,8 @@
     "test:build": "node tests/build.test.mjs",
     "test:dev": "node tests/dev.test.mjs",
     "test:theme": "node tests/theme.test.mjs",
-    "test:release": "node tests/release.test.mjs"
+    "test:release": "node tests/release.test.mjs",
+    "test:android": "node tests/android.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,9 @@
   "homepage": "https://github.com/wuerges/free-sudoku-spa#readme",
   "description": "",
   "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/core": "8.5.3",
     "@tailwindcss/cli": "^4.3.2",
     "tailwindcss": "^4.3.2"
   },

@@ -4,3 +4,12 @@
 style/output.css
 /.build-tools
 /.dev-dist
+
+/.android-dist/
+/.android-web/
+/android/app/src/main/assets/
+/android/.gradle/
+/android/local.properties
+/android/**/build/
+*.jks
+*.keystore
