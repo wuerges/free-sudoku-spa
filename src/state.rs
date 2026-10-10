@@ -700,14 +700,8 @@ impl AppState {
         });
     }
 
-    pub fn cycle_sound(&self) {
-        self.0.update(|s| {
-            s.sound_type = match s.sound_type {
-                SoundType::Beep => SoundType::Explosion,
-                SoundType::Explosion => SoundType::None,
-                SoundType::None => SoundType::Beep,
-            };
-        });
+    pub fn set_sound(&self, sound: SoundType) {
+        self.0.update(|s| s.sound_type = sound);
     }
 }
 

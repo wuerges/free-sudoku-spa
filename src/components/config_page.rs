@@ -1,178 +1,170 @@
-use crate::state::{AppState, SoundType};
+use crate::components::icon::{Icon, IconName};
+use crate::state::{AppState, GameState, SoundType};
 use leptos::prelude::*;
 use leptos_router::components::A;
 
-use crate::state::GameState;
-
-struct Toggle {
-    icon: &'static str,
+#[component]
+fn PreferenceToggle(
+    id: &'static str,
     label: &'static str,
-    desc: &'static str,
+    description: &'static str,
+    icon: IconName,
     get: fn(&GameState) -> bool,
     toggle: fn(&AppState),
+) -> impl IntoView {
+    let state: AppState = use_context().unwrap();
+    let description_id = format!("{id}-description");
+    view! {
+        <label for=id class="preference-row">
+            <Icon name=icon />
+            <span class="min-w-0">
+                <span class="preference-label">{label}</span>
+                <span id=description_id.clone() class="preference-description">{description}</span>
+            </span>
+            <input id=id type="checkbox" aria-label=label aria-describedby=description_id
+                class="preference-checkbox" prop:checked=move || get(&state.0.get())
+                on:change=move |_| toggle(&state) />
+        </label>
+    }
+}
+
+#[component]
+fn DominoSlider(
+    target: u8,
+    id: &'static str,
+    label: &'static str,
+    description: &'static str,
+) -> impl IntoView {
+    let state: AppState = use_context().unwrap();
+    let description_id = format!("{id}-description");
+    let value = move || {
+        let d = state.0.get().domino;
+        match target {
+            0 => d.initial_delay_ms,
+            1 => d.acceleration_percent,
+            2 => d.minimum_delay_ms,
+            _ => d.empty_cell_threshold,
+        }
+    };
+    let formatted = move || match target {
+        0 | 2 => format!("{} ms", value()),
+        1 => format!("{}%", value()),
+        _ if value() == 0 => "Sem limite".to_string(),
+        _ => format!("{} células", value()),
+    };
+    view! {
+        <div class="preference-slider">
+            <label for=id class="slider-label"><span>{label}</span><output for=id>{formatted}</output></label>
+            <input id=id type="range" aria-describedby=description_id.clone() aria-valuetext=formatted
+                min=match target { 0 => 100, 2 => 50, _ => 0 }
+                max=move || match target { 0 => 2000, 1 => 50, 2 => state.0.get().domino.initial_delay_ms, _ => 81 }
+                step=match target { 0 | 2 => 50, _ => 1 } prop:value=move || value().to_string()
+                on:input=move |ev| {
+                    if let Ok(value) = event_target_value(&ev).parse::<u32>() {
+                        let mut d = state.0.get_untracked().domino;
+                        match target { 0 => d.initial_delay_ms = value, 1 => d.acceleration_percent = value,
+                            2 => d.minimum_delay_ms = value, _ => d.empty_cell_threshold = value }
+                        state.set_domino_settings(d);
+                    }
+                } />
+            <p id=description_id class="preference-description">{description}</p>
+        </div>
+    }
 }
 
 #[component]
 pub fn ConfigPage() -> impl IntoView {
     let state: AppState = use_context().unwrap();
-
-    let toggles: Vec<Toggle> = vec![
-        Toggle {
-            icon: "↩↪",
-            label: "Desfazer / Refazer",
-            desc: "Mostra ou esconde os botões de desfazer e refazer.",
-            get: |s| s.undo_enabled,
-            toggle: |s| s.toggle_undo(),
-        },
-        Toggle {
-            icon: "📝",
-            label: "Auto Notas",
-            desc: "Mostra ou esconde o botão de preencher notas automaticamente.",
-            get: |s| s.auto_notes_enabled,
-            toggle: |s| s.toggle_auto_notes(),
-        },
-        Toggle {
-            icon: "💡",
-            label: "Dica",
-            desc: "Mostra ou esconde o botão de dica.",
-            get: |s| s.hint_enabled,
-            toggle: |s| s.toggle_hint(),
-        },
-    ];
-
     view! {
-        <div class="w-full max-w-[min(90vw,500px)] mx-auto pb-8">
-            <A
-                href="/"
-                attr:class="flex items-center gap-0.5 text-accent active:bg-control select-none py-2.5 px-1 -ml-1 rounded-lg transition-opacity no-underline"
-            >
-                <span class="text-xl leading-none">"‹"</span>
-                <span class="text-[17px] font-normal">"Voltar"</span>
-            </A>
+        <main class="settings-page">
+            <A href="/" attr:class="ui-back"><Icon name=IconName::Back /><span>"Voltar"</span></A>
+            <h1 class="page-title">"Configurações"</h1>
+            <p class="page-description">"Deixe o jogo do seu jeito. As alterações são salvas automaticamente."</p>
 
-            <h1 class="text-3xl font-bold tracking-wider text-center mt-4 mb-10">"CONFIGURAÇÕES"</h1>
-
-            <div class="flex flex-col">
-                {toggles.into_iter().map(|t| {
+            <section class="settings-section" aria-labelledby="highlight-settings">
+                <h2 id="highlight-settings">"Destaques do tabuleiro"</h2>
+                <p class="section-description">"Ajuste a intensidade das cores e os indicadores nas células."</p>
+                {[(0, "Sombreamento pela seleção", "selected-shading"),
+                  (1, "Sombreamento pelos iguais", "matching-shading"),
+                  (2, "Sombreamento das células disponíveis", "available-shading")].into_iter().map(|(target, label, id)| {
+                    let value = move || { let h = state.0.get().highlights;
+                        match target { 0 => h.selected_shading, 1 => h.matching_shading, _ => h.available_shading } };
                     view! {
-                        <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid var(--ui-grid-thin);">
-                            <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">{t.icon}</span>
-                            <div>
-                                <strong class="text-sm font-semibold">{t.label}</strong>
-                                <p class="text-xs text-muted" style="margin-top: 2px; line-height: 1.5;">{t.desc}</p>
-                            </div>
-                            <label class="flex items-center justify-center cursor-pointer self-stretch">
-                                <input type="checkbox" prop:checked=move || (t.get)(&state.0.get()) on:change=move |_| (t.toggle)(&state) class="accent-accent cursor-pointer" style="transform: scale(2);" />
-                            </label>
+                        <div class="preference-slider">
+                            <label for=id class="slider-label"><span>{label}</span><output for=id>{move || format!("{}%", value())}</output></label>
+                            <input id=id type="range" min="0" max="100" step="1"
+                                aria-valuetext=move || format!("{}%", value()) prop:value=move || value().to_string()
+                                on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() {
+                                    state.0.update(|s| match target { 0 => s.highlights.selected_shading = value.min(100),
+                                        1 => s.highlights.matching_shading = value.min(100), _ => s.highlights.available_shading = value.min(100) });
+                                } } />
                         </div>
                     }
                 }).collect::<Vec<_>>()}
+                <label class="simple-preference-row"><span>"Pontos nas células disponíveis"</span>
+                    <input type="checkbox" class="preference-checkbox" prop:checked=move || state.0.get().highlights.dots
+                        on:change=move |ev| state.0.update(|s| s.highlights.dots = event_target_checked(&ev)) />
+                </label>
+                <label class="simple-preference-row"><span>"Listras nas células bloqueadas"</span>
+                    <input type="checkbox" class="preference-checkbox" prop:checked=move || state.0.get().highlights.stripes
+                        on:change=move |ev| state.0.update(|s| s.highlights.stripes = event_target_checked(&ev)) />
+                </label>
+            </section>
 
-                <section class="py-5 border-b border-grid-thin space-y-3" aria-labelledby="domino-settings">
-                    <h2 id="domino-settings" class="text-sm font-semibold">"🀄 Efeito Dominó"</h2>
-                    <p class="text-xs text-muted">"Após acertar um número, preenche células vazias com apenas um candidato pela linha, coluna e bloco 3×3."</p>
-                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
-                        <span>"Ativar efeito dominó"</span>
-                        <input id="domino-enabled" type="checkbox" class="accent-accent w-5 h-5"
-                            prop:checked=move || state.0.get().domino_enabled
-                            on:change=move |_| state.toggle_domino() />
-                    </label>
-                    {[(0, "Intervalo inicial", "domino-initial"),
-                      (1, "Aceleração por célula", "domino-acceleration"),
-                      (2, "Intervalo mínimo", "domino-minimum"),
-                      (3, "Ativar com até quantas células vazias", "domino-threshold")].into_iter().map(|(target, label, id)| {
+            <section class="settings-section" aria-labelledby="assistance-settings">
+                <h2 id="assistance-settings">"Assistências"</h2>
+                <p class="section-description">"Escolha quais botões aparecem durante o jogo."</p>
+                <PreferenceToggle id="undo-enabled" label="Desfazer / Refazer"
+                    description="Mostrar os botões para voltar ou repetir uma jogada." icon=IconName::Undo
+                    get=|s| s.undo_enabled toggle=|s| s.toggle_undo() />
+                <PreferenceToggle id="auto-notes-enabled" label="Auto notas"
+                    description="Mostrar o botão que preenche os candidatos nas células vazias." icon=IconName::AutoNotes
+                    get=|s| s.auto_notes_enabled toggle=|s| s.toggle_auto_notes() />
+                <PreferenceToggle id="hint-enabled" label="Dica"
+                    description="Mostrar o botão que revela uma célula." icon=IconName::Hint
+                    get=|s| s.hint_enabled toggle=|s| s.toggle_hint() />
+
+                <div class="domino-preferences" aria-labelledby="domino-settings">
+                    <h3 id="domino-settings">"Efeito dominó"</h3>
+                    <PreferenceToggle id="domino-enabled" label="Ativar efeito dominó"
+                        description="Após um acerto, preencher células com um único candidato pela linha, coluna e bloco 3×3."
+                        icon=IconName::Domino get=|s| s.domino_enabled toggle=|s| s.toggle_domino() />
+                    <DominoSlider target=3 id="domino-threshold" label="Ativar com até"
+                        description="Quantidade de células vazias após um acerto. 0 significa sem limite." />
+                    <details class="timing-details">
+                        <summary>"Ajustar velocidade"</summary>
+                        <DominoSlider target=0 id="domino-initial" label="Intervalo inicial"
+                            description="Espera antes da primeira célula automática." />
+                        <DominoSlider target=1 id="domino-acceleration" label="Aceleração por célula"
+                            description="Redução do intervalo a cada célula. 0% mantém a velocidade constante." />
+                        <DominoSlider target=2 id="domino-minimum" label="Intervalo mínimo"
+                            description="Menor intervalo entre duas células automáticas." />
+                    </details>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="sound-settings">
+                <h2 id="sound-settings" class="flex items-center gap-2"><Icon name=IconName::Sound />"Som"</h2>
+                <fieldset class="sound-options">
+                    <legend class="section-description">"Som ao acertar uma célula"</legend>
+                    {[(SoundType::None, "Desligado"), (SoundType::Beep, "Bip"), (SoundType::Explosion, "Explosão")].into_iter().map(|(sound, label)| {
                         view! {
-                            <div>
-                                <label for=id class="flex justify-between gap-2 text-sm">
-                                    <span>{label}</span>
-                                    <span class="whitespace-nowrap">{move || {
-                                        let d = state.0.get().domino;
-                                        match target {
-                                            0 => format!("{} ms", d.initial_delay_ms),
-                                            1 => format!("{}%", d.acceleration_percent),
-                                            2 => format!("{} ms", d.minimum_delay_ms),
-                                            _ if d.empty_cell_threshold == 0 => "Sem limite".to_string(),
-                                            _ => d.empty_cell_threshold.to_string(),
-                                        }
-                                    }}</span>
-                                </label>
-                                <input id=id type="range" class="w-full h-12 accent-accent cursor-pointer"
-                                    min=match target { 0 => 100, 2 => 50, _ => 0 }
-                                    max=move || match target { 0 => 2000, 1 => 50, 2 => state.0.get().domino.initial_delay_ms, _ => 81 }
-                                    step=match target { 0 | 2 => 50, _ => 1 }
-                                    prop:value=move || { let d = state.0.get().domino; match target { 0 => d.initial_delay_ms, 1 => d.acceleration_percent, 2 => d.minimum_delay_ms, _ => d.empty_cell_threshold }.to_string() }
-                                    on:input=move |ev| {
-                                        if let Ok(value) = event_target_value(&ev).parse::<u32>() {
-                                            let mut d = state.0.get_untracked().domino;
-                                            match target { 0 => d.initial_delay_ms = value, 1 => d.acceleration_percent = value, 2 => d.minimum_delay_ms = value, _ => d.empty_cell_threshold = value }
-                                            state.set_domino_settings(d);
-                                        }
-                                    } />
-                            </div>
+                            <label class="sound-choice" data-selected=move || (state.0.get().sound_type == sound).to_string()>
+                                <input type="radio" name="sound" value=label prop:checked=move || state.0.get().sound_type == sound
+                                    on:change=move |_| state.set_sound(sound) />
+                                <span>{label}</span>
+                            </label>
                         }
                     }).collect::<Vec<_>>()}
-                    <p class="text-xs text-muted">"0 células: sem limite. Outros valores: o efeito começa após um acerto quando restarem até essa quantidade de células vazias. Aceleração 0% mantém o intervalo constante."</p>
-                </section>
+                </fieldset>
+            </section>
 
-                // Sound selector
-                <div class="grid gap-2" style="grid-template-columns: 80px 1fr 80px; padding: 1.25rem 0; border-bottom: 0.5px solid var(--ui-grid-thin);">
-                    <span class="text-lg text-center" style="width: 80px; line-height: 1.25;">"🔊"</span>
-                    <div>
-                        <strong class="text-sm font-semibold">"Som"</strong>
-                        <p class="text-xs text-muted" style="margin-top: 2px; line-height: 1.5;">"Som ao acertar uma célula."</p>
-                    </div>
-                    <button
-                        on:click=move |_| state.cycle_sound()
-                        class="flex items-center justify-center text-sm font-medium rounded bg-control active:bg-control-hover transition-colors cursor-pointer"
-                        style="padding: 4px 8px;"
-                    >
-                        {move || match state.0.get().sound_type {
-                            SoundType::Beep => "Beep",
-                            SoundType::Explosion => "💥",
-                            SoundType::None => "Off",
-                        }}
-                    </button>
-                </div>
-
-                <section class="py-5 border-b border-grid-thin space-y-3" aria-labelledby="highlight-settings">
-                    <h2 id="highlight-settings" class="text-sm font-semibold">"Destaques do tabuleiro"</h2>
-                    {[(0, "Sombreamento pela seleção"), (1, "Sombreamento pelos iguais"), (2, "Sombreamento das células disponíveis")].into_iter().map(|(target, label)| {
-                        let id = match target { 0 => "selected-shading", 1 => "matching-shading", _ => "available-shading" };
-                        view! {
-                            <div>
-                                <label for=id class="flex justify-between gap-2 text-sm">
-                                    <span>{label}</span>
-                                    <span>{move || { let h = state.0.get().highlights; format!("{}%", match target { 0 => h.selected_shading, 1 => h.matching_shading, _ => h.available_shading }) }}</span>
-                                </label>
-                                <input id=id type="range" min="0" max="100" step="1" class="w-full h-12 accent-accent cursor-pointer"
-                                    prop:value=move || { let h = state.0.get().highlights; (match target { 0 => h.selected_shading, 1 => h.matching_shading, _ => h.available_shading }).to_string() }
-                                    on:input=move |ev| { if let Ok(value) = event_target_value(&ev).parse::<u8>() { state.0.update(|s| { match target { 0 => s.highlights.selected_shading = value.min(100), 1 => s.highlights.matching_shading = value.min(100), _ => s.highlights.available_shading = value.min(100) } }); } }
-                                />
-                            </div>
-                        }
-                    }).collect::<Vec<_>>()}
-                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
-                        <span>"Pontos nas células disponíveis"</span>
-                        <input type="checkbox" class="accent-accent w-5 h-5" prop:checked=move || state.0.get().highlights.dots
-                            on:change=move |ev| state.0.update(|s| s.highlights.dots = event_target_checked(&ev)) />
-                    </label>
-                    <label class="flex items-center justify-between gap-3 min-h-12 text-sm cursor-pointer">
-                        <span>"Listras nas células bloqueadas"</span>
-                        <input type="checkbox" class="accent-accent w-5 h-5" prop:checked=move || state.0.get().highlights.stripes
-                            on:change=move |ev| state.0.update(|s| s.highlights.stripes = event_target_checked(&ev)) />
-                    </label>
-                </section>
-
-                // Reset button
-                <div class="flex justify-center" style="margin-top: 2rem;">
-                    <button
-                        on:click=move |_| state.reset_config()
-                        style="padding: 1.25rem 1rem;" class="rounded-lg text-sm font-medium bg-error text-error-text active:bg-error transition-colors cursor-pointer"
-                    >
-                        "↺ Resetar Configurações"
-                    </button>
-                </div>
-            </div>
-        </div>
+            <footer class="settings-footer">
+                <button class="ui-action w-full" on:click=move |_| state.reset_config()>
+                    <Icon name=IconName::Reset />"Restaurar padrões"
+                </button>
+                <p class="preference-description">"Restaura as preferências. Seu progresso no jogo é preservado."</p>
+            </footer>
+        </main>
     }
 }

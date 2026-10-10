@@ -5,7 +5,7 @@ use leptos::prelude::*;
 #[component]
 pub fn SudokuGrid(state: AppState) -> impl IntoView {
     view! {
-        <div class="w-full max-w-[min(90vw,90vh-280px,500px)] mx-auto mt-2">
+        <div class="board-container">
             <div class="sudoku-board grid grid-cols-3 gap-0.5 border-2 border-grid-strong rounded-sm overflow-hidden bg-grid-strong"
                 data-placement-dots=move || state.0.get().highlights.dots.to_string()
                 data-selected-stripes=move || { let h=state.0.get().highlights; (h.stripes && h.selected_shading > 0).to_string() }

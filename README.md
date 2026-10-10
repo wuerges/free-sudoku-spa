@@ -63,11 +63,12 @@ src/
     ├── cell.rs           # single grid cell
     ├── sudoku_grid.rs    # 9×9 grid
     ├── number_pad.rs     # 1-9 + delete + note
-    ├── game_controls.rs  # timer, undo, hint, new game
+    ├── game_controls.rs  # status bar, undo, hint, new game
     ├── game_page.rs      # game route layout
     ├── config_page.rs    # config toggles (undo, auto-notes, hint, domino, sound)
     ├── help_page.rs      # help / instructions
-    └── header.rs         # dark mode, install button
+    ├── header.rs         # dark mode, install button
+    └── icon.rs           # shared local line icons
 ```
 
 ## Features
@@ -88,7 +89,7 @@ src/
 
 ## PWA
 
-- `manifest.json` — installable, standalone, portrait
+- `manifest.json` — installable, standalone, portrait orientation
 - `sw.js` — build-time template for versioned app-shell and asset caching
 - Install prompt via `beforeinstallprompt` (Android Chrome/Edge)
 
@@ -194,6 +195,32 @@ and `CHROMIUM_PATH` to the browser executable. It writes screenshots under
 `/tmp/sudoku-themes` (override with `THEME_SCREENSHOTS`); the domino audit writes
 settings screenshots under `/tmp/sudoku-domino` and checks timing, activation,
 cancellation, undo/redo, and persistence at phone and desktop widths.
+
+`node tests/ui-browser.mjs` uses the same optional Playwright environment and
+checks phone layouts and tablet portrait layouts and browser resizing
+from 320 to 1280 pixels in both themes. It writes ten production screenshots
+to `docs/screenshots/ui-ux/`
+(override with `UI_SCREENSHOTS` to keep ad hoc outputs outside the repository).
+See [the screenshot gallery](docs/screenshots/ui-ux/README.md).
+
+## Controls and settings layout
+
+Local SVG line icons accompany Portuguese control labels. Header utilities have
+44px targets; installation occupies its own row. Time, errors, and pause/resume
+sit above the board. Number entry uses two rows on phones and one nine-column
+row in tablet portrait, with 52px minimum height; Apagar, Notas, and Drop follow
+below, then the two-column assistance buttons and a separate Novo jogo action.
+Active modes use pressed states and a stable label, with a separate selected-number indicator for Drop.
+
+On tablets, the board grows to 720px when space allows, with larger digits,
+notes, and 64px number buttons. Controls stay below the board at every width.
+The installed PWA is locked to portrait; ordinary browser tabs retain the same
+stacked layout when resized.
+
+Settings groups highlights, assistances, and sound in a single column. Domino
+activation and its empty-cell threshold remain visible; “Ajustar velocidade”
+expands the timing controls. Sound offers Desligado, Bip, and Explosão directly.
+“Restaurar padrões” restores preferences without changing game progress.
 
 ## Difficulty
 

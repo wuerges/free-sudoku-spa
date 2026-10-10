@@ -24,7 +24,7 @@ try {
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     const read = () => page.evaluate(() => JSON.parse(localStorage.getItem('sudoku_state')));
     const cell = i => page.locator(`[data-row="${Math.floor(i/9)}"][data-col="${i%9}"]`);
-    const number = n => page.locator('.grid-cols-9 > button').filter({hasText:new RegExp(`^${n}$`)});
+    const number = n => page.locator('.number-choices > button').filter({hasText:new RegExp(`^${n}$`)});
     async function ready() {
       await page.locator('#loading').waitFor({state:'detached'});
       await page.waitForFunction(() => !!localStorage.getItem('sudoku_state'));
@@ -47,6 +47,7 @@ try {
     assert.deepEqual((await read()).domino, {initial_delay_ms:600, acceleration_percent:20, minimum_delay_ms:100, empty_cell_threshold:10});
     assert.equal((await read()).board.filter(v=>v===0).length,3); // Reload does not start a chain.
     await page.goto(url+'/config'); await ready();
+    await page.getByText('Ajustar velocidade',{exact:true}).click();
     for(const [id,value] of [['domino-initial','1000'],['domino-acceleration','10'],['domino-minimum','250'],['domino-threshold','2']]) {
       await page.locator('#'+id).fill(value);
       assert.equal(await page.locator('#'+id).inputValue(),value);
@@ -56,11 +57,11 @@ try {
     await page.reload(); await ready();
     assert.deepEqual((await read()).domino,{initial_delay_ms:1000, acceleration_percent:10, minimum_delay_ms:250, empty_cell_threshold:2});
     await page.goto(url); await ready();
-    await page.getByRole('button',{name:'🔄 Novo Jogo',exact:true}).click();
+    await page.getByRole('button',{name:'Novo jogo',exact:true}).click();
     await page.getByRole('button',{name:'Fácil',exact:true}).click();
     assert.equal((await read()).domino.empty_cell_threshold,2);
     await page.goto(url+'/config'); await ready();
-    await page.getByRole('button',{name:'↺ Resetar Configurações',exact:true}).click();
+    await page.getByRole('button',{name:'Restaurar padrões',exact:true}).click();
     assert.equal((await read()).domino_enabled,true);
     assert.equal((await read()).domino.empty_cell_threshold,10);
     assert.deepEqual((await read()).highlights, {selected_shading:20, matching_shading:20, available_shading:100, dots:true, stripes:true});
@@ -68,7 +69,7 @@ try {
     for(const drop of [false,true]) {
       await seed({threshold:2});
       if(drop) {
-        await page.getByRole('button',{name:'🎯 Drop',exact:true}).click();
+        await page.getByRole('button',{name:'Drop',exact:true}).click();
         await number(1).click(); await cell(0).click();
       } else { await cell(0).click(); await number(1).click(); }
       await page.waitForTimeout(200);
@@ -77,10 +78,10 @@ try {
       assert.equal((await read()).board[9],0); // One cell per timeout.
       await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sudoku_state')).won);
       assert.equal((await read()).history.length,1);
-      await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
+      await page.getByRole('button',{name:'Desfazer',exact:true}).click();
       assert.equal((await read()).board.filter(v=>v===0).length,3);
       assert.equal((await read()).won,false);
-      await page.getByRole('button',{name:'↪ Refazer',exact:true}).click();
+      await page.getByRole('button',{name:'Refazer',exact:true}).click();
       assert.equal((await read()).won,true);
     }
     await seed({threshold:1,delay:200});
@@ -94,12 +95,12 @@ try {
         // SPA navigation preserves the pending callback.
         await page.getByRole('link',{name:'Configurações'}).click();
         if(action==='disable') await page.locator('#domino-enabled').uncheck();
-        else await page.locator('#domino-initial').fill('1000');
-      } else if(action==='pause') await page.getByRole('button',{name:'⏸',exact:true}).click();
-      else if(action==='undo') await page.getByRole('button',{name:'↩ Desfazer',exact:true}).click();
-      else if(action==='edit') await page.getByRole('button',{name:'⌫ Apagar',exact:true}).click();
+        else { await page.getByText('Ajustar velocidade',{exact:true}).click(); await page.locator('#domino-initial').fill('1000'); }
+      } else if(action==='pause') await page.getByRole('button',{name:'Pausar jogo',exact:true}).click();
+      else if(action==='undo') await page.getByRole('button',{name:'Desfazer',exact:true}).click();
+      else if(action==='edit') await page.getByRole('button',{name:'Apagar',exact:true}).click();
       else {
-        await page.getByRole('button',{name:'🔄 Novo Jogo',exact:true}).click();
+        await page.getByRole('button',{name:'Novo jogo',exact:true}).click();
         await page.getByRole('button',{name:'Fácil',exact:true}).click();
       }
       const before = (await read()).board;

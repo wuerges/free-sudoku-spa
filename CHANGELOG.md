@@ -5,6 +5,17 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.14.0]
+
+### Changed
+
+- Settings groups highlights, assistances, and sound in readable sections, with domino timing under “Ajustar velocidade” and explicit sound choices.
+- Consistent local line icons, labeled controls, larger touch targets, stable notes/Drop labels, and grouped game actions improve mobile navigation.
+- Tablet layouts enlarge the board, digits, notes, and number controls; controls remain below the board, and installed apps stay locked to portrait.
+- Number buttons use larger digits and 52px minimum height, arranged in two rows on phones for wider touch targets.
+- Timer, error count, and pause/resume sit above the board; installation has its own header row and reset uses a neutral preference action.
+- Help matches the refreshed controls; saved preferences and game progress remain unchanged.
+
 ## [0.13.0]
 
 ### Changed

@@ -37,6 +37,7 @@ Use stable IDs and do not renumber existing issues.
 ## ISSUE-008: Verify mobile accessibility
 
 - Evidence: Automated contrast checks and light/dark browser flows passed at 390×844 and 1280×900, including routes, board highlights, shading sliders, and pattern controls. Keyboard navigation, screen-reader labels, touch targets, and physical phone/tablet usability still need an accessibility audit.
+- Control review: Chromium checks at 320, 390, 768, and 1280 pixels in both themes verify action targets, layout, focus/tab order, native radio/slider/disclosure keyboard interaction, mode states, settings reset/persistence, and installation placement. Local line icons have decorative semantics; controls retain Portuguese accessible names. Tablet checks additionally cover portrait layout, larger boards and number targets, and browser resizing without lost progress. See `docs/screenshots/ui-ux/README.md`. Full board keyboard navigation, screen-reader behavior, and physical-device checks remain open.
 - Impact: Usability and accessibility on target devices remain unverified.
 - Acceptance: Audit phone/tablet layouts, keyboard navigation, cell/control labels, contrast, and touch targets; resolve findings and record verification in the PR.
 

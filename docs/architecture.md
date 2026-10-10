@@ -16,11 +16,12 @@
 | `src/components/cell.rs` | Cell rendering and interaction |
 | `src/components/sudoku_grid.rs` | Board layout |
 | `src/components/number_pad.rs` | Number, delete, notes, and drop-mode controls |
-| `src/components/game_controls.rs` | Game actions and timer controls |
+| `src/components/game_controls.rs` | Above-board status bar and below-keypad game actions |
 | `src/components/game_page.rs` | Main game layout |
 | `src/components/config_page.rs` | Player settings |
 | `src/components/help_page.rs` | Player instructions |
 | `src/components/header.rs` | Header, theme, and installation controls |
+| `src/components/icon.rs` | Local decorative SVG line icons |
 | `style/input.css` | Tailwind input and custom styles |
 | `manifest.json`, `sw.js`, `public/icons/` | PWA metadata, caching, and icons |
 
@@ -126,3 +127,26 @@ candidates. The triggering entry and cascade share one undo snapshot.
 A transient generation counter invalidates callbacks after board/note edits,
 undo/redo, hints, pause, settings changes, or game replacement. Legacy saved
 counters are ignored. Browser scheduling wraps native-testable state steps.
+
+## UI controls
+
+`GameStatus` renders the timer, labeled error count, and accessible pause/resume
+control above the board. `GameControls` groups assistance actions below the
+keypad, followed by the difficulty disclosure. Header utilities and other
+non-board actions use shared 44px targets in `style/input.css`. Number buttons
+use five columns on phones and nine above 640px, with 52px minimum height.
+`GamePage` wraps the board/status and controls in separate panels. Tablet
+styles grow the board up to 720px within the viewport and increase number
+buttons to 64px height. Panels stay stacked at all viewport widths. Board
+digits and notes scale up, and the manifest locks the installed PWA to portrait.
+
+`Icon` uses a small `IconName` enum and local paths, with `aria-hidden` so control
+labels provide accessible names. Active notes/Drop modes expose `aria-pressed`
+and keep stable names. Settings uses labeled native checkboxes, radios, ranges,
+and a native details/summary disclosure for timing. Its components call existing
+state transitions; `set_sound` selects the existing `SoundType` directly.
+Layout changes do not alter serialization or saved preferences.
+
+`tests/ui-browser.mjs` covers responsive layouts, control sizing, keyboard
+operation, disclosure, sound, mode states, installation, reset, and reload.
+Screenshots under `docs/screenshots/ui-ux/` document the verified production UI.

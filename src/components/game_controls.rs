@@ -1,3 +1,4 @@
+use crate::components::icon::{Icon, IconName};
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
@@ -9,121 +10,63 @@ fn format_time(seconds: u32) -> String {
 }
 
 #[component]
-pub fn GameControls(state: AppState) -> impl IntoView {
-    let timer = move || format_time(state.0.get().timer_seconds);
+pub fn GameStatus(state: AppState) -> impl IntoView {
     let paused = move || state.0.get().paused;
-    let won = move || state.0.get().won;
-    let difficulty = move || state.0.get().difficulty;
-    let show_new_game = RwSignal::new(false);
-
     view! {
-        <div class="w-full max-w-[min(90vw,500px)] mx-auto mt-2 space-y-1.5">
-            // Timer + errors + pause
-            <div class="flex items-center justify-center gap-2 text-xl font-mono">
-                <span>{move || timer()}</span>
-                <span class="text-sm">
-                    {move || {
-                        let e = state.0.get().error_count;
-                        if e == 0 {
-                            "✅ 0".to_string()
-                        } else {
-                            format!("❌ {e}")
-                        }
-                    }}
-                </span>
-                <button
-                    class="text-sm px-2 py-0.5 rounded bg-control active:bg-control-hover"
-                    on:click=move |_| state.toggle_pause()
-                >
-                    {move || if paused() { "▶" } else { "⏸" }}
-                </button>
-            </div>
+        <div class="game-status" role="group" aria-label="Estado do jogo">
+            <span class="flex items-center gap-2" aria-label=move || format!("Tempo de jogo: {}", format_time(state.0.get().timer_seconds))>
+                <Icon name=IconName::Clock /><span class="font-mono tabular-nums">{move || format_time(state.0.get().timer_seconds)}</span>
+            </span>
+            <span class="text-sm text-muted">{move || format!("Erros: {}", state.0.get().error_count)}</span>
+            <button class="ui-icon-button" aria-label=move || if paused() { "Retomar jogo" } else { "Pausar jogo" }
+                title=move || if paused() { "Retomar jogo" } else { "Pausar jogo" }
+                aria-pressed=move || paused().to_string() on:click=move |_| state.toggle_pause()>
+                {move || view! { <Icon name=if paused() { IconName::Play } else { IconName::Pause } /> }}
+            </button>
+        </div>
+    }
+}
 
-            // Win message
-            <Show when=move || won()>
-                <div class="text-center text-success-text font-bold text-lg animate-pulse">
-                    "🎉 Parabéns! Puzzle resolvido!"
-                </div>
+#[component]
+pub fn GameControls(state: AppState) -> impl IntoView {
+    let show_new_game = RwSignal::new(false);
+    view! {
+        <div class="game-actions">
+            <Show when=move || state.0.get().won>
+                <div class="text-center text-success-text font-bold" role="status">"Parabéns! Puzzle resolvido!"</div>
             </Show>
-
-            // New game button + difficulty selection
-            <div class="flex flex-col items-center gap-1">
-                <button
-                    class="px-3 py-1 rounded text-sm font-medium bg-primary text-on-primary active:bg-primary-hover transition-colors"
-                    on:click=move |_| show_new_game.update(|v| *v = !*v)
-                >
-                    "🔄 Novo Jogo"
-                </button>
-                <Show when=move || show_new_game.get()>
-                    <div class="flex flex-wrap items-center justify-center gap-1">
-                        {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert, Difficulty::Master].iter().map(|&d| {
-                            let label = match d {
-                                Difficulty::Easy => "Fácil",
-                                Difficulty::Medium => "Médio",
-                                Difficulty::Hard => "Difícil",
-                                Difficulty::Expert => "Expert",
-                                Difficulty::Master => "Mestre",
-                            };
-                            view! {
-                                <button
-                                    class=move || format!(
-                                        "px-2 py-1 rounded text-xs font-medium transition-colors {}",
-                                        if difficulty() == d {
-                                            "bg-primary text-on-primary"
-                                        } else {
-                                            "bg-control text-text active:bg-control-hover"
-                                        }
-                                    )
-                                    on:click=move |_| {
-                                        state.new_game(d);
-                                        show_new_game.set(false);
-                                    }
-                                >
-                                    {label}
-                                </button>
-                            }
-                        }).collect::<Vec<_>>()}
-                    </div>
-                </Show>
-            </div>
-
-            // Action buttons
-            <div class="flex justify-center gap-1.5">
+            <div class="assistance-actions" role="group" aria-label="Assistências do jogo">
                 <Show when=move || state.0.get().undo_enabled>
-                    <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover disabled:bg-disabled disabled:text-muted"
-                        on:click=move |_| state.undo()
-                        disabled=move || state.0.get().history.is_empty()
-                    >
-                        "↩ Desfazer"
+                    <button class="ui-action" on:click=move |_| state.undo() disabled=move || state.0.get().history.is_empty()>
+                        <Icon name=IconName::Undo />"Desfazer"
                     </button>
-                </Show>
-                <Show when=move || state.0.get().undo_enabled>
-                    <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover disabled:bg-disabled disabled:text-muted"
-                        on:click=move |_| state.redo()
-                        disabled=move || state.0.get().redo_stack.is_empty()
-                    >
-                        "↪ Refazer"
+                    <button class="ui-action" on:click=move |_| state.redo() disabled=move || state.0.get().redo_stack.is_empty()>
+                        <Icon name=IconName::Redo />"Refazer"
                     </button>
                 </Show>
                 <Show when=move || state.0.get().auto_notes_enabled>
-                    <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-control active:bg-control-hover"
-                        on:click=move |_| state.auto_notes()
-                    >
-                        "📝 Auto Notas"
-                    </button>
+                    <button class="ui-action" on:click=move |_| state.auto_notes()><Icon name=IconName::AutoNotes />"Auto notas"</button>
                 </Show>
                 <Show when=move || state.0.get().hint_enabled>
-                    <button
-                        class="px-3 py-1.5 rounded text-sm font-medium bg-hint text-hint-text active:bg-hint disabled:bg-disabled disabled:text-muted"
-                        on:click=move |_| state.hint()
-                    >
-                        "💡 Dica"
-                    </button>
+                    <button class="ui-action ui-hint-action" on:click=move |_| state.hint()><Icon name=IconName::Hint />"Dica"</button>
                 </Show>
             </div>
+            <button class="ui-action new-game-action" aria-expanded=move || show_new_game.get().to_string()
+                aria-controls="difficulty-choices" on:click=move |_| show_new_game.update(|v| *v = !*v)>
+                <Icon name=IconName::Reset />"Novo jogo"
+            </button>
+            <Show when=move || show_new_game.get()>
+                <div id="difficulty-choices" class="difficulty-choices" role="group" aria-label="Dificuldade do novo jogo">
+                    {[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Expert, Difficulty::Master].into_iter().map(|difficulty| {
+                        let label = match difficulty { Difficulty::Easy => "Fácil", Difficulty::Medium => "Médio",
+                            Difficulty::Hard => "Difícil", Difficulty::Expert => "Expert", Difficulty::Master => "Mestre" };
+                        view! {
+                            <button class="ui-action" data-active=move || (state.0.get().difficulty == difficulty).to_string()
+                                on:click=move |_| { state.new_game(difficulty); show_new_game.set(false); }>{label}</button>
+                        }
+                    }).collect::<Vec<_>>()}
+                </div>
+            </Show>
         </div>
     }
 }
