@@ -48,6 +48,41 @@ impl Default for HighlightSettings {
     }
 }
 
+/// Player preferences; candidates always come from a simple row/column/box scan.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DominoSettings {
+    pub initial_delay_ms: u32,
+    pub acceleration_percent: u32,
+    pub minimum_delay_ms: u32,
+    pub empty_cell_threshold: u32,
+}
+
+impl Default for DominoSettings {
+    fn default() -> Self {
+        Self {
+            initial_delay_ms: 600,
+            acceleration_percent: 20,
+            minimum_delay_ms: 100,
+            empty_cell_threshold: 0,
+        }
+    }
+}
+
+impl DominoSettings {
+    fn normalize(&mut self) {
+        self.initial_delay_ms = self.initial_delay_ms.clamp(100, 2000);
+        self.acceleration_percent = self.acceleration_percent.min(50);
+        self.minimum_delay_ms = self.minimum_delay_ms.clamp(50, self.initial_delay_ms);
+        self.empty_cell_threshold = self.empty_cell_threshold.min(81);
+    }
+
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    fn next_delay(&self, delay_ms: u32) -> u32 {
+        ((delay_ms * (100 - self.acceleration_percent) + 50) / 100).max(self.minimum_delay_ms)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
     #[serde(with = "u8_81")]
@@ -84,6 +119,9 @@ pub struct GameState {
     pub sound_type: SoundType,
     #[serde(default)]
     pub highlights: HighlightSettings,
+    #[serde(default)]
+    pub domino: DominoSettings,
+    #[serde(skip)]
     pub domino_gen: u32,
     #[serde(skip)]
     pub just_filled: Option<(usize, usize)>,
@@ -133,6 +171,7 @@ impl Default for GameState {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: false,
+            domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),
             highlights: HighlightSettings::default(),
@@ -216,7 +255,91 @@ impl GameState {
         self.hinted[Self::idx(r, c)] != 0
     }
 
+    fn cancel_domino(&mut self) {
+        self.domino_gen = self.domino_gen.wrapping_add(1);
+    }
+
+    fn domino_eligible(&self) -> bool {
+        let empty = self.board.iter().filter(|&&v| v == 0).count() as u32;
+        self.domino_enabled
+            && !self.paused
+            && !self.won
+            && empty > 0
+            && (self.domino.empty_cell_threshold == 0 || empty <= self.domino.empty_cell_threshold)
+    }
+
+    fn clear_related_notes(&mut self, row: usize, col: usize, value: u8) {
+        let mask = !(1 << (value - 1));
+        for i in 0..81 {
+            let (r, c) = (i / 9, i % 9);
+            if r == row || c == col || (r / 3 == row / 3 && c / 3 == col / 3) {
+                self.notes[i] &= mask;
+            }
+        }
+    }
+
+    /// Apply a player entry; both normal and Drop mode use this transition.
+    fn enter_number(&mut self, row: usize, col: usize, value: u8) -> bool {
+        if self.is_locked(row, col) || self.won || self.paused || value > 9 {
+            return false;
+        }
+        self.push_snapshot();
+        let i = Self::idx(row, col);
+        if self.note_mode {
+            if value == 0 {
+                self.notes[i] = 0;
+            } else {
+                self.notes[i] ^= 1 << (value - 1);
+            }
+            return false;
+        }
+        self.board[i] = value;
+        self.notes[i] = 0;
+        if value == 0 {
+            return false;
+        }
+        if value != self.solution[i] {
+            self.error_count += 1;
+            return false;
+        }
+        self.clear_related_notes(row, col, value);
+        self.just_filled = Some((row, col));
+        self.won = self.board == self.solution;
+        #[cfg(target_arch = "wasm32")]
+        play_sound(self.sound_type);
+        self.domino_eligible()
+    }
+
+    /// Fill only naked singles from current row/column/box constraints.
+    /// The solution check prevents propagating an incorrect player entry.
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    fn domino_step(&mut self, generation: u32) -> bool {
+        if self.domino_gen != generation || !self.domino_eligible() {
+            return false;
+        }
+        self.just_filled = None;
+        for i in 0..81 {
+            if self.board[i] != 0 {
+                continue;
+            }
+            let (row, col) = (i / 9, i % 9);
+            let candidates = sudoku_engine::candidates(&self.board, row, col);
+            if candidates.len() != 1 || candidates[0] != self.solution[i] {
+                continue;
+            }
+            let value = candidates[0];
+            self.board[i] = value;
+            self.notes[i] = 0;
+            self.clear_related_notes(row, col, value);
+            self.just_filled = Some((row, col));
+            self.won = self.board == self.solution;
+            return true;
+        }
+        false
+    }
+
     pub fn push_snapshot(&mut self) {
+        self.cancel_domino();
         self.history.push(Snapshot {
             board: self.board,
             notes: self.notes,
@@ -236,6 +359,7 @@ impl GameState {
     }
 
     pub fn undo(&mut self) {
+        self.cancel_domino();
         if let Some(snap) = self.history.pop() {
             self.redo_stack.push(Snapshot {
                 board: self.board,
@@ -244,10 +368,14 @@ impl GameState {
             self.board = snap.board;
             self.notes = snap.notes;
             self.reconcile_restored_givens();
+            self.won = self.board == self.solution;
+            self.celebrated = false;
+            self.just_filled = None;
         }
     }
 
     pub fn redo(&mut self) {
+        self.cancel_domino();
         if let Some(snap) = self.redo_stack.pop() {
             self.history.push(Snapshot {
                 board: self.board,
@@ -256,6 +384,9 @@ impl GameState {
             self.board = snap.board;
             self.notes = snap.notes;
             self.reconcile_restored_givens();
+            self.won = self.board == self.solution;
+            self.celebrated = false;
+            self.just_filled = None;
         }
     }
 }
@@ -291,7 +422,8 @@ impl AppState {
                 auto_notes_enabled: s.auto_notes_enabled,
                 hint_enabled: s.hint_enabled,
                 domino_enabled: s.domino_enabled,
-                domino_gen: s.domino_gen,
+                domino: s.domino,
+                domino_gen: s.domino_gen.wrapping_add(1),
                 sound_type: s.sound_type,
                 highlights: s.highlights,
                 just_filled: None,
@@ -310,41 +442,11 @@ impl AppState {
     }
 
     pub fn select_cell(&self, r: usize, c: usize) {
+        let mut trigger_domino = false;
         self.0.update(|s| {
             if s.drop_mode {
-                if let Some(dn) = s.drop_number {
-                    if !s.is_locked(r, c) && !s.won {
-                        if s.note_mode {
-                            s.push_snapshot();
-                            s.notes[GameState::idx(r, c)] ^= 1 << (dn - 1);
-                        } else {
-                            s.push_snapshot();
-                            let idx = GameState::idx(r, c);
-                            s.board[idx] = dn;
-                            s.notes[idx] = 0;
-                            if dn != s.solution[idx] {
-                                s.error_count += 1;
-                            }
-                            if dn == s.solution[idx] {
-                                let bit = !(1 << (dn - 1));
-                                for i in 0..9 {
-                                    s.notes[GameState::idx(r, i)] &= bit;
-                                    s.notes[GameState::idx(i, c)] &= bit;
-                                }
-                                let br = (r / 3) * 3;
-                                let bc = (c / 3) * 3;
-                                for rr in br..br + 3 {
-                                    for cc in bc..bc + 3 {
-                                        s.notes[GameState::idx(rr, cc)] &= bit;
-                                    }
-                                }
-                                s.just_filled = Some((r, c));
-                            }
-                            if s.board == s.solution {
-                                s.won = true;
-                            }
-                        }
-                    }
+                if let Some(number) = s.drop_number {
+                    trigger_domino = s.enter_number(r, c, number);
                 }
             }
 
@@ -377,6 +479,7 @@ impl AppState {
             s.secondary_highlight_rows = 0;
             s.secondary_highlight_cols = 0;
         });
+        self.finish_entry(trigger_domino);
     }
 
     pub fn toggle_drop_mode(&self) {
@@ -396,129 +499,52 @@ impl AppState {
         });
     }
 
-    pub fn place_number(&self, v: u8) {
+    pub fn place_number(&self, value: u8) {
         let mut trigger_domino = false;
         self.0.update(|s| {
-            if let Some((r, c)) = s.selected {
-                if s.is_locked(r, c) || s.won {
-                    return;
-                }
-                s.push_snapshot();
-
-                if s.note_mode {
-                    if v == 0 {
-                        s.notes[GameState::idx(r, c)] = 0;
-                    } else {
-                        let bit = 1 << (v - 1);
-                        s.notes[GameState::idx(r, c)] ^= bit;
-                    }
-                } else {
-                    if v == 0 {
-                        s.board[GameState::idx(r, c)] = 0;
-                    } else {
-                        let idx = GameState::idx(r, c);
-                        s.board[idx] = v;
-                        s.notes[idx] = 0;
-                        if v != s.solution[idx] {
-                            s.error_count += 1;
-                        }
-                        // If correct, remove notes of this number from row/col/box
-                        if v == s.solution[idx] {
-                            #[cfg(target_arch = "wasm32")]
-                            play_sound(s.sound_type);
-                            let bit = !(1 << (v - 1));
-                            for i in 0..9 {
-                                s.notes[GameState::idx(r, i)] &= bit;
-                                s.notes[GameState::idx(i, c)] &= bit;
-                            }
-                            let br = (r / 3) * 3;
-                            let bc = (c / 3) * 3;
-                            for rr in br..br + 3 {
-                                for cc in bc..bc + 3 {
-                                    s.notes[GameState::idx(rr, cc)] &= bit;
-                                }
-                            }
-                            s.just_filled = Some((r, c));
-                            if s.domino_enabled && s.board != s.solution {
-                                trigger_domino = true;
-                            }
-                        }
-                    }
-                }
-
-                // Check win
-                if !s.note_mode && s.board == s.solution {
-                    s.won = true;
-                }
+            if let Some((row, col)) = s.selected {
+                trigger_domino = s.enter_number(row, col, value);
             }
         });
+        self.finish_entry(trigger_domino);
+    }
+
+    fn finish_entry(&self, trigger_domino: bool) {
         #[cfg(target_arch = "wasm32")]
-        if self.0.with(|s| s.won && !s.celebrated) {
-            let sound = self.0.with(|s| s.sound_type);
-            self.0.update(|s| s.celebrated = true);
-            play_fireworks(sound);
-        }
-        if trigger_domino {
-            #[cfg(target_arch = "wasm32")]
-            {
-                let sound = self.0.with(|s| s.sound_type);
-                let gen = self.0.with(|s| s.domino_gen + 1);
-                self.0.update(|s| s.domino_gen = gen);
-                Self::domino_chain(self.0, 600, gen, sound);
+        {
+            Self::celebrate(self.0);
+            if trigger_domino {
+                let (delay, generation) =
+                    self.0.with(|s| (s.domino.initial_delay_ms, s.domino_gen));
+                Self::domino_chain(self.0, delay, generation);
             }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = trigger_domino;
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn celebrate(signal: RwSignal<GameState>) {
+        if signal.with(|s| s.won && !s.celebrated) {
+            let sound = signal.with(|s| s.sound_type);
+            signal.update(|s| s.celebrated = true);
+            play_fireworks(sound);
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn domino_chain(signal: RwSignal<GameState>, delay_ms: u32, gen: u32, sound: SoundType) {
+    fn domino_chain(signal: RwSignal<GameState>, delay_ms: u32, generation: u32) {
         set_timeout(
             move || {
                 let mut filled = false;
-                signal.update(|s| {
-                    if s.domino_gen != gen {
-                        return;
-                    }
-                    s.just_filled = None;
-                    for i in 0..81 {
-                        if s.board[i] == 0 {
-                            let row = i / 9;
-                            let col = i % 9;
-                            let cands = sudoku_engine::candidates(&s.board, row, col);
-                            if cands.len() == 1 {
-                                let v = cands[0];
-                                s.board[i] = v;
-                                s.notes[i] = 0;
-                                play_sound(sound);
-                                // Clear notes of this number from row/col/box
-                                let bit = !(1 << (v - 1));
-                                for j in 0..9 {
-                                    s.notes[GameState::idx(row, j)] &= bit;
-                                    s.notes[GameState::idx(j, col)] &= bit;
-                                }
-                                let br = (row / 3) * 3;
-                                let bc = (col / 3) * 3;
-                                for rr in br..br + 3 {
-                                    for cc in bc..bc + 3 {
-                                        s.notes[GameState::idx(rr, cc)] &= bit;
-                                    }
-                                }
-                                if s.board == s.solution {
-                                    s.won = true;
-                                }
-                                s.just_filled = Some((row, col));
-                                filled = true;
-                                break;
-                            }
-                        }
-                    }
-                });
-                if signal.with(|s| s.won && !s.celebrated) {
-                    signal.update(|s| s.celebrated = true);
-                    play_fireworks(sound);
-                }
+                signal.update(|s| filled = s.domino_step(generation));
                 if filled {
-                    let next = ((delay_ms as f32 * 0.8).round() as u32).max(100);
-                    Self::domino_chain(signal, next, gen, sound);
+                    play_sound(signal.with(|s| s.sound_type));
+                    Self::celebrate(signal);
+                    if signal.with(|s| s.domino_eligible() && s.domino_gen == generation) {
+                        let next = signal.with(|s| s.domino.next_delay(delay_ms));
+                        Self::domino_chain(signal, next, generation);
+                    }
                 }
             },
             std::time::Duration::from_millis(delay_ms as u64),
@@ -551,7 +577,18 @@ impl AppState {
     }
 
     pub fn toggle_domino(&self) {
-        self.0.update(|s| s.domino_enabled = !s.domino_enabled);
+        self.0.update(|s| {
+            s.cancel_domino();
+            s.domino_enabled = !s.domino_enabled;
+        });
+    }
+
+    pub fn set_domino_settings(&self, mut settings: DominoSettings) {
+        settings.normalize();
+        self.0.update(|s| {
+            s.cancel_domino();
+            s.domino = settings;
+        });
     }
 
     pub fn reset_config(&self) {
@@ -559,7 +596,9 @@ impl AppState {
             s.undo_enabled = true;
             s.auto_notes_enabled = true;
             s.hint_enabled = true;
+            s.cancel_domino();
             s.domino_enabled = false;
+            s.domino = DominoSettings::default();
             s.sound_type = SoundType::default();
             s.highlights = HighlightSettings::default();
         });
@@ -570,6 +609,7 @@ impl AppState {
             if !s.hint_enabled || s.won {
                 return;
             }
+            s.cancel_domino();
             // Hint: pick the unsolved cell with fewest candidates.
             // Deterministic pseudo-random traversal order from puzzle seed.
             let mut order: Vec<usize> = (0..81).collect();
@@ -660,7 +700,10 @@ impl AppState {
     }
 
     pub fn toggle_pause(&self) {
-        self.0.update(|s| s.paused = !s.paused);
+        self.0.update(|s| {
+            s.cancel_domino();
+            s.paused = !s.paused;
+        });
     }
 
     pub fn cycle_sound(&self) {
@@ -766,6 +809,7 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     let legacy = value.get("givens").is_none();
     let mut state: GameState = serde_json::from_value(value)?;
+    state.domino.normalize();
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
     state.highlights.available_shading = state.highlights.available_shading.min(100);
@@ -812,6 +856,268 @@ pub fn save_state(_state: &GameState) {
 mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
+
+    fn domino_fixture() -> GameState {
+        let mut s = GameState::default();
+        for r in 0..9 {
+            for c in 0..9 {
+                s.solution[r * 9 + c] = ((r * 3 + r / 3 + c) % 9 + 1) as u8;
+            }
+        }
+        s.board = s.solution;
+        for i in [0, 1, 9] {
+            s.board[i] = 0;
+        }
+        s.givens = s.board;
+        s.notes = [511; 81];
+        s.domino_enabled = true;
+        s.sound_type = SoundType::None;
+        s
+    }
+
+    #[test]
+    fn domino_timing_and_normalization() {
+        let mut d = DominoSettings::default();
+        assert_eq!(d.next_delay(600), 480);
+        assert_eq!(d.next_delay(480), 384);
+        assert_eq!(d.next_delay(100), 100);
+        d.acceleration_percent = 0;
+        assert_eq!(d.next_delay(600), 600);
+        d.initial_delay_ms = 100;
+        d.minimum_delay_ms = 900;
+        d.acceleration_percent = 99;
+        d.empty_cell_threshold = 99;
+        d.normalize();
+        assert_eq!(d.minimum_delay_ms, 100);
+        assert_eq!(d.acceleration_percent, 50);
+        assert_eq!(d.empty_cell_threshold, 81);
+        assert_eq!(d.next_delay(101), 100);
+    }
+
+    #[test]
+    fn domino_threshold_is_checked_after_correct_entries_in_both_modes() {
+        for drop in [false, true] {
+            let mut s = domino_fixture();
+            s.domino.empty_cell_threshold = 2;
+            assert!(!s.domino_eligible());
+            let value = s.solution[0];
+            let app = AppState(RwSignal::new(s));
+            if drop {
+                app.toggle_drop_mode();
+                app.select_drop_number(value);
+                app.select_cell(0, 0);
+            } else {
+                app.select_cell(0, 0);
+                app.place_number(value);
+            }
+            let s = app.0.get();
+            assert!(s.domino_eligible());
+            assert_eq!(s.board.iter().filter(|&&v| v == 0).count(), 2);
+            assert_eq!(s.history.len(), 1);
+            assert_eq!(s.domino_gen, 1);
+        }
+        let mut s = domino_fixture();
+        s.domino.empty_cell_threshold = 1;
+        assert!(!s.enter_number(0, 0, s.solution[0]));
+        s.domino.empty_cell_threshold = 0;
+        assert!(s.domino_eligible());
+        s = domino_fixture();
+        assert!(!s.enter_number(0, 0, 9));
+        s = domino_fixture();
+        s.note_mode = true;
+        assert!(!s.enter_number(0, 0, s.solution[0]));
+        s = domino_fixture();
+        s.paused = true;
+        assert!(!s.enter_number(0, 0, s.solution[0]));
+        assert_eq!(s.board[0], 0);
+    }
+
+    #[test]
+    fn domino_steps_ignore_notes_clear_peers_and_group_history() {
+        let mut s = domino_fixture();
+        let before = s.board;
+        let notes = s.notes;
+        assert!(s.enter_number(0, 0, s.solution[0]));
+        let generation = s.domino_gen;
+        assert!(s.domino_step(generation));
+        assert_eq!(s.just_filled, Some((0, 1)));
+        assert_eq!(s.notes[1], 0);
+        assert_eq!(s.notes[10] & (1 << (s.solution[1] - 1)), 0);
+        assert!(s.domino_step(generation));
+        assert!(s.won);
+        assert!(!s.domino_step(generation));
+        assert_eq!(s.history.len(), 1);
+        let after = s.board;
+        let after_notes = s.notes;
+        s.undo();
+        assert_eq!(s.board, before);
+        assert_eq!(s.notes, notes);
+        assert!(!s.won);
+        assert!(!s.domino_step(generation));
+        s.redo();
+        assert_eq!(s.board, after);
+        assert_eq!(s.notes, after_notes);
+        assert!(s.won);
+    }
+
+    #[test]
+    fn domino_scans_row_column_box_and_skips_unsafe_candidates() {
+        // Block 1..8 around (0,0), with each unit providing distinct exclusions.
+        let mut s = domino_fixture();
+        s.board = [0; 81];
+        s.solution = [9; 81];
+        for (i, v) in [
+            (3, 1),
+            (4, 2),
+            (5, 3),
+            (27, 4),
+            (36, 5),
+            (45, 6),
+            (10, 7),
+            (20, 8),
+        ] {
+            s.board[i] = v;
+        }
+        assert_eq!(sudoku_engine::candidates(&s.board, 0, 0), vec![9]);
+        s.notes[0] = 1; // Notes cannot make 1 eligible or exclude 9.
+        assert!(s.domino_step(s.domino_gen));
+        assert_eq!(s.board[0], 9);
+        s.board[0] = 0;
+        s.solution = [1; 81];
+        assert!(!s.domino_step(s.domino_gen));
+        assert_eq!(s.board[0], 0);
+        s.board[6] = 9; // No candidate at the target.
+        assert!(sudoku_engine::candidates(&s.board, 0, 0).is_empty());
+        assert!(!s.domino_step(s.domino_gen));
+        s.board = [0; 81]; // Multiple candidates; notes are not deductions.
+        s.notes = [1; 81];
+        assert!(!s.domino_step(s.domino_gen));
+    }
+
+    #[test]
+    fn domino_recomputes_candidates_and_leaves_hidden_singles_alone() {
+        let mut s = domino_fixture();
+        let rows = [
+            "530070000",
+            "600195000",
+            "098000060",
+            "800060003",
+            "400803001",
+            "700020006",
+            "060000280",
+            "000419005",
+            "000080079",
+        ];
+        let solution = [
+            "534678912",
+            "672195348",
+            "198342567",
+            "859761423",
+            "426853791",
+            "713924856",
+            "961537284",
+            "287419635",
+            "345286179",
+        ];
+        for (r, row) in rows.iter().enumerate() {
+            for (c, ch) in row.bytes().enumerate() {
+                s.board[r * 9 + c] = ch - b'0';
+            }
+            for (c, ch) in solution[r].bytes().enumerate() {
+                s.solution[r * 9 + c] = ch - b'0';
+            }
+        }
+        let initial = s.board;
+        let mut newly_single = false;
+        while s.domino_step(s.domino_gen) {
+            let (r, c) = s.just_filled.unwrap();
+            newly_single |= sudoku_engine::candidates(&initial, r, c).len() > 1;
+        }
+        assert!(newly_single);
+        assert_eq!(s.board, s.solution);
+
+        // Create a hidden single 1 at (0,0): the other row cells exclude 1,
+        // but the target still has several candidates and must remain empty.
+        s.board = [0; 81];
+        for i in [12, 15, 28, 29] {
+            s.board[i] = 1;
+        }
+        assert!(sudoku_engine::candidates(&s.board, 0, 0).len() > 1);
+        assert_eq!(
+            (0..9)
+                .filter(|&c| sudoku_engine::candidates(&s.board, 0, c).contains(&1))
+                .collect::<Vec<_>>(),
+            vec![0]
+        );
+        assert!(!s.domino_step(s.domino_gen));
+        assert_eq!(s.board[0], 0);
+    }
+
+    #[test]
+    fn domino_callbacks_are_invalidated_by_state_actions() {
+        for action in 0..10 {
+            let app = AppState(RwSignal::new(domino_fixture()));
+            app.select_cell(0, 0);
+            app.place_number(app.0.get().solution[0]);
+            let generation = app.0.get().domino_gen;
+            match action {
+                0 => app.toggle_domino(),
+                1 => app.reset_config(),
+                2 => app.set_domino_settings(DominoSettings::default()),
+                3 => app.toggle_pause(),
+                4 => app.undo(),
+                5 => app.redo(),
+                6 => app.hint(),
+                7 => app.auto_notes(),
+                8 => app.place_number(0),
+                _ => app.new_game(Difficulty::Easy),
+            }
+            let before = app.0.get().board;
+            app.0.update(|s| assert!(!s.domino_step(generation)));
+            assert_eq!(app.0.get().board, before);
+        }
+    }
+
+    #[test]
+    fn domino_preferences_are_compatible_persistent_and_resettable() {
+        let mut s = domino_fixture();
+        s.timer_seconds = 123;
+        s.push_snapshot();
+        s.domino = DominoSettings {
+            initial_delay_ms: 1000,
+            acceleration_percent: 0,
+            minimum_delay_ms: 250,
+            empty_cell_threshold: 12,
+        };
+        let mut json = serde_json::to_value(&s).unwrap();
+        let restored = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(restored.domino, s.domino);
+        assert_eq!(restored.domino_gen, 0);
+        json.as_object_mut().unwrap().remove("domino");
+        json["domino_gen"] = serde_json::json!(4294967295u32);
+        let legacy = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(legacy.domino, DominoSettings::default());
+        assert_eq!(legacy.domino_gen, 0);
+        assert_eq!(legacy.board, s.board);
+        assert_eq!(legacy.notes, s.notes);
+        assert_eq!(legacy.timer_seconds, 123);
+        assert_eq!(legacy.history[0].board, s.history[0].board);
+        assert!(legacy.domino_enabled);
+        json["domino"] = serde_json::json!({"initial_delay_ms": 1, "empty_cell_threshold": 999});
+        let partial = decode_saved_state(&json.to_string()).unwrap();
+        assert_eq!(partial.domino.initial_delay_ms, 100);
+        assert_eq!(partial.domino.minimum_delay_ms, 100);
+        assert_eq!(partial.domino.acceleration_percent, 20);
+        assert_eq!(partial.domino.empty_cell_threshold, 81);
+        let app = AppState(RwSignal::new(s.clone()));
+        app.new_game(Difficulty::Easy);
+        assert_eq!(app.0.get().domino, s.domino);
+        let board = app.0.get().board;
+        app.reset_config();
+        assert_eq!(app.0.get().board, board);
+        assert_eq!(app.0.get().domino, DominoSettings::default());
+        assert!(!app.0.get().domino_enabled);
+    }
 
     #[test]
     fn highlight_preferences_round_trip_and_old_saves_keep_progress() {
@@ -1154,6 +1460,7 @@ mod tests {
             auto_notes_enabled: true,
             hint_enabled: true,
             domino_enabled: false,
+            domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),
             highlights: HighlightSettings::default(),

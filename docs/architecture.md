@@ -110,3 +110,17 @@ puzzle rating. Loading old saves preserves their existing difficulty and state;
 it does not regrade a partially played board. Undo, hints, and entries do not
 change the puzzle's rating. The header distinguishes older ungraded games.
 See [the implemented policy](difficulty-policy.md) for bounds and calibration.
+
+## Domino cascades
+
+`GameState.domino` stores serde-defaulted `DominoSettings`; existing saves keep
+600ms initial delay, 20% acceleration, 100ms minimum, and no empty-cell limit.
+Settings are normalized on load and through the setter and survive new games.
+Normal and Drop entries share one transition. Only correct entries start a
+cascade; enabling, loading, or changing settings does not auto-start it.
+Each step recomputes naked singles with the engine's row/column/box candidate
+scan, ignores notes and advanced deductions, and skips solution-inconsistent
+candidates. The triggering entry and cascade share one undo snapshot.
+A transient generation counter invalidates callbacks after board/note edits,
+undo/redo, hints, pause, settings changes, or game replacement. Legacy saved
+counters are ignored. Browser scheduling wraps native-testable state steps.
