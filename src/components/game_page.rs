@@ -1,9 +1,4 @@
-use crate::components::{
-    game_controls::{GameControls, GameStatus},
-    header::Header,
-    number_pad::NumberPad,
-    sudoku_grid::SudokuGrid,
-};
+use crate::components::{header::Header, number_pad::NumberPad, sudoku_grid::SudokuGrid};
 use crate::state::AppState;
 use leptos::prelude::*;
 
@@ -15,12 +10,13 @@ pub fn GamePage() -> impl IntoView {
         <Header />
         <div class="game-play-area">
             <div class="board-panel">
-                <GameStatus state=state />
                 <SudokuGrid state=state />
             </div>
             <div class="control-panel">
                 <NumberPad state=state />
-                <GameControls state=state />
+                <Show when=move || state.0.get().won>
+                    <div class="text-center text-success-text font-bold" role="status">"Parabéns! Puzzle resolvido!"</div>
+                </Show>
             </div>
         </div>
         </main>

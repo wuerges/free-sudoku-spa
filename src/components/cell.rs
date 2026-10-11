@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::{color_name, AppState};
 use leptos::prelude::*;
 
 #[component]
@@ -75,6 +75,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                 if state.0.get().just_filled == Some((row, col)) { "cell-flash" } else { "" },
             )
             data-row=row data-col=col
+            data-color=move || state.0.get().cell_colors[row * 9 + col]
             data-cell-state=cell_state
             data-selected=move || selected().to_string()
             data-matching=move || matching().to_string()
@@ -85,7 +86,7 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             data-number-origin=origin
             aria-pressed=move || selected().to_string()
             aria-label=move || format!(
-                "Linha {}, coluna {}, {}{}{}{}",
+                "Linha {}, coluna {}, {}{}{}{}{}",
                 row + 1, col + 1,
                 if value() == 0 { "vazia".to_string() } else { format!("número {}", value()) },
                 match origin() { "given" => ", número original", "hint" => ", dica", _ => "" },
@@ -95,6 +96,9 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
                     Some(false) => state.0.get().active_number().map_or_else(|| ", na linha, coluna ou bloco selecionado".to_string(), |n| format!(", bloqueada para {n} pelas regras, {}",
                         if blocker() == Some("selected") { "pela célula selecionada" } else { "por outro número igual" })),
                     None => String::new(),
+                },
+                match state.0.get().cell_colors[row * 9 + col] {
+                    0 => String::new(), color => format!(", cor {}", color_name(color).to_lowercase()),
                 },
             )
             on:click=move |_| state.select_cell(row, col)

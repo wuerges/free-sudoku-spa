@@ -1,3 +1,4 @@
+import { clickGameAction } from './game-actions.mjs';
 // Optional browser audit: provide Playwright via PLAYWRIGHT_MODULE or an installed playwright package.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -72,7 +73,7 @@ try {
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
     await cell(fixture.user).click();await page.getByRole('button',{name:'Apagar',exact:true}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
-    await page.getByRole('button',{name:'Desfazer',exact:true}).click();
+    await clickGameAction(page,'Desfazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // A selected error keeps its error fill and selection outline.
     const wrong=[1,2,3,4,5,6,7,8,9].find(n=>n!==fixture.s.solution[fixture.user] && n!==fixture.s.solution[fixture.hint]);
@@ -118,7 +119,7 @@ try {
     await page.reload();await page.locator('.sudoku-cell').first().waitFor();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'given');
     assert.match(await page.locator('header p').innerText(),/jogo anterior/);
-    await page.getByRole('button',{name:'Desfazer',exact:true}).click();
+    await clickGameAction(page,'Desfazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
     await cell(fixture.user).click();
     await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${fixture.s.solution[fixture.user]}$`)}).click();

@@ -1,3 +1,4 @@
+import { clickGameAction } from './game-actions.mjs';
 // Optional production-bundle audit; same Playwright environment as theme-browser.mjs.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -57,7 +58,7 @@ try {
     await page.reload(); await ready();
     assert.deepEqual((await read()).domino,{initial_delay_ms:1000, acceleration_percent:10, minimum_delay_ms:250, empty_cell_threshold:2});
     await page.goto(url); await ready();
-    await page.getByRole('button',{name:'Novo jogo',exact:true}).click();
+    await clickGameAction(page,'Novo jogo');
     await page.getByRole('button',{name:'Fácil',exact:true}).click();
     assert.equal((await read()).domino.empty_cell_threshold,2);
     await page.goto(url+'/config'); await ready();
@@ -78,10 +79,10 @@ try {
       assert.equal((await read()).board[9],0); // One cell per timeout.
       await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sudoku_state')).won);
       assert.equal((await read()).history.length,1);
-      await page.getByRole('button',{name:'Desfazer',exact:true}).click();
+      await clickGameAction(page,'Desfazer');
       assert.equal((await read()).board.filter(v=>v===0).length,3);
       assert.equal((await read()).won,false);
-      await page.getByRole('button',{name:'Refazer',exact:true}).click();
+      await clickGameAction(page,'Refazer');
       assert.equal((await read()).won,true);
     }
     await seed({threshold:1,delay:200});
@@ -97,10 +98,10 @@ try {
         if(action==='disable') await page.locator('#domino-enabled').uncheck();
         else { await page.getByText('Ajustar velocidade',{exact:true}).click(); await page.locator('#domino-initial').fill('1000'); }
       } else if(action==='pause') await page.getByRole('button',{name:'Pausar jogo',exact:true}).click();
-      else if(action==='undo') await page.getByRole('button',{name:'Desfazer',exact:true}).click();
+      else if(action==='undo') await clickGameAction(page,'Desfazer');
       else if(action==='edit') await page.getByRole('button',{name:'Apagar',exact:true}).click();
       else {
-        await page.getByRole('button',{name:'Novo jogo',exact:true}).click();
+        await clickGameAction(page,'Novo jogo');
         await page.getByRole('button',{name:'Fácil',exact:true}).click();
       }
       const before = (await read()).board;

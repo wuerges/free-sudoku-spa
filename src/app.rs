@@ -73,7 +73,7 @@ pub fn App() -> impl IntoView {
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>
         <Router>
-            <div class="min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
+            <div class="app-shell min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
                 <Routes fallback=|| "Not found">
                     <Route path=path!("") view=GamePage />
                     <Route path=path!("/help") view=HelpPage />

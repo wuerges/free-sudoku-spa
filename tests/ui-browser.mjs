@@ -1,3 +1,4 @@
+import { clickGameAction } from './game-actions.mjs';
 // Production UI audit and PR screenshots. Optional Playwright environment matches theme-browser.mjs.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -42,11 +43,11 @@ try {
         await page.reload(); await page.locator('.sudoku-cell').first().waitFor(); await ready();
       } else sharedFixture=await read();
       await overflow('game');
-      const allTargets=await page.locator('.ui-action, .ui-icon-button, .number-choices > button').evaluateAll(es=>es.map(e=>({label:e.getAttribute('aria-label')||e.textContent.trim(),r:e.getBoundingClientRect().toJSON()})));
-      for(const {label,r} of allTargets) {
-        assert.ok(r.height>=44 && r.width>=24,`${width}: ${label} touch target ${r.width}×${r.height}`);
-        if(/^\d$/.test(label)) assert.ok(r.width>=48 && r.height>=52,`${label}: number target`);
-        else assert.ok(r.width>=44,`${label}: action width`);
+      const allTargets=await page.locator('.ui-action, .ui-icon-button, .number-choices > button').evaluateAll(es=>es.map(e=>({label:e.getAttribute('aria-label')||e.textContent.trim(),r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})));
+      for(const {label,r,minimum} of allTargets) {
+        assert.ok(r.height>=minimum && r.width>=minimum,`${width}: ${label} touch target ${r.width}×${r.height}`);
+        if(/^\d$/.test(label)) assert.ok(r.width>=44 && r.height>=44,`${label}: number target`);
+        else assert.ok(r.width>=minimum,`${label}: action width`);
       }
       const digits=await page.locator('.number-choices > button').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().toJSON()));
       assert.equal(new Set(digits.map(r=>r.top)).size,width<640?2:1);
@@ -55,12 +56,13 @@ try {
       if(width>=768) {
         assert.ok(await page.locator('.cell-number').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize))>=30, 'tablet board digits scale up');
         assert.ok(await page.locator('.cell-note').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize))>10, 'tablet notes scale up');
-        assert.ok(board.width>500,`${width}×${height}: board should grow beyond phone cap`);
+        assert.ok(board.width >= (height >= 1100 ? 600 : 252), `${width}×${height}: board uses available height`);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1), 'normal game fits viewport');
         assert.ok(board.y+board.height<=height,`${width}×${height}: board fits vertically`);
-        for(const r of digits) assert.ok(r.width>=48 && r.height>=64);
+        for(const r of digits) assert.ok(r.width>=44 && r.height>=48);
         assert.ok(controls.y>=board.y+board.height, 'controls stay below board');
         const cellSize=await cell(0).boundingBox();
-        assert.ok(cellSize.width>=56 && Math.abs(cellSize.width-cellSize.height)<1,'tablet cells are large squares');
+        assert.ok(cellSize.width>=27 && Math.abs(cellSize.width-cellSize.height)<1,'tablet cells remain square and fit available space');
       }
       // Regular browser tabs may resize despite the installed PWA portrait lock.
       if(width===800 || (width===1280 && height===800)) {
@@ -96,16 +98,16 @@ try {
       await page.getByRole('button',{name:'Drop',exact:true}).click();
       await page.getByRole('group',{name:'Números',exact:true}).getByRole('button',{name:'1',exact:true}).click();
       assert.equal(await page.getByRole('button',{name:'Drop',exact:true}).getAttribute('aria-pressed'),'true');
-      assert.match(await page.getByRole('status').innerText(),/Drop: número 1/);
+      assert.match(await page.locator('.drop-instruction').innerText(),/Drop: número 1/);
       await page.getByRole('button',{name:'Drop',exact:true}).click();
-      await page.getByRole('button',{name:'Novo jogo',exact:true}).click();
+      await clickGameAction(page,'Novo jogo');
       await overflow('difficulty');
       await page.getByRole('button',{name:'Fácil',exact:true}).click();
       assert.equal((await read()).difficulty,'Easy');
       await settingsLink.click();
       await page.getByRole('heading',{name:'Configurações',exact:true}).waitFor();
       await overflow('settings');
-      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Destaques do tabuleiro','Assistências','Som']);
+      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Destaques do tabuleiro','Números concluídos','Assistências','Som']);
       assert.equal(await page.locator('.timing-details').getAttribute('open'),null);
       assert.equal(await page.locator('#domino-initial').isVisible(),false);
       assert.equal(await page.locator('#domino-threshold').inputValue(),'10');
@@ -149,24 +151,28 @@ try {
       assert.equal(afterReload.domino_enabled,false);
       assert.equal(await page.locator('.timing-details').getAttribute('open'),null);
       await page.getByRole('link',{name:'Voltar',exact:true}).click();
+      await page.getByRole('button',{name:'Ações',exact:true}).click();
       assert.equal(await page.getByRole('button',{name:'Desfazer',exact:true}).count(),0);
+      await page.keyboard.press('Escape');
       await page.getByRole('link',{name:'Configurações',exact:true}).click();
       await page.getByRole('button',{name:'Restaurar padrões',exact:true}).click();
       const reset=await read();
       assert.deepEqual(reset.board,beforeReload.board);
-      assert.deepEqual(reset.highlights,{selected_shading:20,matching_shading:20,available_shading:100,dots:true,stripes:true});
+      assert.deepEqual(reset.highlights,{selected_shading:20,matching_shading:20,available_shading:100,completed_contrast:100,dots:true,stripes:true});
       assert.equal(reset.sound_type,'Explosion'); assert.equal(reset.domino_enabled,true);
       assert.equal(reset.domino.empty_cell_threshold,10);
       await page.getByRole('link',{name:'Voltar',exact:true}).click();
+      await page.getByRole('button',{name:'Ações',exact:true}).click();
       assert.equal(await page.getByRole('button',{name:'Desfazer',exact:true}).count(),1);
+      await page.keyboard.press('Escape');
       await page.evaluate(()=>{
         window.__sudoku={_installPrompt:{},showInstall:()=>window.__installTest=true};
         window.dispatchEvent(new Event('sudoku:installavailable'));
       });
       await page.getByRole('button',{name:'Instalar aplicativo',exact:true}).waitFor();
       await overflow('install');
-      const install=await page.locator('.install-row').boundingBox(),header=await page.locator('.header-main').boundingBox();
-      assert.ok(install.y>=header.y+header.height);
+      const install=await page.getByRole('button',{name:'Instalar aplicativo',exact:true}).boundingBox(),header=await page.locator('.header-main').boundingBox();
+      assert.ok(install.y>=header.y && install.y+install.height<=header.y+header.height+1, 'installation stays in the compact header');
       await page.getByRole('button',{name:'Instalar aplicativo',exact:true}).click();
       assert.equal(await page.evaluate(()=>window.__installTest),true);
       await page.getByRole('link',{name:'Ajuda',exact:true}).click();

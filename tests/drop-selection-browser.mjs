@@ -1,3 +1,4 @@
+import { clickGameAction } from './game-actions.mjs';
 // Optional production browser regression for solved-cell Drop selection.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -49,7 +50,7 @@ try {
     for(const i of [2,2,4,5]) {
       await cell(i).click();
       assert.equal(await number(s.board[i]).getAttribute('aria-pressed'),'true');
-      assert.match(await page.getByRole('status').innerText(),new RegExp(`Drop: número ${s.board[i]}`));
+      assert.match(await page.locator('.drop-instruction').innerText(),new RegExp(`Drop: número ${s.board[i]}`));
       const after=await read();
       for(const field of ['board','notes','history','redo_stack','error_count']) assert.deepEqual(after[field],before[field]);
     }
@@ -67,7 +68,7 @@ try {
     await page.getByRole('link',{name:'Voltar',exact:true}).click();
     await page.getByRole('button',{name:'Drop',exact:true}).click();await number(9).click();await cell(5).click();
     assert.equal((await read()).board[5],9);assert.equal(await number(9).getAttribute('aria-pressed'),'true');
-    await page.getByRole('button',{name:'Novo jogo',exact:true}).click();await page.getByRole('button',{name:'Fácil',exact:true}).click();
+    await clickGameAction(page,'Novo jogo');await page.getByRole('button',{name:'Fácil',exact:true}).click();
     assert.equal((await read()).drop_pick_solved,false);
     const newBoard=(await read()).board;
     await page.getByRole('link',{name:'Configurações',exact:true}).click();

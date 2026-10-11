@@ -1,5 +1,8 @@
-use crate::components::icon::{Icon, IconName};
-use crate::state::AppState;
+use crate::components::{
+    game_controls::GameControls,
+    icon::{Icon, IconName},
+};
+use crate::state::{color_name, AppState};
 use leptos::prelude::*;
 
 #[component]
@@ -12,6 +15,21 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
         <div class="number-pad" style=move || format!("--completed-contrast: {}%;", state.0.get().highlights.completed_contrast.min(100))>
             <div class="number-choices" role="group" aria-label="Números">
                 {(1..=9).map(|v| view! { <NumberBtn state=state v=v /> }).collect::<Vec<_>>()}
+            </div>
+            <div class="color-tools" role="group" aria-label="Cores das células">
+                {(1..=4u8).map(|color| view! {
+                    <button type="button" class="ui-action color-tool" data-color=color
+                        aria-label=color_name(color) title=color_name(color)
+                        aria-pressed=move || (state.0.get().paint_tool == Some(color)).to_string()
+                        disabled=move || { let s = state.0.get(); s.paused || s.won }
+                        on:click=move |_| state.select_paint_tool(color)>
+                        <span class="color-swatch" aria-hidden="true"></span>
+                        <span class="sr-only">{color_name(color)}</span>
+                    </button>
+                }).collect::<Vec<_>>()}
+                <button type="button" class="ui-action color-tool" aria-label="Limpar cores" title="Limpar cores"
+                    disabled=move || { let s = state.0.get(); s.paused || s.won || s.cell_colors.iter().all(|&c| c == 0) }
+                    on:click=move |_| state.clear_colors()><Icon name=IconName::Reset /><span aria-hidden="true">"Limpar"</span></button>
             </div>
             <div class="entry-actions" role="group" aria-label="Modo de entrada">
                 <button class="ui-action ui-erase-action" on:click=move |_| state.place_number(0)>
@@ -26,7 +44,10 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                     <Icon name=IconName::Drop />"Drop"
                     <span class="drop-number" aria-hidden="true">{move || drop_number().map(|n| n.to_string()).unwrap_or_default()}</span>
                 </button>
+                <GameControls state=state />
             </div>
+            <p class="paint-instruction" role="status" aria-live="polite">{move || state.0.get().paint_tool.map(|color|
+                format!("{}: toque para pintar ou remover.", color_name(color))).unwrap_or_default()}</p>
             <Show when=move || drop_mode()>
                 <p class="drop-instruction" role="status">{move || match drop_number() {
                     Some(number) => format!("Drop: número {number}. Toque nas células para aplicar."),

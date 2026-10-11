@@ -22,6 +22,8 @@ pub enum IconName {
     Pause,
     Play,
     Clock,
+    Menu,
+    Close,
 }
 
 #[component]
@@ -45,6 +47,8 @@ pub fn Icon(name: IconName) -> impl IntoView {
         IconName::Reset => "M3 4v6h6M3 10a9 9 0 1 1 1 8",
         IconName::Pause => "M8 5v14M16 5v14",
         IconName::Play => "M7 4l13 8-13 8z",
+        IconName::Menu => "M4 6h16M4 12h16M4 18h16",
+        IconName::Close => "M6 6l12 12M18 6L6 18",
         IconName::Clock => "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M12 6v6l4 2",
     };
     view! {

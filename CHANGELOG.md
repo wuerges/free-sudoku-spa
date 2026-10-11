@@ -5,6 +5,16 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.19.0]
+
+### Added
+
+- Manual green, purple, pink and orange cell marks, tap-again removal, clear-all and undo/redo, saved compatibly with older games.
+
+### Changed
+
+- Larger boards, a compact header, equally sized number/color buttons, and collapsible game actions preserve playing space on phones and 11-inch tablets.
+
 ## [0.18.0]
 
 ### Added
