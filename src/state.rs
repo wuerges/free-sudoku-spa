@@ -209,6 +209,37 @@ pub fn color_name(color: u8) -> &'static str {
 }
 
 impl GameState {
+    /// Replace only game data, preserving every recipient preference.
+    pub fn import_shared(&mut self, game: &crate::sharing::SharedGame) {
+        self.cancel_domino();
+        self.board = game.board;
+        self.givens = game.givens;
+        self.solution = game.solution;
+        self.notes = game.notes;
+        self.cell_colors = game.colors;
+        self.hinted = game.hinted;
+        self.difficulty = game.difficulty;
+        self.requested_difficulty = game.requested;
+        self.rating = game.rating.clone();
+        self.seed = game.seed;
+        self.timer_seconds = game.seconds;
+        self.error_count = game.errors;
+        self.history.clear();
+        self.redo_stack.clear();
+        self.selected = None;
+        self.note_mode = false;
+        self.drop_mode = false;
+        self.drop_number = None;
+        self.paint_tool = None;
+        self.just_filled = None;
+        self.secondary_highlight_value = None;
+        self.secondary_highlight_rows = 0;
+        self.secondary_highlight_cols = 0;
+        self.paused = true;
+        self.won = self.board == self.solution;
+        self.celebrated = self.won;
+    }
+
     fn idx(r: usize, c: usize) -> usize {
         r * 9 + c
     }
@@ -332,7 +363,7 @@ impl GameState {
             return false;
         }
         if value != self.solution[i] {
-            self.error_count += 1;
+            self.error_count = self.error_count.saturating_add(1);
             return false;
         }
         self.clear_related_notes(row, col, value);
@@ -784,7 +815,7 @@ impl AppState {
     pub fn tick_timer(&self) {
         self.0.update(|s| {
             if !s.paused && !s.won {
-                s.timer_seconds += 1;
+                s.timer_seconds = s.timer_seconds.saturating_add(1);
             }
         });
     }
@@ -923,6 +954,8 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
             }
         }
     }
+    // A completed save has already been celebrated, including shared imports.
+    state.celebrated = state.won;
     state.domino.normalize();
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
@@ -971,6 +1004,17 @@ pub fn save_state(_state: &GameState) {
 mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
+
+    #[test]
+    fn completed_import_reload_does_not_replay_celebration() {
+        let mut s = GameState::default();
+        s.board = s.solution;
+        let shared = crate::sharing::SharedGame::capture(&s, false);
+        s.import_shared(&shared);
+        let loaded = decode_saved_state(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert!(loaded.won && loaded.celebrated && loaded.paused);
+        assert_eq!(loaded.board, s.solution);
+    }
 
     #[test]
     fn paint_preserves_values_and_groups_clear_with_mixed_history() {

@@ -60,6 +60,9 @@ pub fn App() -> impl IntoView {
         set_html_dark(dark_mode.get());
     });
 
+    provide_context(crate::components::share_dialog::ShareUi(RwSignal::new(
+        false,
+    )));
     provide_context(state);
     provide_context(dark_mode);
 
@@ -72,6 +75,7 @@ pub fn App() -> impl IntoView {
             }
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>
+        <crate::components::share_dialog::ShareDialogs state=state />
         <Router>
             <div class="app-shell min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
                 <Routes fallback=|| "Not found">

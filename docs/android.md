@@ -122,3 +122,10 @@ web bundle and does not emulate Android lifecycle, intents or system bars.
 
 Emulator smoke tests cover bundled startup/routes and a reload retaining the board;
 they do not establish all gameplay flows or a real signed in-place upgrade.
+
+
+Sharing links use the public website resolved at build time. For another host,
+run `SUDOKU_PUBLIC_URL=https://sudoku.example.com just android-release` (also
+supported by `android-sync` and `android-debug`). With no override or Vercel build
+variables, links use `https://free-sudoku-spa.vercel.app`, never the local native
+origin. See [public URL configuration](../README.md#public-url-at-build-time).

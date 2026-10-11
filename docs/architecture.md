@@ -245,3 +245,29 @@ undo/redo, reload/offline, equal button heights, larger boards and action-panel
 keyboard/outside dismissal. Browser audit helpers in `tests/game-actions.mjs`
 open the panel for the existing game-action flows. Physical S23 Ultra/11-inch
 tablet acceptance remains separate from emulation.
+
+## Shared links
+
+`src/sharing.rs` defines an independent v1 DTO and URL-safe unpadded Base64 JSON
+codec, capped at 8192 encoded bytes. It validates exact array sizes, ranges,
+solution units and clue/hint consistency before preview; wrong player entries
+are allowed. It never passes untrusted data to the trusted local-save loader.
+`ShareDialogs` handles initial and subsequent hash navigation with native modal
+dialogs (focus containment, Escape, scrollable phone layout). Links are captured
+on opening (default: current progress) and on mode changes, using untracked
+game reads so timer updates do not change the displayed snapshot. Recipients
+select the received snapshot or its initial position; preview and
+confirmation use the same derived fields without changing the incoming payload.
+`initial_position` clears progress while retaining recorded clues and metadata.
+`import_shared` replaces only game fields, invalidates domino callbacks and
+clears transient input
+and history. Completed imports suppress celebration. Save serialization is unchanged.
+The build-resolved public origin also applies inside the APK; APK link import is out of scope.
+
+
+`build.rs` invokes the shared Node resolver in `scripts/public-url.mjs` and
+embeds the validated origin into Rust, with Cargo environment-change tracking.
+Trunk hooks apply the same resolver to marked social metadata in staged HTML,
+before release offline hashing or development-worker staging. Source HTML is
+never rewritten. Previews use VERCEL_URL; only production considers
+VERCEL_PROJECT_PRODUCTION_URL. Explicit SUDOKU_PUBLIC_URL overrides both.

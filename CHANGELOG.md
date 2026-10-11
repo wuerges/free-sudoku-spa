@@ -5,6 +5,15 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.21.0]
+
+### Added
+
+- Self-contained Sudoku links from Ações → Compartilhar, with automatically generated current-progress and initial-puzzle snapshots, selectable/copyable URLs and system sharing where available.
+- Validated read-only import preview with current-progress or initial-puzzle choices and confirmation, preserving recipient settings and starting paused with empty history.
+- Generic Sudoku social preview image; social crawlers do not receive the puzzle fragment.
+- Build-time public URL configuration for shared links and social metadata, with automatic Vercel preview/production resolution and explicit overrides for web/APK hosting.
+
 ## [0.20.0]
 
 ### Changed
