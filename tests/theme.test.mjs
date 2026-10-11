@@ -15,12 +15,24 @@ function contrast(a, b) { const [lo, hi] = [luminance(a), luminance(b)].sort((a,
 for (const [theme, p] of Object.entries(palettes)) {
   test(theme + ': readable numbers, notes, hints, errors, and control labels', () => {
     for (const fg of ['text', 'user', 'notes', 'accent']) {
-      for (const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for (const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint','mark-green','mark-purple','mark-pink','mark-orange']) {
         assert.ok(contrast(p[fg],p[bg]) >= 5.5, `${fg}/${bg}: ${contrast(p[fg],p[bg])}`);
       }
     }
     for (const [fg,bg] of [['error-text','error'],['hint-text','hint'],['success-text','success'],['on-primary','primary'],['on-primary','primary-hover'],['text','control'],['text','control-hover'],['muted','page'],['muted','control'],['accent','page'],['accent','control'],['error-text','selected'],['hint-text','selected'],['success-text','page']]) {
       assert.ok(contrast(p[fg],p[bg]) >= 4.5, `${fg}/${bg}`);
+    }
+  });
+  test(theme + ': palette swatch borders remain visible', () => {
+    for (const color of ['green','purple','pink','orange']) {
+      for (const background of ['control',`mark-${color}`]) {
+        assert.ok(contrast(p[`mark-${color}-edge`],p[background]) >= 3, `${color} edge/${background}`);
+      }
+    }
+  });
+  test(theme + ': errors and hints remain readable on manual cell fills', () => {
+    for(const color of ['green','purple','pink','orange']) for(const foreground of ['error-text','hint-text']) {
+      assert.ok(contrast(p[foreground],p[`mark-${color}`])>=4.5, `${foreground}/${color}`);
     }
   });
   test(theme + ': slider blends retain readable notes and grid lines', () => {
@@ -48,7 +60,7 @@ for (const [theme, p] of Object.entries(palettes)) {
   });
   test(theme + ': visible grid boundaries and selection/focus indicators', () => {
     for (const fg of ['grid-thin','grid-strong','accent']) {
-      for(const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint']) {
+      for(const bg of ['available','blocked','matching-blocked','blocked-stripe','cell','cell-hover','peer','matching','selected','secondary','error','hint','mark-green','mark-purple','mark-pink','mark-orange']) {
         assert.ok(contrast(p[fg],p[bg]) >= 3, `${fg}/${bg}`);
       }
     }

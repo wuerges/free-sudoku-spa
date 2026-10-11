@@ -89,6 +89,8 @@ pub struct GameState {
     pub solution: [u8; 81],
     #[serde(with = "u16_81")]
     pub notes: [u16; 81],
+    #[serde(with = "u8_81", default = "empty_givens")]
+    pub cell_colors: [u8; 81],
     pub difficulty: Difficulty,
     #[serde(default)]
     pub requested_difficulty: Option<Difficulty>,
@@ -101,6 +103,9 @@ pub struct GameState {
     pub note_mode: bool,
     #[serde(skip)]
     pub drop_mode: bool,
+    /// Transient painting tool: 1–4 toggle a preset color.
+    #[serde(skip)]
+    pub paint_tool: Option<u8>,
     #[serde(skip)]
     pub drop_number: Option<u8>,
     #[serde(default = "yes")]
@@ -146,6 +151,8 @@ pub struct Snapshot {
     pub board: [u8; 81],
     #[serde(with = "u16_81")]
     pub notes: [u16; 81],
+    #[serde(with = "u8_81", default = "empty_givens")]
+    pub cell_colors: [u8; 81],
 }
 
 impl Default for GameState {
@@ -156,6 +163,7 @@ impl Default for GameState {
             givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
+            cell_colors: [0; 81],
             difficulty: board.difficulty,
             requested_difficulty: Some(Difficulty::Easy),
             rating: board.rating,
@@ -164,6 +172,7 @@ impl Default for GameState {
             error_count: 0,
             note_mode: false,
             drop_mode: false,
+            paint_tool: None,
             drop_number: None,
             drop_pick_solved: true,
             undo_enabled: true,
@@ -186,6 +195,16 @@ impl Default for GameState {
             history: Vec::new(),
             redo_stack: Vec::new(),
         }
+    }
+}
+
+pub fn color_name(color: u8) -> &'static str {
+    match color {
+        1 => "Verde",
+        2 => "Roxo",
+        3 => "Rosa",
+        4 => "Laranja",
+        _ => "Sem cor",
     }
 }
 
@@ -352,11 +371,25 @@ impl GameState {
         false
     }
 
+    fn paint_cell(&mut self, row: usize, col: usize, color: u8) {
+        if row >= 9 || col >= 9 || !(1..=4).contains(&color) || self.paused || self.won {
+            return;
+        }
+        let i = Self::idx(row, col);
+        self.push_snapshot();
+        self.cell_colors[i] = if self.cell_colors[i] == color {
+            0
+        } else {
+            color
+        };
+    }
+
     pub fn push_snapshot(&mut self) {
         self.cancel_domino();
         self.history.push(Snapshot {
             board: self.board,
             notes: self.notes,
+            cell_colors: self.cell_colors,
         });
         self.redo_stack.clear();
     }
@@ -378,9 +411,11 @@ impl GameState {
             self.redo_stack.push(Snapshot {
                 board: self.board,
                 notes: self.notes,
+                cell_colors: self.cell_colors,
             });
             self.board = snap.board;
             self.notes = snap.notes;
+            self.cell_colors = snap.cell_colors;
             self.reconcile_restored_givens();
             self.won = self.board == self.solution;
             self.celebrated = false;
@@ -394,9 +429,11 @@ impl GameState {
             self.history.push(Snapshot {
                 board: self.board,
                 notes: self.notes,
+                cell_colors: self.cell_colors,
             });
             self.board = snap.board;
             self.notes = snap.notes;
+            self.cell_colors = snap.cell_colors;
             self.reconcile_restored_givens();
             self.won = self.board == self.solution;
             self.celebrated = false;
@@ -423,6 +460,7 @@ impl AppState {
                 givens: board.cells,
                 solution: board.solution,
                 notes: [0u16; 81],
+                cell_colors: [0; 81],
                 difficulty: board.difficulty,
                 requested_difficulty: Some(difficulty),
                 rating: board.rating,
@@ -431,6 +469,7 @@ impl AppState {
                 error_count: 0,
                 note_mode: s.note_mode,
                 drop_mode: false,
+                paint_tool: None,
                 drop_number: None,
                 drop_pick_solved: s.drop_pick_solved,
                 undo_enabled: s.undo_enabled,
@@ -459,6 +498,14 @@ impl AppState {
     pub fn select_cell(&self, r: usize, c: usize) {
         let mut trigger_domino = false;
         self.0.update(|s| {
+            if let Some(color) = s.paint_tool {
+                s.paint_cell(r, c, color);
+                s.selected = Some((r, c));
+                s.secondary_highlight_value = None;
+                s.secondary_highlight_rows = 0;
+                s.secondary_highlight_cols = 0;
+                return;
+            }
             if s.drop_mode {
                 let value = s.get(r, c);
                 if s.drop_pick_solved
@@ -505,8 +552,35 @@ impl AppState {
         self.finish_entry(trigger_domino);
     }
 
+    pub fn select_paint_tool(&self, color: u8) {
+        self.0.update(|s| {
+            if !(1..=4).contains(&color) || s.paused || s.won {
+                return;
+            }
+            s.cancel_domino();
+            s.paint_tool = if s.paint_tool == Some(color) {
+                None
+            } else {
+                Some(color)
+            };
+            s.drop_mode = false;
+            s.drop_number = None;
+        });
+    }
+
+    pub fn clear_colors(&self) {
+        self.0.update(|s| {
+            if s.paused || s.won || s.cell_colors.iter().all(|&c| c == 0) {
+                return;
+            }
+            s.push_snapshot();
+            s.cell_colors = [0; 81];
+        });
+    }
+
     pub fn toggle_drop_mode(&self) {
         self.0.update(|s| {
+            s.paint_tool = None;
             s.drop_mode = !s.drop_mode;
             s.drop_number = None;
         });
@@ -518,6 +592,7 @@ impl AppState {
 
     pub fn select_drop_number(&self, v: u8) {
         self.0.update(|s| {
+            s.paint_tool = None;
             if s.drop_number == Some(v) {
                 s.drop_number = None;
             } else {
@@ -529,6 +604,7 @@ impl AppState {
     pub fn place_number(&self, value: u8) {
         let mut trigger_domino = false;
         self.0.update(|s| {
+            s.paint_tool = None;
             if let Some((row, col)) = s.selected {
                 trigger_domino = s.enter_number(row, col, value);
             }
@@ -587,7 +663,10 @@ impl AppState {
     }
 
     pub fn toggle_note_mode(&self) {
-        self.0.update(|s| s.note_mode = !s.note_mode);
+        self.0.update(|s| {
+            s.paint_tool = None;
+            s.note_mode = !s.note_mode;
+        });
     }
 
     pub fn toggle_undo(&self) {
@@ -831,6 +910,16 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     let legacy = value.get("givens").is_none();
     let mut state: GameState = serde_json::from_value(value)?;
+    for colors in std::iter::once(&mut state.cell_colors)
+        .chain(state.history.iter_mut().map(|s| &mut s.cell_colors))
+        .chain(state.redo_stack.iter_mut().map(|s| &mut s.cell_colors))
+    {
+        for color in colors {
+            if *color > 4 {
+                *color = 0;
+            }
+        }
+    }
     state.domino.normalize();
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
@@ -880,6 +969,137 @@ mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
 
+    #[test]
+    fn paint_preserves_values_and_groups_clear_with_mixed_history() {
+        let owner = Owner::new();
+        owner.set();
+        let app = AppState(RwSignal::new(domino_fixture()));
+        let before = app.0.get();
+        app.select_paint_tool(1);
+        for i in [0, 2, 10] {
+            app.select_cell(i / 9, i % 9);
+        }
+        let marked = app.0.get();
+        assert_eq!(marked.board, before.board);
+        assert_eq!(marked.notes, before.notes);
+        assert_eq!(marked.error_count, before.error_count);
+        assert_eq!(marked.history.len(), 3);
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().cell_colors[0], 0);
+        assert_eq!(app.0.get().history.len(), 4);
+        app.undo();
+        assert_eq!(app.0.get().cell_colors[0], 1);
+        app.redo();
+        assert_eq!(app.0.get().cell_colors[0], 0);
+        app.undo();
+        app.select_paint_tool(2);
+        app.select_cell(0, 0);
+        app.undo();
+        assert_eq!(app.0.get().cell_colors[0], 1);
+        app.redo();
+        assert_eq!(app.0.get().cell_colors[0], 2);
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().cell_colors[0], 0);
+        app.undo();
+        app.clear_colors();
+        assert_eq!(app.0.get().cell_colors, [0; 81]);
+        app.undo();
+        assert_eq!(app.0.get().cell_colors[0], 2);
+        assert_eq!(app.0.get().cell_colors[2], 1);
+        app.0.update(|s| s.domino_enabled = false);
+        app.place_number(before.solution[0]);
+        assert_eq!(app.0.get().paint_tool, None);
+        assert_eq!(app.0.get().cell_colors[0], 2);
+        app.undo();
+        assert_eq!(app.0.get().board, before.board);
+        assert_eq!(app.0.get().cell_colors[0], 2);
+        app.redo();
+        assert_eq!(app.0.get().board[0], before.solution[0]);
+    }
+
+    #[test]
+    fn paint_guards_modes_and_domino_cancellation() {
+        let owner = Owner::new();
+        owner.set();
+        let app = AppState(RwSignal::new(domino_fixture()));
+        app.toggle_drop_mode();
+        app.select_drop_number(3);
+        let generation = app.0.get().domino_gen;
+        app.select_paint_tool(3);
+        assert!(!app.0.get().drop_mode);
+        assert_eq!(app.0.get().drop_number, None);
+        assert_ne!(app.0.get().domino_gen, generation);
+        app.0.update(|s| assert!(!s.domino_step(generation)));
+        app.select_cell(0, 2);
+        app.0.update(|s| s.hinted[10] = s.board[10]);
+        app.select_cell(1, 1);
+        assert_eq!(app.0.get().cell_colors[10], 3);
+        app.toggle_note_mode();
+        assert_eq!(app.0.get().paint_tool, None);
+        app.select_paint_tool(4);
+        app.toggle_drop_mode();
+        assert_eq!(app.0.get().paint_tool, None);
+        app.select_paint_tool(4);
+        app.select_paint_tool(4);
+        assert_eq!(app.0.get().paint_tool, None);
+        app.select_paint_tool(1);
+        for won in [false, true] {
+            app.0.update(|s| {
+                s.won = won;
+                s.paused = !won;
+            });
+            let before = app.0.get();
+            app.select_cell(0, 0);
+            app.clear_colors();
+            app.select_paint_tool(2);
+            assert_eq!(app.0.get().cell_colors, before.cell_colors);
+            assert_eq!(app.0.get().history.len(), before.history.len());
+            assert_eq!(app.0.get().paint_tool, before.paint_tool);
+        }
+        app.0.update(|s| {
+            s.won = false;
+            s.paused = false;
+        });
+        let colors = app.0.get().cell_colors;
+        app.reset_config();
+        assert_eq!(app.0.get().cell_colors, colors);
+        app.new_game(Difficulty::Easy);
+        assert_eq!(app.0.get().cell_colors, [0; 81]);
+        assert_eq!(app.0.get().paint_tool, None);
+    }
+
+    #[test]
+    fn color_saves_preserve_legacy_progress_and_both_history_stacks() {
+        let mut s = domino_fixture();
+        s.push_snapshot();
+        s.board[0] = s.solution[0];
+        s.undo();
+        let mut legacy = serde_json::to_value(&s).unwrap();
+        legacy.as_object_mut().unwrap().remove("cell_colors");
+        for key in ["history", "redo_stack"] {
+            for snapshot in legacy[key].as_array_mut().unwrap() {
+                snapshot.as_object_mut().unwrap().remove("cell_colors");
+            }
+        }
+        let loaded = decode_saved_state(&legacy.to_string()).unwrap();
+        assert_eq!(loaded.board, s.board);
+        assert_eq!(loaded.notes, s.notes);
+        assert_eq!(loaded.history.len(), s.history.len());
+        assert_eq!(loaded.redo_stack.len(), s.redo_stack.len());
+        assert_eq!(loaded.cell_colors, [0; 81]);
+        assert_eq!(loaded.redo_stack[0].cell_colors, [0; 81]);
+        s.paint_tool = Some(1);
+        s.cell_colors[0] = 4;
+        s.redo_stack[0].cell_colors[2] = 255;
+        let loaded = decode_saved_state(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert_eq!(loaded.cell_colors[0], 4);
+        assert_eq!(loaded.redo_stack[0].cell_colors[2], 0);
+        assert_eq!(loaded.paint_tool, None);
+        let mut invalid = serde_json::to_value(&s).unwrap();
+        invalid["cell_colors"] = serde_json::json!([1, 2]);
+        assert!(decode_saved_state(&invalid.to_string()).is_err());
+    }
+
     fn domino_fixture() -> GameState {
         let mut s = GameState::default();
         for r in 0..9 {
@@ -916,6 +1136,7 @@ mod tests {
                 s.history.push(Snapshot {
                     board: s.board,
                     notes: s.notes,
+                    cell_colors: s.cell_colors,
                 });
                 s.redo_stack = s.history.clone();
                 let before = serde_json::to_value(&s).unwrap();
@@ -1033,6 +1254,7 @@ mod tests {
         s.history.push(Snapshot {
             board: s.board,
             notes: s.notes,
+            cell_colors: s.cell_colors,
         });
         let mut legacy = serde_json::to_value(&s).unwrap();
         legacy.as_object_mut().unwrap().remove("drop_pick_solved");
@@ -1690,6 +1912,7 @@ mod tests {
             givens: board.cells,
             solution: board.solution,
             notes: [0u16; 81],
+            cell_colors: [0; 81],
             difficulty: board.difficulty,
             requested_difficulty: Some(board.difficulty),
             rating: board.rating,
@@ -1698,6 +1921,7 @@ mod tests {
             error_count: 0,
             note_mode: false,
             drop_mode: false,
+            paint_tool: None,
             drop_number: None,
             drop_pick_solved: true,
             undo_enabled: true,

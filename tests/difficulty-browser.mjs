@@ -1,3 +1,4 @@
+import { openGameActions } from './game-actions.mjs';
 // Optional release-WASM audit. Uses the same Playwright environment as theme-browser.mjs.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -26,6 +27,7 @@ try {
   console.log('AUDIT,requested,run,clues,handler_ms,measured,technique,grader_version');
   for(const [requested,label] of [['Easy','Fácil'],['Medium','Médio'],['Hard','Difícil'],['Expert','Expert'],['Master','Mestre']]) {
     for(let run=0;run<20;run++) {
+      await openGameActions(page);
       await page.getByRole('button',{name:/Novo jogo/}).click();
       await page.getByRole('button',{name:label,exact:true}).waitFor();
       const result=await page.evaluate(async label=>{
@@ -43,7 +45,7 @@ try {
       assert.equal(result.rating.difficulty,requested);
       assert.equal(result.rating.grader_version,1);
       assert.ok(result.rating.step_counts.some(n=>n>0));
-      if(requested==='Master') assert.equal(await page.getByRole('button',{name:/Dica/}).isEnabled(),true);
+      if(requested==='Master') { await openGameActions(page); assert.equal(await page.getByRole('button',{name:/Dica/}).isEnabled(),true); await page.keyboard.press('Escape'); }
       console.log(`AUDIT,${requested},${run},${result.clues},${result.elapsed.toFixed(3)},${result.rating.difficulty},${result.rating.strongest},${result.rating.grader_version}`);
     }
   }

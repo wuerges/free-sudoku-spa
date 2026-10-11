@@ -25,6 +25,7 @@ pub fn HelpPage() -> impl IntoView {
             "Modo drop",
             "Ative, escolha um número no teclado ou toque em uma célula preenchida corretamente, depois toque nas células vazias para colocar o número ou alternar notas. Quando as nove ocorrências de um número estiverem corretas, ele fica desativado para preencher pelo Drop, mas continua disponível no modo notas. Desative a seleção pelas células resolvidas nas Configurações para manter o comportamento anterior.",
         ),
+        (Some(IconName::Pencil), "Cores das células", "Escolha uma cor abaixo dos números e toque nas células para pintar. Aplicar a mesma cor novamente remove a marca. Toque na ferramenta ativa para sair. Limpar cores apaga todas. Abra Ações para Desfazer, Refazer, Auto notas, Dica ou Novo jogo; Desfazer e Refazer também restauram cores. As marcas ficam salvas; um novo jogo começa sem marcas."),
         (Some(IconName::Pause), "Pausar", "Pausa ou retoma o cronômetro."),
         (
             Some(IconName::Clock),

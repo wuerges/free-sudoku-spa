@@ -1,4 +1,7 @@
-use crate::components::icon::{Icon, IconName};
+use crate::components::{
+    game_controls::GameStatus,
+    icon::{Icon, IconName},
+};
 use crate::state::AppState;
 use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
@@ -47,10 +50,7 @@ pub fn Header() -> impl IntoView {
     view! {
         <header class="game-header">
             <div class="header-main">
-                <div class="min-w-0 pr-2">
-                    <h1 class="text-xl font-bold">"Sudoku"</h1>
-                    <p class="text-xs text-muted leading-relaxed">{difficulty_label}</p>
-                </div>
+                <GameStatus state=state />
                 <nav class="header-tools" aria-label="Opções do jogo">
                     <A href="/config" attr:aria-label="Configurações" attr:title="Configurações" attr:class="ui-icon-button">
                         <Icon name=IconName::Settings />
@@ -63,16 +63,17 @@ pub fn Header() -> impl IntoView {
                         on:click=move |_| dark_mode.update(|d| *d = !*d)>
                         {move || view! { <Icon name=if dark_mode.get() { IconName::Sun } else { IconName::Moon } /> }}
                     </button>
+                    <Show when=move || install_visible.get()>
+                        <button class="ui-icon-button" aria-label="Instalar aplicativo" title="Instalar aplicativo" on:click=move |_| {
+                            let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
+                            install_visible.set(false);
+                        }><Icon name=IconName::Install /></button>
+                    </Show>
                 </nav>
             </div>
-            <Show when=move || install_visible.get()>
-                <div class="install-row">
-                    <button class="ui-action" on:click=move |_| {
-                        let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
-                        install_visible.set(false);
-                    }><Icon name=IconName::Install />"Instalar aplicativo"</button>
-                </div>
-            </Show>
+            <div class="header-caption">
+                <h1>"Sudoku"</h1><p>{difficulty_label}</p>
+            </div>
         </header>
     }
 }

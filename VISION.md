@@ -18,6 +18,7 @@ The repository contains:
 - Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Game-state serialization to the `sudoku_state` localStorage key.
+- Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
 - A manifest, icons, installation-prompt bridge, and service worker.
 - Engine and state unit tests, Trunk build configuration, and Vercel static-hosting configuration.
@@ -61,7 +62,7 @@ These statements describe code present in the repository. Browser behavior, perf
 Color-token tests cover text and indicator contrast in both themes, including a 5.5:1 board-text target and stronger separation of highlight fills. Original clues, player entries, hints, errors, selection, matching numbers, and row/column/box peers have distinct treatments. Selecting a filled cell or Drop digit previews legal empty cells with a brighter fill/dot and uses opposite diagonal stripe directions for empties blocked by the selected occurrence or other matching numbers, using current rules rather than the solution. Three shading sliders (selection/peers, matching blockers, available cells) and dot/stripe checkboxes persist as compatible settings and survive new games. A full keyboard/screen-reader and target-device audit remains open.
 
 The control review adds consistent local line icons, larger action targets,
-above-board game status, and a two-column assistance group. Settings groups
+compact header status and a collapsible game-action panel. Settings groups
 highlights, assistances, and sound, with timing behind a native disclosure and
 explicit sound choices. Tablet layouts enlarge the board with controls below
 it; the installed PWA stays locked to portrait. Chromium audits cover

@@ -130,15 +130,18 @@ counters are ignored. Browser scheduling wraps native-testable state steps.
 
 ## UI controls
 
-`GameStatus` renders the timer, labeled error count, and accessible pause/resume
-control above the board. `GameControls` groups assistance actions below the
-keypad, followed by the difficulty disclosure. Header utilities and other
-non-board actions use shared 44px targets in `style/input.css`. Number buttons
-use five columns on phones and nine above 640px, with 52px minimum height.
-`GamePage` wraps the board/status and controls in separate panels. Tablet
-styles grow the board up to 720px within the viewport and increase number
-buttons to 64px height. Panels stay stacked at all viewport widths. Board
-digits and notes scale up, and the manifest locks the installed PWA to portrait.
+`GameStatus` renders time, errors and pause inside the compact header; the
+caption below contains title and difficulty. Header utility targets are 36px.
+NumberPad renders the digits, four color choices and clear-all, followed by
+Apagar, Notas, Drop and GameControls' Ações trigger. Digits and color tools share
+one CSS height variable: 44px on phones and 48px on tablets.
+
+GameControls owns a transient open signal and a dismissible action panel with
+undo/redo, auto-notes, hint and new-game difficulty choices. The anchored panel
+uses a fixed outside-click layer and height-limited scrolling; it overlays the
+board instead of reserving layout space. Escape/close return focus to the
+trigger; starting a game also closes the panel. Victory status stays visible
+outside the panel. These UI signals are not persisted.
 
 `Icon` uses a small `IconName` enum and local paths, with `aria-hidden` so control
 labels provide accessible names. Active notes/Drop modes expose `aria-pressed`
@@ -198,3 +201,39 @@ selection, so incorrect duplicates never gain the completed style. A dedicated
 settings slider controls the fill and outline; text remains readable throughout
 the range, and the checkmark remains present at zero. Selected Drop buttons use
 the existing selected colors. Styling does not change entry rules.
+
+## Manual cell colors and viewport sizing
+
+`GameState.cell_colors` and `Snapshot.cell_colors` use the existing 81-byte
+serde helper: 0 means unmarked, 1 green, 2 purple, 3 pink, and 4 orange. Missing
+arrays default to zeros; unknown IDs normalize to zero on load in the current
+board and both history stacks. All snapshot capture/restore paths include
+colors. Entry, notes, hints and domino fills retain marks. New games clear them;
+configuration reset preserves them. `paint_tool` is serde-skipped, with 1–4
+selecting a color and `None` normal input; zero is not a selectable tool.
+
+Painting runs before Drop/selection entry in `select_cell`. It can mark clues
+and hints without editing numbers or notes. Applying a cell's existing color
+removes it; each tap and clear-all use the existing snapshot/history machinery.
+Painting rejects paused/won states and cancels pending domino work. Entering
+painting disables Drop; number, erase, Notes and Drop controls leave painting.
+
+The palette sits immediately after the digits. Cell exposes `data-color` and
+a Portuguese color description. Manual background colors override highlight
+fills, preserving selection/focus outlines, matching underlines, placement
+stripes/dots and error/hint text. There is no cell-edge marker. Theme tests cover
+board text, error/hint text, grid and selection contrast on each manual fill.
+
+The game is a vertical flex layout: compact header, square board, controls.
+Layout wrappers use `display: contents`. Dynamic viewport height (`dvh`) and
+safe-area insets reserve control height without JavaScript measurement. The
+board flexes into remaining height, capped by available width and 840px on
+tablets. Its minimum height is 252px; insufficient height falls back to document
+scrolling. Controls stay next to the board rather than being separated by unused
+space. The collapsed action panel has no permanent height cost.
+
+`tests/cell-colors-browser.mjs` checks legacy history, same-color removal,
+undo/redo, reload/offline, equal button heights, larger boards and action-panel
+keyboard/outside dismissal. Browser audit helpers in `tests/game-actions.mjs`
+open the panel for the existing game-action flows. Physical S23 Ultra/11-inch
+tablet acceptance remains separate from emulation.

@@ -175,7 +175,7 @@ Vercel response headers still need verification on a deployed preview.
 ## Themes and releases
 
 Tailwind v4 consumes semantic CSS custom properties in `style/input.css`. Light
-uses cool slate and blue; dark uses stepped navy backgrounds. Error and hint
+uses cool slate and blue; dark uses stepped navy backgrounds. Without manual marks, error and hint
 backgrounds take precedence over selection, while an inset blue outline keeps
 the active cell visible. Matching numbers also have an underline; errors have
 an exclamation mark. Original clues use bold text, player entries use blue,
@@ -236,17 +236,25 @@ See [the screenshot gallery](docs/screenshots/ui-ux/README.md).
 
 ## Controls and settings layout
 
-Local SVG line icons accompany Portuguese control labels. Header utilities have
-44px targets; installation occupies its own row. Time, errors, and pause/resume
-sit above the board. Number entry uses two rows on phones and one nine-column
-row in tablet portrait, with 52px minimum height; Apagar, Notas, and Drop follow
-below, then the two-column assistance buttons and a separate Novo jogo action.
-Active modes use pressed states and a stable label, with a separate selected-number indicator for Drop.
+Local SVG line icons accompany Portuguese control labels. The compact header
+combines time, errors, pause and utility icons, with the title/difficulty below.
+Header icons use 36px targets; entry and action controls retain at least 44px.
+Number buttons and the five color tools have the same height: 44px on phones,
+48px on tablets. Digits use two rows on phones and one nine-column row above
+640px; the color palette sits directly below them.
 
-On tablets, the board grows to 720px when space allows, with larger digits,
-notes, and 64px number buttons. Controls stay below the board at every width.
-The installed PWA is locked to portrait; ordinary browser tabs retain the same
-stacked layout when resized.
+Apagar, Notas, Drop and Ações share one row. Ações opens a dismissible panel over
+the board with Desfazer, Refazer, Auto notas, Dica and Novo jogo. Close it with
+its close button, Escape, or a tap outside. The panel keeps keyboard focus
+returning to Ações and does not shrink the board. Active entry modes expose
+pressed states, with a separate selected-number indicator for Drop.
+
+The square board uses the space left by the compact controls, growing up to
+840px on tablets. Dynamic viewport height and safe-area insets support phone
+browser bars and installed use. Controls stay immediately below the board.
+Normal phone/tablet play fits at the verified viewports; short screens and
+enlarged text may scroll to keep controls reachable. The installed PWA remains
+locked to portrait; ordinary browser tabs can resize.
 
 Settings groups highlights, assistances, and sound in a single column. Domino
 activation and its empty-cell threshold remain visible; “Ajustar velocidade”
@@ -292,3 +300,25 @@ With the optional Playwright environment described above, run
 `node tests/completed-contrast-browser.mjs` after `just build` to check legacy
 saves, slider endpoints/midpoint, notes/Drop, persistence, reset and phone/tablet
 layouts in both themes. Captures go to `/tmp/sudoku-completed-contrast`.
+
+## Manual cell colors
+
+Choose Verde, Roxo, Rosa or Laranja below the numbers, then tap cells to paint.
+The palette deliberately avoids blue, which already identifies game highlights.
+Tap the active tool again to exit painting, or use number/Notes/Drop controls.
+Applying the same color again removes that cell’s mark; “Limpar cores” clears
+all marks in one undoable action. Painting includes original clues and hints without changing
+values or notes. It is unavailable while paused or after victory.
+
+Marks survive reloads, offline resume and configuration reset; a new game clears
+them. Undo/redo restores colors alongside numbers and notes. Existing saves and
+history load with no marks. Manual colors use the cell background without an edge marker. Selection/focus
+outlines, matching underlines, placement patterns, and error/hint text remain
+visible over the fill.
+
+Run `node tests/cell-colors-browser.mjs` with the optional Playwright environment
+described above after `just build`. It checks painting, legacy saves, history,
+mode changes, equal button heights, larger boards, collapsible actions, resizing,
+enlarged text and offline reload in both
+themes. `COLOR_SCREENSHOTS` overrides the default `/tmp/sudoku-cell-colors`.
+See [the painting review captures](docs/screenshots/cell-colors/README.md).

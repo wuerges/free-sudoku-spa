@@ -1,3 +1,4 @@
+import { clickGameAction } from './game-actions.mjs';
 // Optional production browser regression for completed-number contrast.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -30,7 +31,7 @@ try {
     fixture.board=fixture.solution.map(v=>v===1?1:0);
     fixture.givens=[...fixture.board]; fixture.hinted=Array(81).fill(0);
     fixture.notes=Array(81).fill(0);fixture.notes[1]=4;
-    fixture.history=[{board:[...fixture.board],notes:[...fixture.notes]}]; fixture.redo_stack=[...fixture.history];
+    fixture.history=[{board:[...fixture.board],notes:[...fixture.notes],cell_colors:[...fixture.cell_colors]}]; fixture.redo_stack=[...fixture.history];
     fixture.domino_enabled=false;fixture.sound_type='None';fixture.selected=null;
     fixture.drop_mode=false;fixture.note_mode=false;fixture.paused=false;fixture.won=false;
     delete fixture.highlights.completed_contrast;
@@ -66,7 +67,7 @@ try {
     await page.getByRole('link',{name:'Configurações',exact:true}).click();
     await page.getByRole('slider',{name:'Contraste dos números concluídos',exact:true}).fill('37');
     await page.getByRole('link',{name:'Voltar',exact:true}).click();
-    await page.getByRole('button',{name:'Novo jogo',exact:true}).click();await page.getByRole('button',{name:'Fácil',exact:true}).click();
+    await clickGameAction(page,'Novo jogo');await page.getByRole('button',{name:'Fácil',exact:true}).click();
     assert.equal((await read()).highlights.completed_contrast,37);
     const newBoard=(await read()).board;
     await page.getByRole('link',{name:'Configurações',exact:true}).click();
