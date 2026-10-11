@@ -23,9 +23,9 @@ pub fn HelpPage() -> impl IntoView {
         (
             Some(IconName::Drop),
             "Modo drop",
-            "Ative, escolha um número no teclado ou toque em uma célula preenchida corretamente, depois toque nas células vazias para colocar o número ou alternar notas. Quando as nove ocorrências de um número estiverem corretas, ele fica desativado para preencher pelo Drop, mas continua disponível no modo notas. Desative a seleção pelas células resolvidas nas Configurações para manter o comportamento anterior.",
+            "Ative e escolha um número no teclado; fora de Notas e da pintura, você também pode escolher o número tocando em uma célula preenchida corretamente. Toque nas células vazias para colocar o número ou alternar notas. Aplicar números, notas e cores não muda a célula usada como referência dos destaques. Quando as nove ocorrências de um número estiverem corretas, ele fica desativado para preencher pelo Drop, mas continua disponível no modo notas. Desative a seleção pelas células resolvidas nas Configurações para manter o comportamento anterior.",
         ),
-        (Some(IconName::Pencil), "Cores das células", "Escolha uma cor abaixo dos números e toque nas células para pintar. Aplicar a mesma cor novamente remove a marca. Toque na ferramenta ativa para sair. Limpar cores apaga todas. Abra Ações para Desfazer, Refazer, Auto notas, Dica ou Novo jogo; Desfazer e Refazer também restauram cores. As marcas ficam salvas; um novo jogo começa sem marcas."),
+        (Some(IconName::Pencil), "Cores das células", "Com Drop desligado, selecione uma célula e toque em uma cor para aplicar. Com Drop ligado, escolha uma cor e toque nas células para pintar. O número escolhido continua guiando os destaques; trocar o número no teclado mantém a pintura ativa. Toque na cor ativa para voltar a inserir números ou notas. Aplicar a mesma cor novamente remove a marca. Limpar cores apaga todas. Abra Ações para Desfazer, Refazer, Auto notas, Dica ou Novo jogo; Desfazer e Refazer também restauram cores. As marcas ficam salvas; um novo jogo começa sem marcas."),
         (Some(IconName::Pause), "Pausar", "Pausa ou retoma o cronômetro."),
         (
             Some(IconName::Clock),

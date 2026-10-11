@@ -155,13 +155,14 @@ operation, disclosure, sound, mode states, installation, reset, and reload.
 Screenshots under `docs/screenshots/ui-ux/` document the verified production UI.
 
 `GameState.drop_pick_solved` is a saved preference with a true serde default.
-In Drop mode, `select_cell` picks a nonzero correct value before attempting
-an entry, without creating history or editing the board. Normal selection
-and disabled-preference Drop entries keep their existing behavior. New games
+In normal Drop mode (outside Notes/painting), `select_cell` picks a nonzero
+correct value before attempting an entry, without creating history or editing
+the board. It intentionally changes the highlight digit and anchor. Normal
+selection and disabled-preference Drop entries keep their existing behavior. New games
 preserve the preference; configuration reset enables it.
 
 `number_is_solved` counts nine board/solution matches for a digit. Drop keypad
-buttons disable completed digits outside notes mode, and `enter_number` also
+buttons disable completed digits outside Notes/painting, and `enter_number` also
 blocks placement so picking a completed digit from a cell cannot bypass the
 rule. Notes remain editable; incorrect duplicates do not count as solved.
 
@@ -212,11 +213,18 @@ colors. Entry, notes, hints and domino fills retain marks. New games clear them;
 configuration reset preserves them. `paint_tool` is serde-skipped, with 1–4
 selecting a color and `None` normal input; zero is not a selectable tool.
 
-Painting runs before Drop/selection entry in `select_cell`. It can mark clues
-and hints without editing numbers or notes. Applying a cell's existing color
-removes it; each tap and clear-all use the existing snapshot/history machinery.
-Painting rejects paused/won states and cancels pending domino work. Entering
-painting disables Drop; number, erase, Notes and Drop controls leave painting.
+Without Drop, the palette applies immediately to `selected` and never activates
+a tool; no selection means no action. With Drop, `paint_tool` selects repeated
+painting without clearing `drop_number`. Digit choices keep painting active and
+change the highlight digit. Tapping the active color exits painting. Toggling
+Drop clears its digit/tool, and Notes/erase leave painting.
+
+Drop painting, note entry and number placement use their target coordinates
+without changing `selected` or expanded highlight state. Normal solved-cell
+picking deliberately sets the digit/anchor and clears expanded highlights;
+it is bypassed for painting and Notes. Painting can mark clues/hints without
+editing values, cancels pending domino work, and rejects paused/won states.
+Same-color removal and clear-all use existing snapshots.
 
 The palette sits immediately after the digits. Cell exposes `data-color` and
 a Portuguese color description. Manual background colors override highlight

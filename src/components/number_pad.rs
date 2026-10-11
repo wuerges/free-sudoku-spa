@@ -21,7 +21,7 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                     <button type="button" class="ui-action color-tool" data-color=color
                         aria-label=color_name(color) title=color_name(color)
                         aria-pressed=move || (state.0.get().paint_tool == Some(color)).to_string()
-                        disabled=move || { let s = state.0.get(); s.paused || s.won }
+                        disabled=move || { let s = state.0.get(); s.paused || s.won || (!s.drop_mode && s.selected.is_none()) }
                         on:click=move |_| state.select_paint_tool(color)>
                         <span class="color-swatch" aria-hidden="true"></span>
                         <span class="sr-only">{color_name(color)}</span>
@@ -47,8 +47,8 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                 <GameControls state=state />
             </div>
             <p class="paint-instruction" role="status" aria-live="polite">{move || state.0.get().paint_tool.map(|color|
-                format!("{}: toque para pintar ou remover.", color_name(color))).unwrap_or_default()}</p>
-            <Show when=move || drop_mode()>
+                format!("{}: pinte células; toque na cor para sair.", color_name(color))).unwrap_or_default()}</p>
+            <Show when=move || drop_mode() && state.0.get().paint_tool.is_none()>
                 <p class="drop-instruction" role="status">{move || match drop_number() {
                     Some(number) => format!("Drop: número {number}. Toque nas células para aplicar."),
                     None => "Drop: escolha um número e toque nas células.".to_string(),
@@ -63,7 +63,7 @@ fn NumberBtn(state: AppState, v: u8) -> impl IntoView {
     let disabled = move || {
         let s = state.0.get();
         if s.drop_mode {
-            !s.note_mode && s.number_is_solved(v)
+            s.paint_tool.is_none() && !s.note_mode && s.number_is_solved(v)
         } else {
             s.board.iter().filter(|&&c| c == v).count() >= 9
         }

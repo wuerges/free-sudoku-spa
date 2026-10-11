@@ -5,6 +5,16 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.20.0]
+
+### Changed
+
+- Cell colors follow number targeting: select a cell then apply a color, or use Drop for repeated painting while independently choosing a highlight digit.
+
+### Fixed
+
+- Drop painting, notes and number entry preserve the highlight anchor; notes no longer pick digits from solved cells.
+
 ## [0.19.0]
 
 ### Added
