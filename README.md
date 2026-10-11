@@ -101,7 +101,7 @@ src/
 - Sound on correct guess: beep, explosion (default), or off
 - Pencil-mark notes mode with per-cell candidates
 - **🎯 Drop mode**: select a number, then tap cells to place or note it in bulk
-- In Drop mode, tap a correctly filled cell to pick its number without editing it. Disable “Selecionar número pelas células resolvidas” in Settings to keep the previous behavior. The preference defaults to enabled and survives reloads/new games.
+- In normal Drop (outside Notes/painting), tap a correctly filled cell to pick its number without editing it. Disable “Selecionar número pelas células resolvidas” in Settings to keep the previous behavior. The preference defaults to enabled and survives reloads/new games.
 - Completed numbers (nine correct occurrences) are disabled for Drop placement, but remain available in Drop notes mode. Incorrect duplicates do not count toward completion.
 - Real-time conflict highlighting
 - Undo/Redo with full history (cleared on hint)
@@ -303,9 +303,15 @@ layouts in both themes. Captures go to `/tmp/sudoku-completed-contrast`.
 
 ## Manual cell colors
 
-Choose Verde, Roxo, Rosa or Laranja below the numbers, then tap cells to paint.
-The palette deliberately avoids blue, which already identifies game highlights.
-Tap the active tool again to exit painting, or use number/Notes/Drop controls.
+With Drop off, select a cell and tap Verde, Roxo, Rosa or Laranja to color it.
+With Drop on, choose a color and tap cells to paint repeatedly. The palette
+avoids blue, which already identifies game highlights. Choosing a color keeps
+the Drop digit and highlight anchor. Number buttons change that digit while
+painting stays active, including completed digits. Tap the active color again
+to resume number/note entry; Notes or toggling Drop also exits painting.
+Drop painting, notes and number placement preserve the highlight anchor.
+Normal Drop still supports picking a solved cell when enabled in Settings;
+painting and Notes never pick a digit from a target cell.
 Applying the same color again removes that cell’s mark; “Limpar cores” clears
 all marks in one undoable action. Painting includes original clues and hints without changing
 values or notes. It is unavailable while paused or after victory.
@@ -321,4 +327,5 @@ described above after `just build`. It checks painting, legacy saves, history,
 mode changes, equal button heights, larger boards, collapsible actions, resizing,
 enlarged text and offline reload in both
 themes. `COLOR_SCREENSHOTS` overrides the default `/tmp/sudoku-cell-colors`.
-See [the painting review captures](docs/screenshots/cell-colors/README.md).
+See [the targeting review captures](docs/screenshots/color-targeting/README.md) and
+[the earlier layout review](docs/screenshots/cell-colors/README.md).

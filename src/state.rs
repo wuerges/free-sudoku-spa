@@ -498,26 +498,28 @@ impl AppState {
     pub fn select_cell(&self, r: usize, c: usize) {
         let mut trigger_domino = false;
         self.0.update(|s| {
-            if let Some(color) = s.paint_tool {
-                s.paint_cell(r, c, color);
-                s.selected = Some((r, c));
-                s.secondary_highlight_value = None;
-                s.secondary_highlight_rows = 0;
-                s.secondary_highlight_cols = 0;
-                return;
-            }
             if s.drop_mode {
+                if let Some(color) = s.paint_tool {
+                    s.paint_cell(r, c, color);
+                    return;
+                }
                 let value = s.get(r, c);
                 if s.drop_pick_solved
+                    && !s.note_mode
                     && !s.paused
                     && !s.won
                     && value != 0
                     && value == s.solution[GameState::idx(r, c)]
                 {
                     s.drop_number = Some(value);
+                    s.selected = Some((r, c));
+                    s.secondary_highlight_value = None;
+                    s.secondary_highlight_rows = 0;
+                    s.secondary_highlight_cols = 0;
                 } else if let Some(number) = s.drop_number {
                     trigger_domino = s.enter_number(r, c, number);
                 }
+                return;
             }
 
             if !s.drop_mode && s.selected == Some((r, c)) && s.get(r, c) != 0 {
@@ -557,14 +559,16 @@ impl AppState {
             if !(1..=4).contains(&color) || s.paused || s.won {
                 return;
             }
-            s.cancel_domino();
-            s.paint_tool = if s.paint_tool == Some(color) {
-                None
-            } else {
-                Some(color)
-            };
-            s.drop_mode = false;
-            s.drop_number = None;
+            if s.drop_mode {
+                s.cancel_domino();
+                s.paint_tool = if s.paint_tool == Some(color) {
+                    None
+                } else {
+                    Some(color)
+                };
+            } else if let Some((row, col)) = s.selected {
+                s.paint_cell(row, col, color);
+            }
         });
     }
 
@@ -592,7 +596,6 @@ impl AppState {
 
     pub fn select_drop_number(&self, v: u8) {
         self.0.update(|s| {
-            s.paint_tool = None;
             if s.drop_number == Some(v) {
                 s.drop_number = None;
             } else {
@@ -975,6 +978,7 @@ mod tests {
         owner.set();
         let app = AppState(RwSignal::new(domino_fixture()));
         let before = app.0.get();
+        app.toggle_drop_mode();
         app.select_paint_tool(1);
         for i in [0, 2, 10] {
             app.select_cell(i / 9, i % 9);
@@ -1007,6 +1011,8 @@ mod tests {
         assert_eq!(app.0.get().cell_colors[0], 2);
         assert_eq!(app.0.get().cell_colors[2], 1);
         app.0.update(|s| s.domino_enabled = false);
+        app.toggle_drop_mode();
+        app.select_cell(0, 0);
         app.place_number(before.solution[0]);
         assert_eq!(app.0.get().paint_tool, None);
         assert_eq!(app.0.get().cell_colors[0], 2);
@@ -1026,8 +1032,8 @@ mod tests {
         app.select_drop_number(3);
         let generation = app.0.get().domino_gen;
         app.select_paint_tool(3);
-        assert!(!app.0.get().drop_mode);
-        assert_eq!(app.0.get().drop_number, None);
+        assert!(app.0.get().drop_mode);
+        assert_eq!(app.0.get().drop_number, Some(3));
         assert_ne!(app.0.get().domino_gen, generation);
         app.0.update(|s| assert!(!s.domino_step(generation)));
         app.select_cell(0, 2);
@@ -1039,6 +1045,7 @@ mod tests {
         app.select_paint_tool(4);
         app.toggle_drop_mode();
         assert_eq!(app.0.get().paint_tool, None);
+        app.toggle_drop_mode();
         app.select_paint_tool(4);
         app.select_paint_tool(4);
         assert_eq!(app.0.get().paint_tool, None);
@@ -1066,6 +1073,97 @@ mod tests {
         app.new_game(Difficulty::Easy);
         assert_eq!(app.0.get().cell_colors, [0; 81]);
         assert_eq!(app.0.get().paint_tool, None);
+    }
+
+    #[test]
+    fn selection_first_colors_apply_without_activating_a_tool() {
+        let owner = Owner::new();
+        owner.set();
+        let app = AppState(RwSignal::new(domino_fixture()));
+        app.select_paint_tool(1);
+        assert!(app.0.get().history.is_empty());
+        assert_eq!(app.0.get().paint_tool, None);
+        app.select_cell(0, 2);
+        app.select_cell(0, 2); // Expanded highlighting must survive coloring.
+        let before = app.0.get();
+        app.select_paint_tool(2);
+        let colored = app.0.get();
+        assert_eq!(colored.cell_colors[2], 2);
+        assert_eq!(colored.board, before.board);
+        assert_eq!(colored.notes, before.notes);
+        assert_eq!(colored.selected, before.selected);
+        assert_eq!(
+            colored.secondary_highlight_value,
+            before.secondary_highlight_value
+        );
+        assert_eq!(colored.paint_tool, None);
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().cell_colors[0], 0);
+        app.select_cell(0, 2);
+        app.select_paint_tool(2);
+        assert_eq!(app.0.get().cell_colors[2], 0);
+        app.undo();
+        assert_eq!(app.0.get().cell_colors[2], 2);
+        app.redo();
+        assert_eq!(app.0.get().cell_colors[2], 0);
+    }
+
+    #[test]
+    fn drop_edits_preserve_anchor_and_independent_highlight_digit() {
+        let owner = Owner::new();
+        owner.set();
+        let mut s = domino_fixture();
+        s.domino_enabled = false;
+        let app = AppState(RwSignal::new(s));
+        app.select_cell(0, 2);
+        app.select_cell(0, 2);
+        let anchor = app.0.get();
+        app.toggle_drop_mode();
+        app.select_paint_tool(1);
+        assert_eq!(app.0.get().active_number(), None);
+        app.select_cell(0, 1);
+        assert_eq!(app.0.get().cell_colors[1], 1);
+        assert_eq!(app.0.get().active_number(), None);
+        app.select_drop_number(3);
+        let before = app.0.get();
+        app.select_cell(1, 1); // A solved cell must paint, never pick its digit.
+        assert_eq!(app.0.get().active_number(), Some(3));
+        assert_eq!(app.0.get().board, before.board);
+        assert_eq!(app.0.get().cell_colors[10], 1);
+        app.select_drop_number(5);
+        assert_eq!(app.0.get().paint_tool, Some(1));
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().active_number(), Some(5));
+        app.select_paint_tool(1); // Resume entry without changing the digit.
+        assert_eq!(app.0.get().paint_tool, None);
+        app.toggle_note_mode();
+        let before_notes = app.0.get();
+        app.select_cell(1, 1); // Notes cannot pick a solved digit.
+        assert_eq!(app.0.get().drop_number, Some(5));
+        assert_eq!(app.0.get().history.len(), before_notes.history.len());
+        app.select_cell(0, 0);
+        assert_eq!(app.0.get().notes[0], before_notes.notes[0] ^ (1 << 4));
+        app.toggle_note_mode();
+        app.select_drop_number(1);
+        app.select_cell(0, 0);
+        let after = app.0.get();
+        assert_eq!(after.board[0], 1);
+        assert_eq!(after.selected, anchor.selected);
+        assert_eq!(
+            after.secondary_highlight_value,
+            anchor.secondary_highlight_value
+        );
+        assert_eq!(
+            after.secondary_highlight_rows,
+            anchor.secondary_highlight_rows
+        );
+        assert_eq!(
+            after.secondary_highlight_cols,
+            anchor.secondary_highlight_cols
+        );
+        app.select_cell(1, 1); // Ordinary solved-cell picking is still intentional.
+        assert_eq!(app.0.get().selected, Some((1, 1)));
+        assert_eq!(app.0.get().drop_number, Some(after.board[10]));
     }
 
     #[test]
@@ -1122,49 +1220,42 @@ mod tests {
     #[test]
     fn drop_picks_solved_digits_without_editing_any_source_or_history() {
         for source in ["given", "hint", "player"] {
-            for notes in [false, true] {
-                let mut s = domino_fixture();
-                s.board[17] = 0;
-                s.givens[17] = 0; // Keep the picked digit incomplete for placement.
-                if source != "given" {
-                    s.givens[2] = 0;
-                }
-                if source == "hint" {
-                    s.hinted[2] = s.board[2];
-                }
-                s.note_mode = notes;
-                s.history.push(Snapshot {
-                    board: s.board,
-                    notes: s.notes,
-                    cell_colors: s.cell_colors,
-                });
-                s.redo_stack = s.history.clone();
-                let before = serde_json::to_value(&s).unwrap();
-                let generation = s.domino_gen;
-                let app = AppState(RwSignal::new(s));
-                app.toggle_drop_mode();
-                app.select_drop_number(9);
-                for _ in 0..2 {
-                    app.select_cell(0, 2);
-                }
-                let after = app.0.get();
-                assert_eq!(after.drop_number, Some(after.solution[2]));
-                assert_eq!(after.selected, Some((0, 2)));
-                assert_eq!(after.domino_gen, generation);
-                let mut encoded = serde_json::to_value(&after).unwrap();
-                encoded["selected"] = before["selected"].clone();
-                assert_eq!(
-                    encoded, before,
-                    "picking must not mutate persisted gameplay"
-                );
-                app.select_cell(0, 0);
-                let entered = app.0.get();
-                if notes {
-                    assert_eq!(entered.notes[0], 511 ^ (1 << (after.solution[2] - 1)));
-                } else {
-                    assert_eq!(entered.board[0], after.solution[2]);
-                }
+            let mut s = domino_fixture();
+            s.board[17] = 0;
+            s.givens[17] = 0; // Keep the picked digit incomplete for placement.
+            if source != "given" {
+                s.givens[2] = 0;
             }
+            if source == "hint" {
+                s.hinted[2] = s.board[2];
+            }
+            s.history.push(Snapshot {
+                board: s.board,
+                notes: s.notes,
+                cell_colors: s.cell_colors,
+            });
+            s.redo_stack = s.history.clone();
+            let before = serde_json::to_value(&s).unwrap();
+            let generation = s.domino_gen;
+            let app = AppState(RwSignal::new(s));
+            app.toggle_drop_mode();
+            app.select_drop_number(9);
+            for _ in 0..2 {
+                app.select_cell(0, 2);
+            }
+            let after = app.0.get();
+            assert_eq!(after.drop_number, Some(after.solution[2]));
+            assert_eq!(after.selected, Some((0, 2)));
+            assert_eq!(after.domino_gen, generation);
+            let mut encoded = serde_json::to_value(&after).unwrap();
+            encoded["selected"] = before["selected"].clone();
+            assert_eq!(
+                encoded, before,
+                "picking must not mutate persisted gameplay"
+            );
+            app.select_cell(0, 0);
+            let entered = app.0.get();
+            assert_eq!(entered.board[0], after.solution[2]);
         }
     }
 

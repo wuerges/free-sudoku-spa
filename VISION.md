@@ -18,7 +18,7 @@ The repository contains:
 - Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Game-state serialization to the `sudoku_state` localStorage key.
-- Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
+- Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop edits preserve the highlight anchor and painting keeps an independently selected highlight digit. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
 - A manifest, icons, installation-prompt bridge, and service worker.
 - Engine and state unit tests, Trunk build configuration, and Vercel static-hosting configuration.

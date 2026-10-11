@@ -54,11 +54,17 @@ try {
       const after=await read();
       for(const field of ['board','notes','history','redo_stack','error_count']) assert.deepEqual(after[field],before[field]);
     }
+    const entryAnchor=(await read()).selected;
     await number(9).click();await cell(6).click();
+    assert.deepEqual((await read()).selected,entryAnchor,'number placement preserves highlight anchor');
     assert.equal((await read()).board[6],9); // Incorrect cells remain editable.
     await seed();await page.getByRole('button',{name:'Drop',exact:true}).click();
     await page.getByRole('button',{name:'Notas',exact:true}).click();
-    await cell(2).click();await cell(0).click();
+    await number(3).click();
+    const noteAnchor=(await read()).selected;
+    await cell(4).click();await cell(0).click();
+    assert.deepEqual((await read()).selected,noteAnchor);
+    assert.equal(await number(3).getAttribute('aria-pressed'),'true');
     assert.equal((await read()).notes[0],1<<2);assert.equal((await read()).board[0],0);
     await seed();await page.getByRole('link',{name:'Configurações',exact:true}).click();
     const pref=page.getByRole('checkbox',{name:'Selecionar número pelas células resolvidas',exact:true});
