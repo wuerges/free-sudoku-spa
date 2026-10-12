@@ -25,10 +25,15 @@ export async function generateOfflineBundle(directory, templatePath = new URL('.
   const template = await readFile(templatePath, 'utf8');
   const hash = createHash('sha256').update(template);
   for (const name of files) {
-    const bytes = await readFile(path.join(directory, name));
+    let bytes = await readFile(path.join(directory, name));
+    if (name === 'index.html') bytes = Buffer.from(bytes.toString().replace(/<meta name="sudoku-bundle" content="[a-f0-9]+"\s*\/>/g, ''));
     hash.update(JSON.stringify([name, bytes.length])).update(bytes);
   }
   const version = hash.digest('hex');
+  const htmlPath = path.join(directory, 'index.html');
+  const html = (await readFile(htmlPath, 'utf8')).replace(/<meta name="sudoku-bundle" content="[a-f0-9]+"\s*\/>/g, '');
+  const marker = `<meta name="sudoku-bundle" content="${version}" />`;
+  await writeFile(htmlPath, html.includes('<head>') ? html.replace('<head>', '<head>' + marker) : marker + html);
   const assets = files.map(name => '/' + name.split('/').map(encodeURIComponent).join('/'));
   const output = template.replace('/* OFFLINE_BUNDLE */', `const VERSION = ${JSON.stringify(version)};\nconst ASSETS = ${JSON.stringify(assets)};`);
   if (output === template) throw new Error('Missing offline bundle template marker');

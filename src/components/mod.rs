@@ -12,3 +12,5 @@ pub mod share_dialog;
 
 pub mod board_preview;
 pub mod history_page;
+
+pub mod update_banner;

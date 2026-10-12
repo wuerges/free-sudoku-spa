@@ -68,3 +68,9 @@ Use stable IDs and do not renumber existing issues.
 - Evidence: Rust synthesis, shared Web Audio lifecycle and saved volume/balloon controls replace the former JavaScript effects. Automated tests cover synthesis levels, compatible saves and browser flows; physical Android Chrome lifecycle acceptance remains pending.
 - Impact: Headless Chromium cannot establish audible loudness or recovery after phone screen locking and operating-system audio interruption.
 - Acceptance: On physical Android Chrome, verify repeated entries, Test sound, victory explosions, volume 0/25/75/100, balloon counts 0/25/100, background/foreground and screen lock recovery, with no delayed stale sounds. Repeat in the Android wrapper and record results.
+
+## ISSUE-013: Verify physical mobile PWA update acceptance
+
+- Evidence: Explicit update consent, complete-bundle activation and per-tab save recovery are implemented with automated worker and browser coverage. Physical installed-PWA lifecycle acceptance remains pending.
+- Impact: Headless Chromium cannot establish behavior when Android suspends or kills background PWA windows.
+- Acceptance: On physical Android Chrome and an installed PWA, upgrade between two releases with an active game, notes, colors and undo/redo; verify foreground detection, Later, all-tab consent/closure, save failure, offline application and preserved progress after screen lock/background suspension. Verify actual preview cache headers under ISSUE-002.

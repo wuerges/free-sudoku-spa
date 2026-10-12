@@ -1,6 +1,6 @@
 [package]
 name = "free-sudoku-pwa"
-version = "0.27.0"
+version = "0.28.0"
 edition = "2021"
 
 [dependencies]
@@ -14,6 +14,7 @@ serde_bytes = "0.11"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
+futures-channel = "0.3"
 web-sys = { version = "0.3", features = [
   "AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam",
   "AudioBuffer", "AudioBufferSourceNode",
@@ -26,6 +27,9 @@ web-sys = { version = "0.3", features = [
   "Storage",
   "console",
   "KeyboardEvent",
+  "ServiceWorker", "MessageChannel", "MessagePort", "MessageEvent",
+  "Navigator", "HtmlDialogElement", "CssStyleDeclaration",
+  "ResizeObserver", "ResizeObserverEntry", "DomRect", "DomRectReadOnly",
   "ServiceWorkerContainer",
   "ServiceWorkerRegistration",
 ] }

@@ -888,7 +888,7 @@ impl AppState {
 // Legacy saves cannot reliably distinguish original clues from correct entries.
 // Preserve their locked cells, then retain provenance for subsequent player moves.
 #[cfg(any(target_arch = "wasm32", test))]
-fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
+pub(crate) fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     let legacy = value.get("givens").is_none();
     let mut state: GameState = serde_json::from_value(value)?;
@@ -934,6 +934,9 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
 fn load_state() -> Option<GameState> {
     #[cfg(target_arch = "wasm32")]
     {
+        if let Some(state) = crate::updates::take_resume() {
+            return Some(state);
+        }
         let window = web_sys::window()?;
         let storage = window.local_storage().ok()??;
         let json = storage.get_item("sudoku_state").ok()??;
@@ -1006,7 +1009,7 @@ impl GameHistory {
         }
         Ok(entries)
     }
-    async fn save_entry(entry: &HistoryEntry, activate: bool) -> Result<(), Message> {
+    pub(crate) async fn save_entry(entry: &HistoryEntry, activate: bool) -> Result<(), Message> {
         let json = serde_json::to_string(entry).map_err(|_| Message::HistorySerializeFailed)?;
         store_save(&json, activate)
             .await

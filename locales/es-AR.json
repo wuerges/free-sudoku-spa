@@ -217,5 +217,14 @@
   "TestSound": "Probar sonido",
   "VictoryEffects": "Efectos de victoria",
   "BalloonCount": "Globos",
-  "BalloonCountIntro": "Cantidad de globos al completar un juego. Cero mantiene los fuegos artificiales sin globos."
+  "BalloonCountIntro": "Cantidad de globos al completar un juego. Cero mantiene los fuegos artificiales sin globos.",
+  "UpdateAvailable": "Nueva versión disponible",
+  "UpdateNow": "Actualizar ahora",
+  "UpdateLater": "Más tarde",
+  "UpdateSaving": "Guardando tu partida…",
+  "UpdateWaiting": "Esperando otras pestañas de Sudoku",
+  "UpdateWaitingIntro": "Aceptá la actualización en cada pestaña de Sudoku o cerrá las otras pestañas. Tu partida queda guardada.",
+  "UpdateApplying": "Aplicando actualización…",
+  "UpdateCancel": "Seguir jugando",
+  "UpdateSaveFailed": "No se pudo guardar tu partida. La actualización no se aplicó. Intentá de nuevo."
 }

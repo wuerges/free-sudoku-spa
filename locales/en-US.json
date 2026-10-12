@@ -217,5 +217,14 @@
   "TestSound": "Test sound",
   "VictoryEffects": "Victory effects",
   "BalloonCount": "Balloons",
-  "BalloonCountIntro": "Number of balloons after completing a game. Zero keeps fireworks without balloons."
+  "BalloonCountIntro": "Number of balloons after completing a game. Zero keeps fireworks without balloons.",
+  "UpdateAvailable": "New version available",
+  "UpdateNow": "Update now",
+  "UpdateLater": "Later",
+  "UpdateSaving": "Saving your game…",
+  "UpdateWaiting": "Waiting for other Sudoku tabs",
+  "UpdateWaitingIntro": "Accept the update in each Sudoku tab, or close the other tabs. Your game stays saved.",
+  "UpdateApplying": "Applying update…",
+  "UpdateCancel": "Continue playing",
+  "UpdateSaveFailed": "Your game could not be saved. The update has not been applied. Try again."
 }

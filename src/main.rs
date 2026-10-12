@@ -9,6 +9,7 @@ mod serde_helpers;
 mod sharing;
 mod state;
 mod sudoku_engine;
+mod updates;
 
 use leptos::prelude::*;
 

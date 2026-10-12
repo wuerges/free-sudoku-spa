@@ -101,6 +101,7 @@ pub fn App() -> impl IntoView {
         <Show when=move || i18n.save_failed.get()>
             <p class="locale-storage-error" role="alert">{move || i18n.text(crate::i18n::Message::LocaleSaveFailed)}</p>
         </Show>
+        <crate::components::update_banner::UpdateBanner state=state history=history/>
         <crate::components::history_page::HistoryFeedback state=state history=history/>
         <crate::components::share_dialog::ShareDialogs state=state />
         <Router>

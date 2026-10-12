@@ -217,5 +217,14 @@
   "TestSound": "Testar som",
   "VictoryEffects": "Efeitos de vitória",
   "BalloonCount": "Balões",
-  "BalloonCountIntro": "Quantidade de balões ao concluir um jogo. Zero mantém os fogos sem balões."
+  "BalloonCountIntro": "Quantidade de balões ao concluir um jogo. Zero mantém os fogos sem balões.",
+  "UpdateAvailable": "Nova versão disponível",
+  "UpdateNow": "Atualizar agora",
+  "UpdateLater": "Depois",
+  "UpdateSaving": "Salvando seu jogo…",
+  "UpdateWaiting": "Aguardando outras abas do Sudoku",
+  "UpdateWaitingIntro": "Aceite a atualização em cada aba do Sudoku ou feche as outras abas. Seu jogo permanece salvo.",
+  "UpdateApplying": "Aplicando atualização…",
+  "UpdateCancel": "Continuar jogando",
+  "UpdateSaveFailed": "Não foi possível salvar seu jogo. A atualização não foi aplicada. Tente novamente."
 }

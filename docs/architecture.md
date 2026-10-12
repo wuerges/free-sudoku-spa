@@ -13,6 +13,7 @@
 | `src/sudoku_engine.rs` | Puzzle generation, solving, candidates, and validation; engine unit tests |
 | `src/game_history.rs` | Archive DTO and retention policy |
 | `src/state.rs` | Game state, user actions, undo/redo, hints, domino behavior, localStorage persistence, and state tests |
+| `src/updates.rs` | Shared update notice, per-tab saving, typed worker events and consent |
 | `src/serde_helpers.rs` | Serialization helpers for 81-element arrays |
 | `src/i18n.rs`, `locales/` | Reactive interface language and four complete translation catalogs |
 | `src/components/cell.rs` | Cell rendering and interaction |
@@ -45,7 +46,9 @@ Trunk runs `scripts/offline-bundle.mjs` after asset generation and before publis
 
 Each worker installs its complete bundle into a separate `sudoku-offline-<hash>` cache. A failed precache rejects installation and deletes only that incomplete cache. Navigation always uses that version's cached HTML; listed assets use the same cache, keeping HTML and hashed assets consistent across releases. Other requests use the browser's network behavior.
 
-Updates wait for all controlled tabs to close. Activation removes only obsolete Sudoku caches, including legacy `sudoku-v1`; unrelated caches and localStorage remain untouched. Initial installation does not claim the already-open page, so reload after installation to enter worker control.
+Updates remain waiting until all open Sudoku windows accept or close. `src/components/update_banner.rs` renders the shared notice and waiting dialog. `src/updates.rs` owns typed browser listeners, check throttling, checked per-tab saving and consent. The worker queries each live client with a version-bound message/MessageChannel protocol in probe and commit phases, rechecks membership and only then calls `skipWaiting()`. It stores an activation marker in its own bundle cache so worker termination between consent and activation does not lose permission to claim clients. Initial installation has no marker and does not force takeover or reload. Activation claims accepted clients and removes the marker. Previous caches remain available for old hashed resources until every live window reports that it is running the new bundle; only then are obsolete Sudoku caches removed. This also protects a tab opened in the final activation race. Such a late old-version tab gets its own update notice and saves before reloading into the already-active bundle. Unrelated caches and game stores remain intact.
+
+The offline generator injects the bundle hash into an HTML meta tag, normalizing that tag out of hashing so repeated generation is stable. Each accepting tab waits for history transactions, freezes interaction/domino, commits its archive, verifies localStorage and a version-bound sessionStorage `sudoku_update_resume` snapshot, and only then acknowledges readiness. Loading consumes a matching snapshot once before the ordinary active save. This preserves distinct per-tab progress despite the shared localStorage active key. A declined/nonresponding/legacy client blocks activation. Waiting tabs retry every 30 seconds and can revoke consent before commit. Only a matching new controller reloads an accepted tab, once. Failed saves restore the original state and expose a localized retry. The Android wrapper disables registration and the update service.
 
 Hosting defaults to revalidation, with immutable caching reserved for hashed Trunk JS/WASM/CSS. Verify actual Vercel response headers on a preview before marking the hosting-cache issue resolved.
 
