@@ -15,7 +15,7 @@ The repository contains:
 - A 9×9 board with five localized difficulty levels: Easy, Medium, Hard, Expert, and Master.
 - A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
 - A button-based number pad, pencil notes, saved Drop configuration with Drop only, No Drop and Both (the default), conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
-- Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
+- Optional domino cascades with saved timing and empty-cell activation settings, plus saved sound volume and victory balloon settings, a sound preview, and Rust audio/canvas effects. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Self-contained current/initial Sudoku links with validated import preview, recipient settings preserved and a generic social preview image.
 - Local game history with miniature boards, ten unpinned past games plus the active game and unlimited pins, guarded link/new-game replacement and resume/separate-restart choices. Archives use IndexedDB; preferences and older active saves remain compatible.

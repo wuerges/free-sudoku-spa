@@ -200,7 +200,7 @@
   "HelpNewGame": "Inicia un juego nuevo. La dificultad depende de las técnicas de resolución: Fácil (candidatos únicos), Medio (candidatos bloqueados), Difícil (pares/tríos), Experto (X-Wing/XY-Wing y cadenas cortas) y Maestro (cadenas alternadas). El encabezado muestra la técnica más avanzada. Los juegos antiguos conservan su nivel anterior.",
   "HelpHint": "Revela la celda con menos candidatos, borra las notas relacionadas y el historial de deshacer. Las celdas reveladas quedan amarillas. Disponible en todos los niveles si está activada en Configuración.",
   "HelpDomino": "Después de un acierto normal o en modo Drop, completa celdas vacías con un único candidato según su fila, columna y bloque 3×3. Configurá el intervalo inicial, la aceleración, el intervalo mínimo y el límite de celdas vacías en Configuración. Límite 0 significa sin límite; otros valores permiten el efecto cuando quedan como máximo esa cantidad de celdas vacías. Activado por defecto cuando quedan hasta 10 celdas vacías.",
-  "HelpSound": "Al acertar una celda, se reproduce un sonido. Elegí Desactivado, Bip o Explosión en la sección Sonido de Configuración.",
+  "HelpSound": "Al acertar una celda, se reproduce un sonido. Elegí Desactivado, Bip o Explosión en la sección Sonido de Configuración. Volumen de los sonidos: Controla los sonidos de las jugadas y de la victoria. Cero silencia el audio; también se aplica el volumen del dispositivo. Globos: Cantidad de globos al completar un juego. Cero mantiene los fuegos artificiales sin globos.",
   "HelpPause": "Pausá o reanudá el cronómetro.",
   "HelpUndo": "Deshacé la última acción. Usar una pista borra el historial de deshacer.",
   "HelpRedo": "Rehacé la acción deshecha. Usar una pista borra el historial de deshacer.",
@@ -211,5 +211,11 @@
   "DropAvailabilityIntro": "Solo Drop mantiene Drop activado y oculta su botón. Sin Drop lo mantiene desactivado y oculta su botón. Ambos muestra el botón y permite alternar.",
   "DropOnly": "Solo Drop",
   "NoDrop": "Sin Drop",
-  "BothModes": "Ambos"
+  "BothModes": "Ambos",
+  "SoundVolume": "Volumen de los sonidos",
+  "SoundVolumeIntro": "Controla los sonidos de las jugadas y de la victoria. Cero silencia el audio; también se aplica el volumen del dispositivo.",
+  "TestSound": "Probar sonido",
+  "VictoryEffects": "Efectos de victoria",
+  "BalloonCount": "Globos",
+  "BalloonCountIntro": "Cantidad de globos al completar un juego. Cero mantiene los fuegos artificiales sin globos."
 }

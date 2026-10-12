@@ -1,6 +1,6 @@
 [package]
 name = "free-sudoku-pwa"
-version = "0.25.0"
+version = "0.26.0"
 edition = "2021"
 
 [dependencies]
@@ -15,6 +15,10 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = [
+  "AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam",
+  "AudioBuffer", "AudioBufferSourceNode",
+  "AudioScheduledSourceNode", "GainNode", "WaveShaperNode",
+  "Event", "EventTarget", "HtmlCanvasElement", "CanvasRenderingContext2d",
   "Window",
   "Document",
   "Element",

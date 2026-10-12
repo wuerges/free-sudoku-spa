@@ -1,5 +1,8 @@
 mod app;
+mod audio;
+mod celebration;
 mod components;
+mod effects;
 mod game_history;
 mod i18n;
 mod serde_helpers;

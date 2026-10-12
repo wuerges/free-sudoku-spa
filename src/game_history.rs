@@ -116,6 +116,10 @@ mod tests {
         let mut local = GameState::default();
         local.highlights.completed_contrast = 37;
         local.undo_enabled = false;
+        local.effects = crate::effects::EffectsSettings {
+            volume: 37,
+            balloons: 100,
+        };
         local.note_mode = true;
         local.drop_mode = true;
         local.drop_number = Some(3);
@@ -136,6 +140,7 @@ mod tests {
         assert!(initial.history.is_empty() && initial.redo_stack.is_empty());
         assert_eq!(entry.game.seconds, 321);
         for restored in [resume, initial] {
+            assert_eq!(restored.effects, local.effects);
             assert!(restored.note_mode && restored.drop_mode);
             assert_eq!(restored.drop_number, None);
             assert_eq!(restored.paint_tool, None);

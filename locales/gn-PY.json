@@ -200,7 +200,7 @@
   "HelpNewGame": "Oñepyrũ ñembosarái pyahu. Hasykue ou ñembohovái técnica-gui: Ndahasyi (papapy año), Mbytegua (papapy oñembotýva), Hasy (mokõi/mbohapy), Katupyry (X-Wing/XY-Wing ha joaju mbyky) ha Mbo’ehára (joaju oñeñanduejey). Akã ohechauka técnica hasyvéva. Ñembosarái ymaguare omantene hasykue ymaguare.",
   "HelpHint": "Ohechauka koty oguerekóva sa’ive papapy ikatúva oĩ, ombogue ñehai ojoajúva ha Mboguevi rembiasakue. Koty ojehechaukáva isa’yju. Ojeporukuaa opa hasykuépe oñemyandy ramo Ñembohekópe.",
   "HelpDomino": "Papapy oĩ porã rire jeporu jepivegua térã Drop-pe, omyenyhẽ koty nandi oguerekóva peteĩ papapy año ikatúva oĩ rysýi, yta ha aty 3×3 rehe. Emboheko ñepyrũ ñoha’arõ, pya’eve, ñoha’arõ mbykyvéva ha koty nandi límite Ñembohekópe. Límite 0 he’ise límite’ỹ; ambue papapy oheja rembiapo oĩ ramo upe koty nandi térã sa’ive. Oñemyandy ñepyrũhápe opyta ramo 10 koty nandi térã sa’ive.",
-  "HelpSound": "Emoĩ porãvo papapy, oñehendu tyapu. Eiporavo Ogue, Bip térã Mbokapu Ñemboheko Tyapu atýpe.",
+  "HelpSound": "Emoĩ porãvo papapy, oñehendu tyapu. Eiporavo Ogue, Bip térã Mbokapu Ñemboheko Tyapu atýpe. Pu mbarete: Omboheko ñemongu’e ha ñembosarái ñemohu’ã pu. Cero omokirirĩ pu; dispositivo pu mbarete oñemoĩ avei. Glóvo: Glóvo papapy ñembosarái oñemohu’ã rire. Cero oheja tata rendy glóvo’ỹre.",
   "HelpPause": "Emombyta térã emyandy jey aravo papaha.",
   "HelpUndo": "Emboguevi tembiapo paha. Pista jeporu ombogue Mboguevi rembiasakue.",
   "HelpRedo": "Ejapo jey tembiapo oñemboguevíva. Pista jeporu ombogue Mboguevi rembiasakue.",
@@ -211,5 +211,11 @@
   "DropAvailabilityIntro": "Drop año oheja Drop hendy ha nombohechái ivotõ. Drop’ỹ oheja Drop ogue ha nombohechái ivotõ. Mokõivéva ohechauka votõ ha oheja ñemoambue.",
   "DropOnly": "Drop año",
   "NoDrop": "Drop’ỹ",
-  "BothModes": "Mokõivéva"
+  "BothModes": "Mokõivéva",
+  "SoundVolume": "Pu mbarete",
+  "SoundVolumeIntro": "Omboheko ñemongu’e ha ñembosarái ñemohu’ã pu. Cero omokirirĩ pu; dispositivo pu mbarete oñemoĩ avei.",
+  "TestSound": "Eha’ã pu",
+  "VictoryEffects": "Ñembosarái ñemohu’ã techaukaha",
+  "BalloonCount": "Glóvo",
+  "BalloonCountIntro": "Glóvo papapy ñembosarái oñemohu’ã rire. Cero oheja tata rendy glóvo’ỹre."
 }

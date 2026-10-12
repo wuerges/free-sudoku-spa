@@ -115,7 +115,7 @@ try {
       await settingsLink.click();
       await page.getByRole('heading',{name:'Configurações',exact:true}).waitFor();
       await overflow('settings');
-      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Idioma','Destaques do tabuleiro','Números concluídos','Assistências','Som']);
+      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Idioma','Destaques do tabuleiro','Números concluídos','Assistências','Som','Efeitos de vitória']);
       assert.equal(await page.locator('.timing-details').getAttribute('open'),null);
       assert.equal(await page.locator('#domino-initial').isVisible(),false);
       assert.equal(await page.locator('#domino-threshold').inputValue(),'10');

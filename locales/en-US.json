@@ -200,7 +200,7 @@
   "HelpNewGame": "Start a new game. Difficulty comes from solving techniques: Easy (singles), Medium (locked candidates), Hard (pairs/triples), Expert (X-Wing/XY-Wing and short chains), and Master (alternating chains). The header shows the strongest technique. Older games keep their previous level.",
   "HelpHint": "Reveal the cell with the fewest candidates, clear related notes, and clear undo history. Revealed cells are yellow. Available at every level when enabled in Settings.",
   "HelpDomino": "After a correct normal or Drop entry, fill empty cells with only one candidate according to their row, column, and 3×3 box. Configure initial delay, acceleration, minimum delay, and the empty-cell limit in Settings. Limit 0 means no limit; other values allow the effect when at most that many empty cells remain. Enabled by default when at most 10 empty cells remain.",
-  "HelpSound": "A correct entry plays a sound. Choose Off, Beep, or Explosion in the Sound section of Settings.",
+  "HelpSound": "A correct entry plays a sound. Choose Off, Beep, or Explosion in the Sound section of Settings. Sound volume: Controls move and victory sounds. Zero mutes audio; your device volume also applies. Balloons: Number of balloons after completing a game. Zero keeps fireworks without balloons.",
   "HelpPause": "Pause or resume the timer.",
   "HelpUndo": "Undo the last action. Using a hint clears undo history.",
   "HelpRedo": "Repeat the undone action. Using a hint clears undo history.",
@@ -211,5 +211,11 @@
   "DropAvailabilityIntro": "Drop only keeps Drop on and hides its button. No Drop keeps it off and hides its button. Both shows the button and lets you switch.",
   "DropOnly": "Drop only",
   "NoDrop": "No Drop",
-  "BothModes": "Both"
+  "BothModes": "Both",
+  "SoundVolume": "Sound volume",
+  "SoundVolumeIntro": "Controls move and victory sounds. Zero mutes audio; your device volume also applies.",
+  "TestSound": "Test sound",
+  "VictoryEffects": "Victory effects",
+  "BalloonCount": "Balloons",
+  "BalloonCountIntro": "Number of balloons after completing a game. Zero keeps fireworks without balloons."
 }

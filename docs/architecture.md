@@ -362,3 +362,23 @@ imports/history keep the local policy. Settings reset returns to Both without
 changing the current mode or board. The keypad hides Drop for fixed policies;
 its grid supports both policy visibility and Undo/Redo visibility while retaining
 the 1.5 Notes width ratio. Settings uses localized native radios.
+
+## Audio and victory effects
+
+`src/effects.rs` defines compatible saved preferences: master volume (0–100,
+75 by default) and balloon count (0–100, 25 by default). Missing fields default
+independently; loading clamps values. New games, imports and history resume retain
+local preferences. Configuration reset restores defaults without changing progress.
+
+`src/audio.rs` synthesizes cached PCM clips in Rust and owns one Web Audio context.
+Trusted pointer, click and keyboard interactions resume it; closed contexts are
+recreated. Playback waits for resume, sources disconnect on completion, and hiding
+the document, muting, changing sound type or replacing a game cancels pending audio.
+A master gain and bounded wave shaper control volume and overlapping explosions.
+The configuration preview exercises the same service as gameplay.
+
+`src/celebration.rs` owns the Rust canvas animation and its animation-frame callback.
+Zero balloons retains fireworks. Audio failure cannot prevent visual feedback.
+Fresh completion through entry, hint, domino or redo celebrates; loading or importing
+an already completed game does not. `tests/effects-browser.mjs` checks native Chromium
+context reuse/recovery, saved sliders, mute and victory at phone/tablet widths.

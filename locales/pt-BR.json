@@ -200,7 +200,7 @@
   "HelpNewGame": "Inicia um novo jogo. A dificuldade vem das técnicas usadas para resolver: Fácil (candidatos únicos), Médio (candidatos bloqueados), Difícil (pares/trios), Expert (X-Wing/XY-Wing e cadeias curtas) e Mestre (cadeias alternadas). O cabeçalho mostra a técnica mais avançada. Jogos antigos mantêm o nível anterior.",
   "HelpHint": "Revela a célula com menos candidatos, limpa as notas relacionadas e apaga o histórico de desfazer. Células reveladas ficam amarelas. Disponível em todos os níveis quando ativada nas Configurações.",
   "HelpDomino": "Após um acerto normal ou no modo Drop, preenche células vazias com apenas um candidato pela linha, coluna e bloco 3×3. Configure o intervalo inicial, a aceleração, o intervalo mínimo e o limite de células vazias nas Configurações. Limite 0 significa sem limite; outros valores permitem o efeito quando restarem até essa quantidade. Ativado por padrão quando restarem até 10 células vazias.",
-  "HelpSound": "Ao acertar uma célula, toca um som. Escolha Desligado, Bip ou Explosão na seção Som das Configurações.",
+  "HelpSound": "Ao acertar uma célula, toca um som. Escolha Desligado, Bip ou Explosão na seção Som das Configurações. Volume dos sons: Controla os sons de jogadas e da vitória. Zero silencia o áudio; o volume do dispositivo também se aplica. Balões: Quantidade de balões ao concluir um jogo. Zero mantém os fogos sem balões.",
   "HelpPause": "Pausa ou retoma o cronômetro.",
   "HelpUndo": "Desfaz a última ação. O histórico é apagado ao usar uma dica.",
   "HelpRedo": "Refaz a ação desfeita. O histórico é apagado ao usar uma dica.",
@@ -211,5 +211,11 @@
   "DropAvailabilityIntro": "Somente Drop mantém Drop ligado e oculta seu botão. Sem Drop mantém Drop desligado e oculta seu botão. Ambos mostra o botão e permite alternar.",
   "DropOnly": "Somente Drop",
   "NoDrop": "Sem Drop",
-  "BothModes": "Ambos"
+  "BothModes": "Ambos",
+  "SoundVolume": "Volume dos sons",
+  "SoundVolumeIntro": "Controla os sons de jogadas e da vitória. Zero silencia o áudio; o volume do dispositivo também se aplica.",
+  "TestSound": "Testar som",
+  "VictoryEffects": "Efeitos de vitória",
+  "BalloonCount": "Balões",
+  "BalloonCountIntro": "Quantidade de balões ao concluir um jogo. Zero mantém os fogos sem balões."
 }
