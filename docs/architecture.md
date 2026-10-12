@@ -11,6 +11,7 @@
 | Location | Responsibility |
 | --- | --- |
 | `src/sudoku_engine.rs` | Puzzle generation, solving, candidates, and validation; engine unit tests |
+| `src/game_history.rs` | Archive DTO and retention policy |
 | `src/state.rs` | Game state, user actions, undo/redo, hints, domino behavior, localStorage persistence, and state tests |
 | `src/serde_helpers.rs` | Serialization helpers for 81-element arrays |
 | `src/components/cell.rs` | Cell rendering and interaction |
@@ -271,3 +272,34 @@ Trunk hooks apply the same resolver to marked social metadata in staged HTML,
 before release offline hashing or development-worker staging. Source HTML is
 never rewritten. Previews use VERCEL_URL; only production considers
 VERCEL_PROJECT_PRODUCTION_URL. Explicit SUDOKU_PUBLIC_URL overrides both.
+
+
+## Local game archive
+
+`GameState.game_id` is a serde-defaulted stable local identity. Missing IDs are
+assigned on load without changing the board or preferences. Shared DTOs do not
+include identity. `/history` has an active card plus pinned/recent past cards;
+read-only HTML/CSS miniature boards reuse the import preview renderer.
+
+`GameHistory` in `src/state.rs` coordinates all user-triggered replacements. It freezes gameplay
+and invalidates domino callbacks, awaits an outgoing snapshot transaction, checks
+that the candidate can be persisted to localStorage, then switches the active
+signal. Resume restores identity and undo/redo while merging current settings;
+restart creates another identity and marks the source attempt recently used.
+Shared-link confirmation uses the same archive-first transition and removes the
+fragment only on success. Failure restores the prior pause state and keeps progress.
+
+`public/history-store.js` owns IndexedDB transactions for the version-1
+`sudoku_game_history` database (`games` and `meta` stores). It preserves pin flags
+when snapshots are updated and assigns monotonically increasing activation order
+plus a wall-clock display date. Pinning and archive updates preserve recency.
+Rust selects eviction candidates: only unpinned past records after the newest ten,
+excluding the active ID. The deletion transaction checks pins/active identity again.
+Pruning runs after the new active save is persisted; failures retain extras for
+retry. Invalid records are reported and kept in storage. No server is involved.
+The active record's archive copy may lag ongoing gameplay; its card and reload use
+the current localStorage-backed state, and replacement captures the latest snapshot.
+
+The new bridge is precached with the app shell; generic SPA offline navigation
+also covers `/history`. APK staging retains the bridge and its separate WebView
+storage. Browser/device data retention remains a platform constraint.

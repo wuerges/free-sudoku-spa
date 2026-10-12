@@ -129,3 +129,8 @@ run `SUDOKU_PUBLIC_URL=https://sudoku.example.com just android-release` (also
 supported by `android-sync` and `android-debug`). With no override or Vercel build
 variables, links use `https://free-sudoku-spa.vercel.app`, never the local native
 origin. See [public URL configuration](../README.md#public-url-at-build-time).
+
+Game-history device acceptance must also cover miniature/pin controls, both load
+modes, unlimited pin retention beyond ten recent games, native offline history
+and an in-place APK upgrade preserving both the active localStorage save and
+IndexedDB archives. Web browser coverage does not establish physical acceptance.

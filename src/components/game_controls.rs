@@ -29,6 +29,7 @@ pub fn GameStatus(state: AppState) -> impl IntoView {
 
 #[component]
 pub fn GameControls(state: AppState) -> impl IntoView {
+    let history = expect_context::<crate::state::GameHistory>();
     let sharing = expect_context::<crate::components::share_dialog::ShareUi>().0;
     let show_new_game = RwSignal::new(false);
     let show_actions = RwSignal::new(false);
@@ -74,6 +75,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                             <button class="ui-action ui-hint-action" on:click=move |_| state.hint()><Icon name=IconName::Hint />"Dica"</button>
                         </Show>
                     </div>
+                    <leptos_router::components::A href="/history" attr:class="ui-action">"Histórico"</leptos_router::components::A>
                     <button id="share-trigger" class="ui-action" on:click=move |_| sharing.set(true)>"Compartilhar"</button>
                     <button class="ui-action new-game-action" aria-expanded=move || show_new_game.get().to_string()
                         aria-controls="difficulty-choices" on:click=move |_| show_new_game.update(|v| *v = !*v)>
@@ -86,7 +88,8 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                                     Difficulty::Hard => "Difícil", Difficulty::Expert => "Expert", Difficulty::Master => "Mestre" };
                                 view! {
                                     <button class="ui-action" data-active=move || (state.0.get().difficulty == difficulty).to_string()
-                                        on:click=move |_| { state.new_game(difficulty); close(); }>{label}</button>
+                                        disabled=move || history.busy.get() || !history.ready.get()
+                                        on:click=move |_| { history.new_game(state,difficulty); close(); }>{label}</button>
                                 }
                             }).collect::<Vec<_>>()}
                         </div>

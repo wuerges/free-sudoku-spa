@@ -322,3 +322,22 @@
 .share-preview-cell[data-color="4"] { background: var(--ui-mark-orange); }
 .share-dialog { margin: auto; }
 .share-dialog button { margin-right: 8px; }
+
+.history-page { padding-bottom: 32px; }
+.history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-heading h1 { font-size: 1.5rem; font-weight: bold; }
+.history-page > p { margin-block: 12px; }
+.history-page section { margin-top: 24px; }
+.history-page h2 { font-size: 1.2rem; font-weight: bold; margin-bottom: 12px; }
+.history-cards { display: grid; gap: 12px; }
+.history-card { display: grid; grid-template-columns: minmax(100px, 140px) minmax(0, 1fr); gap: 12px; padding: 12px; background: var(--ui-page); border: 1px solid var(--ui-muted); border-radius: 12px; }
+.history-card h3 { font-weight: bold; }
+.history-card-info p { margin-block: 6px; }
+.history-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.history-miniature .share-preview-cell { font-size: clamp(10px, 2.2vw, 14px); }
+.history-miniature .share-preview-cell small { font-size: 4px; }
+.history-error { position: fixed; z-index: 100; bottom: 12px; left: 12px; right: 12px; padding: 16px; background: var(--ui-page); border: 2px solid var(--ui-error-text); border-radius: 12px; }
+@media (min-width: 768px) { .history-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.history-card > div { min-width: 0; }
+.history-miniature { width: 100%; aspect-ratio: 1; grid-template-columns: repeat(9, minmax(0, 1fr)); overflow: hidden; pointer-events: none; }
+.history-miniature .share-preview-cell { min-width: 0; min-height: 0; line-height: 1; overflow: hidden; }

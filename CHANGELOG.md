@@ -5,6 +5,15 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.22.0]
+
+### Added
+
+- Histórico with read-only board miniatures, recent-game details and pin controls.
+- Retain the active game, ten unpinned past games and all pinned games locally, including the game replaced by a confirmed shared-link import.
+- Resume saved progress with undo/redo or start a separate attempt from original clues, keeping current settings and preserving the previous attempt.
+- IndexedDB archives with guarded replacement, storage-error feedback and offline history navigation. Older active saves gain an identity without losing progress.
+
 ## [0.21.0]
 
 ### Added
