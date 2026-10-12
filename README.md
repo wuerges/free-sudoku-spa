@@ -78,6 +78,9 @@ recovery, saved volume/balloon controls, and phone/tablet victory effects in bot
 themes. Physical Android lifecycle and audible loudness acceptance is tracked in
 `ISSUES.md` (ISSUE-012).
 
+For shipped icon, loading-screen and offline asset checks, run
+`node tests/assets-browser.mjs` after `just build`. See [the asset review](docs/assets-review.md).
+
 ## Project
 
 ```
