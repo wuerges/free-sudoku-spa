@@ -31,12 +31,17 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                 }).collect::<Vec<_>>()}
                 <button type="button" class="ui-action color-tool" aria-label=move || i18n.text(Message::ClearColors) title=move || i18n.text(Message::ClearColors)
                     disabled=move || { let s = state.0.get(); s.paused || s.won || s.cell_colors.iter().all(|&c| c == 0) }
-                    on:click=move |_| state.clear_colors()><Icon name=IconName::Reset /><span aria-hidden="true">{move || i18n.text(Message::Clear)}</span></button>
+                    on:click=move |_| state.clear_colors()><Icon name=IconName::ClearColors /><span aria-hidden="true">{move || i18n.text(Message::Clear)}</span></button>
             </div>
-            <div class="entry-actions" role="group" aria-label=move || i18n.text(Message::EntryMode)>
-                <button class="ui-action ui-erase-action" on:click=move |_| state.place_number(0)>
-                    <Icon name=IconName::Erase />{move || i18n.text(Message::Erase)}
-                </button>
+            <div class="entry-actions" data-history=move || state.0.get().undo_enabled.to_string() role="group" aria-label=move || i18n.text(Message::EntryMode)>
+                <Show when=move || state.0.get().undo_enabled>
+                    <button type="button" class="ui-action history-action" aria-label=move || i18n.text(Message::Undo)
+                        title=move || i18n.text(Message::Undo) on:click=move |_| state.undo()
+                        disabled=move || state.0.get().history.is_empty()><Icon name=IconName::Undo /></button>
+                    <button type="button" class="ui-action history-action" aria-label=move || i18n.text(Message::Redo)
+                        title=move || i18n.text(Message::Redo) on:click=move |_| state.redo()
+                        disabled=move || state.0.get().redo_stack.is_empty()><Icon name=IconName::Redo /></button>
+                </Show>
                 <button class="ui-action" data-active=move || note_mode().to_string()
                     aria-pressed=move || note_mode().to_string() on:click=move |_| state.toggle_note_mode()>
                     <Icon name=IconName::Pencil />{move || i18n.text(Message::Notes)}

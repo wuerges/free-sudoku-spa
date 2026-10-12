@@ -63,14 +63,6 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                         <button type="button" class="ui-icon-button" aria-label=move || i18n.text(Message::CloseActions) on:click=move |_| close()><Icon name=IconName::Close /></button>
                     </div>
                     <div class="assistance-actions" role="group" aria-label=move || i18n.text(Message::GameAssistances)>
-                        <Show when=move || state.0.get().undo_enabled>
-                            <button class="ui-action" on:click=move |_| state.undo() disabled=move || state.0.get().history.is_empty()>
-                                <Icon name=IconName::Undo />{move || i18n.text(Message::Undo)}
-                            </button>
-                            <button class="ui-action" on:click=move |_| state.redo() disabled=move || state.0.get().redo_stack.is_empty()>
-                                <Icon name=IconName::Redo />{move || i18n.text(Message::Redo)}
-                            </button>
-                        </Show>
                         <Show when=move || state.0.get().auto_notes_enabled>
                             <button class="ui-action" on:click=move |_| state.auto_notes()><Icon name=IconName::AutoNotes />{move || i18n.text(Message::AutoNotes)}</button>
                         </Show>

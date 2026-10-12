@@ -8,7 +8,6 @@ pub fn HelpPage() -> impl IntoView {
     let i18n = use_i18n();
     let items: Vec<(Option<IconName>, Message, Message)> = vec![
         (None, Message::Numbers, Message::HelpNumbers),
-        (Some(IconName::Erase), Message::Erase, Message::HelpErase),
         (
             Some(IconName::Pencil),
             Message::NotesMode,

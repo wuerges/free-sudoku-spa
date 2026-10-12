@@ -34,7 +34,7 @@ try {
       assert.ok(bounds.controls.bottom<=bounds.height+1,'controls fit');
       assert.ok(bounds.controls.top>=bounds.board.bottom-1,'controls below board');
       assert.ok(Math.abs(bounds.board.width-bounds.board.height)<2,'square board');
-      for(const {r,minimum} of await page.locator('.color-tool,.ui-action,.ui-icon-button').evaluateAll(es=>es.map(e=>({r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})))) {
+      for(const {r,minimum} of await page.locator('.color-tool:visible,.ui-action:visible,.ui-icon-button:visible').evaluateAll(es=>es.map(e=>({r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})))) {
         assert.ok(r.height>=minimum && r.width>=minimum, `${minimum}px action target ${r.width}×${r.height}`);
       }
       const buttonHeights=await page.locator('.number-choice,.color-tool').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().height));
@@ -119,6 +119,7 @@ try {
     await button('Verde').click();await cell(2).click();assert.equal((await read()).cell_colors[2],0);
     await clickGameAction(page,'Desfazer');assert.equal((await read()).cell_colors[2],1);
     await button('Limpar cores').click();assert.deepEqual((await read()).cell_colors,Array(81).fill(0));
+    assert.deepEqual((await read()).board,marked.board);assert.deepEqual((await read()).notes,marked.notes);
     await clickGameAction(page,'Desfazer');assert.deepEqual((await read()).cell_colors,marked.cell_colors);
     await button('Pausar jogo').click();assert.equal(await button('Verde').isDisabled(),true);
     await cell(0).click();assert.deepEqual((await read()).cell_colors,marked.cell_colors);
@@ -168,7 +169,10 @@ try {
     await context.setOffline(true);await page.reload();await ready();
     assert.deepEqual((await read()).cell_colors,marked.cell_colors);
     await context.setOffline(false);
+    const previousGameId=(await read()).game_id;
     await clickGameAction(page,'Novo jogo');await button('Fácil').click();
+    await page.waitForFunction(id=>JSON.parse(localStorage.getItem('sudoku_state')).game_id!==id,previousGameId);
+    await page.locator('#history-saving').waitFor({state:'hidden'});
     assert.deepEqual((await read()).cell_colors,Array(81).fill(0));
     assert.equal(await button('Limpar cores').isDisabled(),true);
     // Larger text may scroll, but all controls remain reachable.
