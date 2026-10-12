@@ -1,6 +1,7 @@
 mod app;
 mod components;
 mod serde_helpers;
+mod sharing;
 mod state;
 mod sudoku_engine;
 

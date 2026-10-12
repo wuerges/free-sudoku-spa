@@ -29,6 +29,7 @@ pub fn GameStatus(state: AppState) -> impl IntoView {
 
 #[component]
 pub fn GameControls(state: AppState) -> impl IntoView {
+    let sharing = expect_context::<crate::components::share_dialog::ShareUi>().0;
     let show_new_game = RwSignal::new(false);
     let show_actions = RwSignal::new(false);
     let trigger = NodeRef::<leptos::html::Button>::new();
@@ -73,6 +74,7 @@ pub fn GameControls(state: AppState) -> impl IntoView {
                             <button class="ui-action ui-hint-action" on:click=move |_| state.hint()><Icon name=IconName::Hint />"Dica"</button>
                         </Show>
                     </div>
+                    <button id="share-trigger" class="ui-action" on:click=move |_| sharing.set(true)>"Compartilhar"</button>
                     <button class="ui-action new-game-action" aria-expanded=move || show_new_game.get().to_string()
                         aria-controls="difficulty-choices" on:click=move |_| show_new_game.update(|v| *v = !*v)>
                         <Icon name=IconName::Reset />"Novo jogo"

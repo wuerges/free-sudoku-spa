@@ -17,6 +17,7 @@ The repository contains:
 - A button-based number pad, pencil notes, drop mode, conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
 - Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
+- Self-contained current/initial Sudoku links with validated import preview, recipient settings preserved and a generic social preview image.
 - Game-state serialization to the `sudoku_state` localStorage key.
 - Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop edits preserve the highlight anchor and painting keeps an independently selected highlight digit. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
@@ -98,7 +99,7 @@ These are candidates, not committed scope:
 - Local statistics and streaks.
 - Explanations of hints using human solving techniques.
 - A daily puzzle backed by deterministic generation.
-- Puzzle import/export and result sharing.
+- Additional puzzle import formats and result sharing.
 - Additional interface languages.
 
 Prioritize correctness, saved-game compatibility, offline reliability, and usability before expanding features. No implementation deadline or delivery estimate is set by this document.

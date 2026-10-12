@@ -329,3 +329,61 @@ enlarged text and offline reload in both
 themes. `COLOR_SCREENSHOTS` overrides the default `/tmp/sudoku-cell-colors`.
 See [the targeting review captures](docs/screenshots/color-targeting/README.md) and
 [the earlier layout review](docs/screenshots/cell-colors/README.md).
+
+## Sharing Sudoku
+
+Ações → Compartilhar automatically creates a fixed current-progress snapshot.
+Selecting Estado atual or Sudoku inicial immediately regenerates the link from
+the game at that moment. Timer ticks do not change the displayed link.
+Web and APK links target the public origin resolved at build time (see below).
+No backend or account is involved. The fragment includes the solution and excludes
+preferences/history. Recipients choose Estado atual to continue the received
+progress or Sudoku inicial
+to restart from its recorded clues, see a validated read-only preview and confirm
+replacement; settings stay local, history is cleared and play starts paused.
+Cancel leaves progress intact. Confirmation/cancellation removes the fragment.
+Older saves use their recorded clue set, which may include previously locked
+correct entries. Social cards use `public/social-sudoku.png`, a generic board;
+fragments are unavailable to server-side preview crawlers.
+
+Run `node tests/sharing-browser.mjs` after `just build` with the optional
+Playwright environment described above. Review captures live in
+[the sharing gallery](docs/screenshots/sharing/README.md).
+
+
+### Public URL at build time
+
+Set an explicit public origin for web or APK builds:
+
+```bash
+SUDOKU_PUBLIC_URL=https://sudoku.example.com just build
+SUDOKU_PUBLIC_URL=https://sudoku.example.com just android-release
+```
+
+Resolution order is an explicit `SUDOKU_PUBLIC_URL`, then
+`https://VERCEL_PROJECT_PRODUCTION_URL` **only when `VERCEL_ENV=production`**,
+then `https://VERCEL_URL`, then `https://free-sudoku-spa.vercel.app`.
+Vercel sets its production URL even on previews; the environment condition keeps
+preview/staging links on their own deployment. Enable **Automatically expose
+System Environment Variables** in Vercel Settings → Environment Variables
+([Vercel documentation](https://vercel.com/docs/environment-variables/system-environment-variables)).
+An explicit override applies to whichever environment it is configured for;
+set it for Production only if previews should keep their deployment URLs.
+Preview links inherit deployment access restrictions.
+
+The setting accepts an absolute HTTP/HTTPS origin with an optional trailing slash.
+Credentials, subdirectory paths, query strings, fragments and empty overrides
+fail the build. Hosting at a subdirectory remains unsupported. It is public
+configuration, not a secret. Both compiled sharing links and staged Open Graph/X
+metadata use the same resolver. Changing the environment requires rebuilding;
+Cargo tracks these values so no clean is necessary. Node.js is required for
+Rust builds as well as Trunk tooling. Restart `just dev` after changing variables.
+Outside Vercel, APK builds use the explicit override or the production fallback,
+never the native `https://localhost` origin.
+
+For a configured build, run the sharing browser audit with
+`SHARING_EXPECTED_ORIGIN=https://sudoku.example.com`. Set `SHARING_SCREENSHOTS`
+to a temporary directory to retain the checked-in default captures.
+`tests/public-url-browser.mjs` checks configured links/metadata in both web and
+Android-staged assets; it requires `SHARING_EXPECTED_ORIGIN` and optionally
+`SHARING_BUILD_DIR` (default `dist`), with the same Playwright environment.

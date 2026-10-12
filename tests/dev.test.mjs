@@ -35,17 +35,19 @@ test('development worker replaces old Sudoku caches without caching requests', a
   assert.equal(handlers.has('fetch'), false);
 });
 
-test('development hook changes only the staged worker, keeping production output intact', async t => {
+test('development hook configures staged metadata and worker without changing source HTML', async t => {
   const stage = await mkdtemp(path.join(tmpdir(), 'sudoku-dev-'));
   t.after(() => rm(stage, {recursive:true,force:true}));
-  await writeFile(path.join(stage,'index.html'), '<html>development build</html>');
+  const original = await readFile('index.html','utf8');
+  await writeFile(path.join(stage,'index.html'), original);
   await writeFile(path.join(stage,'sw.js'), 'old caching worker');
   const result = spawnSync(process.execPath, ['scripts/dev-bundle.mjs'], {
-    encoding:'utf8',env:{...process.env,TRUNK_STAGING_DIR:stage},
+    encoding:'utf8',env:{...process.env,TRUNK_STAGING_DIR:stage,SUDOKU_PUBLIC_URL:'https://dev.example.com'},
   });
   assert.equal(result.status,0,result.stderr);
   assert.equal(await readFile(path.join(stage,'sw.js'),'utf8'), worker);
-  assert.equal(await readFile(path.join(stage,'index.html'),'utf8'),'<html>development build</html>');
+  assert.match(await readFile(path.join(stage,'index.html'),'utf8'), /content="https:\/\/dev.example.com\/"/);
+  assert.equal(await readFile('index.html','utf8'),original);
   const missing = spawnSync(process.execPath, ['scripts/dev-bundle.mjs'], {
     encoding:'utf8',env:{...process.env,TRUNK_STAGING_DIR:''},
   });

@@ -7,3 +7,5 @@ pub mod help_page;
 pub mod icon;
 pub mod number_pad;
 pub mod sudoku_grid;
+
+pub mod share_dialog;

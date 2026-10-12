@@ -4,6 +4,17 @@
   <script>
     document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
   </script>
+  <title>Sudoku grátis</title>
+  <meta property="og:title" content="Sudoku grátis — jogue e compartilhe" />
+  <meta property="og:description" content="Sudoku sem anúncios. Abra um jogo compartilhado ou comece um novo desafio." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" data-public-path="/" content="https://free-sudoku-spa.vercel.app/" />
+  <meta property="og:image" data-public-path="/public/social-sudoku.png" content="https://free-sudoku-spa.vercel.app/public/social-sudoku.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Tabuleiro ilustrativo de Sudoku" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" data-public-path="/public/social-sudoku.png" content="https://free-sudoku-spa.vercel.app/public/social-sudoku.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <link rel="manifest" href="/manifest.json" />
@@ -59,11 +70,29 @@
       });
     }
     window.__sudoku = window.__sudoku || {};
+    window.__sudoku.copyShare = async function() {
+      const field = document.getElementById('share-url');
+      try { await navigator.clipboard.writeText(field.value); document.getElementById('share-status').textContent = 'Link copiado.'; }
+      catch { field.focus(); field.select(); document.getElementById('share-status').textContent = 'Selecione e copie o link manualmente.'; }
+    };
+    window.__sudoku.sendShare = async function() {
+      try { await navigator.share({title:'Sudoku',url:document.getElementById('share-url').value}); }
+      catch (error) { if (error.name !== 'AbortError') document.getElementById('share-status').textContent = 'Não foi possível compartilhar. Copie o link.'; }
+    };
     window.__sudoku._installPrompt = null;
     window.__sudoku.showInstall = function() {
       if (window.__sudoku._installPrompt) {
         window.__sudoku._installPrompt.prompt();
-        window.__sudoku._installPrompt = null;
+        window.__sudoku.copyShare = async function() {
+      const field = document.getElementById('share-url');
+      try { await navigator.clipboard.writeText(field.value); document.getElementById('share-status').textContent = 'Link copiado.'; }
+      catch { field.focus(); field.select(); document.getElementById('share-status').textContent = 'Selecione e copie o link manualmente.'; }
+    };
+    window.__sudoku.sendShare = async function() {
+      try { await navigator.share({title:'Sudoku',url:document.getElementById('share-url').value}); }
+      catch (error) { if (error.name !== 'AbortError') document.getElementById('share-status').textContent = 'Não foi possível compartilhar. Copie o link.'; }
+    };
+    window.__sudoku._installPrompt = null;
       }
     };
     if (!window.__SUDOKU_NATIVE__) window.addEventListener('beforeinstallprompt', function(e) {
