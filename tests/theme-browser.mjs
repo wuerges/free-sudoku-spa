@@ -30,7 +30,7 @@ try {
       const user=empty[0], hint=empty[1], notes=empty[2];
       s.board[user]=s.solution[user];s.board[hint]=s.solution[hint];s.hinted[hint]=s.solution[hint];
       s.notes[notes]=0b101010101;s.selected=[Math.floor(user/9),user%9];
-      s.domino_enabled=false;s.auto_notes_enabled=false;s.sound_type='None';s.history=[];s.redo_stack=[];
+      s.domino_enabled=false;s.auto_notes_enabled=false;s.sound_type='None';s.history=[{board:s.board.map((v,i)=>i===user?0:v),notes:[...s.notes],cell_colors:[...s.cell_colors]}];s.redo_stack=[];
       localStorage.setItem('sudoku_state',JSON.stringify(s));return {user,hint,notes,s};
     });
     if (sharedFixture) {
@@ -71,9 +71,9 @@ try {
     }
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
-    await cell(fixture.user).click();await page.getByRole('button',{name:'Apagar',exact:true}).click();
+    await cell(fixture.user).click();await clickGameAction(page,'Desfazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
-    await clickGameAction(page,'Desfazer');
+    await clickGameAction(page,'Refazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // A selected error keeps its error fill and selection outline.
     const wrong=[1,2,3,4,5,6,7,8,9].find(n=>n!==fixture.s.solution[fixture.user] && n!==fixture.s.solution[fixture.hint]);

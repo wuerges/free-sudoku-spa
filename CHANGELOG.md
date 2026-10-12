@@ -5,6 +5,16 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.24.0]
+
+### Changed
+
+- Replace Erase with directly accessible Undo and Redo below the color tools; Notes, Drop and Actions remain beside them.
+
+### Fixed
+
+- Identify Clear colors with a slashed palette instead of the New Game reset icon.
+
 ## [0.23.0]
 
 ### Added

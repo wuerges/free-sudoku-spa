@@ -87,8 +87,8 @@ src/
 └── components/
     ├── cell.rs           # single grid cell
     ├── sudoku_grid.rs    # 9×9 grid
-    ├── number_pad.rs     # 1-9 + delete + note
-    ├── game_controls.rs  # status bar, undo, hint, new game
+    ├── number_pad.rs     # 1-9 + undo/redo + note
+    ├── game_controls.rs  # status bar, actions menu
     ├── game_page.rs      # game route layout
     ├── config_page.rs    # config toggles (undo, auto-notes, hint, domino, sound)
     ├── help_page.rs      # help / instructions
@@ -267,15 +267,18 @@ See [the screenshot gallery](docs/screenshots/ui-ux/README.md).
 
 ## Controls and settings layout
 
-Local SVG line icons accompany Portuguese control labels. The compact header
+Local SVG line icons accompany localized control labels. The compact header
 combines time, errors, pause and utility icons, with the title/difficulty below.
 Header icons use 36px targets; entry and action controls retain at least 44px.
 Number buttons and the five color tools have the same height: 44px on phones,
 48px on tablets. Digits use two rows on phones and one nine-column row above
 640px; the color palette sits directly below them.
 
-Apagar, Notas, Drop and Ações share one row. Ações opens a dismissible panel over
-the board with Desfazer, Refazer, Auto notas, Dica and Novo jogo. Close it with
+Undo, Redo, Notes, Drop and Actions share one row below the color tools.
+Undo/Redo use icon buttons with localized accessible names and respect their
+Settings toggle. Clear colors uses a slashed-palette icon and only removes manual
+marks. Actions opens a dismissible panel over the board with Auto notes, Hint,
+History, Share and New Game. Close it with
 its close button, Escape, or a tap outside. The panel keeps keyboard focus
 returning to Ações and does not shrink the board. Active entry modes expose
 pressed states, with a separate selected-number indicator for Drop.

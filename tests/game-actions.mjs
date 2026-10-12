@@ -5,6 +5,10 @@ export async function openGameActions(page) {
 }
 
 export async function clickGameAction(page, name) {
+  if (name === 'Desfazer' || name === 'Refazer') {
+    await page.locator('.entry-actions').getByRole('button', {name, exact:true}).click();
+    return;
+  }
   await openGameActions(page);
   await page.getByRole('button', {name, exact:true}).click();
   // Keep the difficulty choices open; other actions return to the board.

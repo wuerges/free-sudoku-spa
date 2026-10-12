@@ -179,7 +179,6 @@
   .ui-action[data-active="true"], .difficulty-choices button[data-active="true"] {
     background: var(--ui-primary); color: var(--ui-on-primary);
   }
-  .ui-erase-action { background: var(--ui-error); color: var(--ui-error-text); }
   .ui-hint-action { background: var(--ui-hint); color: var(--ui-hint-text); }
   .game-header, .game-status, .number-pad, .game-actions, .settings-page {
     width: 100%; max-width: min(90vw, 500px); margin-inline: auto;
@@ -278,7 +277,8 @@
   .paint-instruction { font-size: 12px; line-height: 16px; color: var(--ui-muted); margin-top: 4px; }
   .paint-instruction:empty { display: none; }
   .game-page .ui-action { flex-wrap: wrap; overflow-wrap: anywhere; }
-  .game-page .entry-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 4px; gap: 4px; }
+  .game-page .entry-actions { grid-template-columns: repeat(5, minmax(44px, 1fr)); margin-top: 4px; gap: 4px; }
+  .game-page .entry-actions[data-history="false"] { grid-template-columns: repeat(3, minmax(44px, 1fr)); }
   .game-page .entry-actions > .ui-action, .actions-trigger { font-size: 12px; padding: 2px; gap: 4px; }
   .game-page .drop-instruction { margin-top: 4px; line-height: 16px; }
   .game-page .game-actions { position: relative; width: 100%; max-width: none; display: block; margin: 0; padding: 0; }

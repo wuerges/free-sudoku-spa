@@ -17,7 +17,7 @@
 | `src/i18n.rs`, `locales/` | Reactive interface language and four complete translation catalogs |
 | `src/components/cell.rs` | Cell rendering and interaction |
 | `src/components/sudoku_grid.rs` | Board layout |
-| `src/components/number_pad.rs` | Number, delete, notes, and drop-mode controls |
+| `src/components/number_pad.rs` | Number, color, undo/redo, notes, and drop-mode controls |
 | `src/components/game_controls.rs` | Above-board status bar and below-keypad game actions |
 | `src/components/game_page.rs` | Main game layout |
 | `src/components/config_page.rs` | Player settings |
@@ -135,11 +135,14 @@ counters are ignored. Browser scheduling wraps native-testable state steps.
 `GameStatus` renders time, errors and pause inside the compact header; the
 caption below contains title and difficulty. Header utility targets are 36px.
 NumberPad renders the digits, four color choices and clear-all, followed by
-Apagar, Notas, Drop and GameControls' Ações trigger. Digits and color tools share
-one CSS height variable: 44px on phones and 48px on tablets.
+Undo, Redo, Notes, Drop and GameControls' Actions trigger. Digits and color tools share
+one CSS height variable: 44px on phones and 48px on tablets. Undo/Redo use
+localized icon buttons and are hidden by the existing Settings preference;
+the action row changes from five columns to three. Clear colors uses a
+slashed-palette icon and calls the existing color-only state action.
 
 GameControls owns a transient open signal and a dismissible action panel with
-undo/redo, auto-notes, hint and new-game difficulty choices. The anchored panel
+auto-notes, hint, history, sharing and new-game difficulty choices. The anchored panel
 uses a fixed outside-click layer and height-limited scrolling; it overlays the
 board instead of reserving layout space. Escape/close return focus to the
 trigger; starting a game also closes the panel. Victory status stays visible
