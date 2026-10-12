@@ -5,6 +5,23 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.26.0]
+
+### Added
+
+- Saved 0–100% master volume (default 75%), a Test sound button, and 0–100 victory balloons (default 25). Zero volume mutes audio; zero balloons retains fireworks.
+- Repository rule preferring Rust, with JavaScript reserved for substantial capability, maintenance or integration advantages.
+
+### Changed
+
+- Rust generates explosion sounds with a stronger phone-speaker frequency band and limits the mixed output to prevent clipping.
+- Rust canvas celebrations keep fireworks and configurable balloons independent of audio failures.
+
+### Fixed
+
+- Reuse and resume one Web Audio context instead of leaking a context for each move; stop stale sources on backgrounding or game replacement.
+- Centralize victory audio, including redo completion, while suppressing replay for completed saves and imports.
+
 ## [0.25.0]
 
 ### Added

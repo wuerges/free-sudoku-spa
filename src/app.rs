@@ -24,6 +24,25 @@ pub fn App() -> impl IntoView {
     let history = crate::state::GameHistory::new(state);
     provide_context(history);
 
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::audio::install();
+        let effect_game = StoredValue::new(state.0.get_untracked().game_id.clone());
+        Effect::new(move || {
+            let s = state.0.get();
+            if effect_game.get_value() != s.game_id {
+                crate::audio::cancel();
+                crate::celebration::stop();
+                effect_game.set_value(s.game_id.clone());
+            }
+            crate::audio::configure(s.sound_type, s.effects.volume);
+        });
+        on_cleanup(|| {
+            crate::audio::shutdown();
+            crate::celebration::stop();
+        });
+    }
+
     // Timer
     let timer_state = state;
     set_interval(

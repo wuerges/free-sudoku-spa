@@ -73,6 +73,11 @@ mobile/tablet layouts and automatic Rust/CSS reload. The audit temporarily edits
 two source files and restores them; run it without concurrent source edits.
 Set `PLAYWRIGHT_MODULE` to the module path if Playwright is installed elsewhere.
 
+Run `node tests/effects-browser.mjs` after `just build` to check native Web Audio
+recovery, saved volume/balloon controls, and phone/tablet victory effects in both
+themes. Physical Android lifecycle and audible loudness acceptance is tracked in
+`ISSUES.md` (ISSUE-012).
+
 ## Project
 
 ```
@@ -82,6 +87,9 @@ src/
 ├── app.rs                # root component
 ├── sudoku_engine.rs      # generation, solving, validation
 ├── game_history.rs       # local archive policy and safe game replacement
+├── audio.rs              # Rust synthesis and shared Web Audio lifecycle
+├── celebration.rs        # Rust canvas fireworks and balloons
+├── effects.rs            # saved volume and balloon preferences
 ├── state.rs              # reactive game state (RwSignal)
 ├── serde_helpers.rs      # serde for large arrays
 └── components/

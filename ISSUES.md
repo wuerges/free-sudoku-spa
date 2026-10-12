@@ -62,3 +62,9 @@ Use stable IDs and do not renumber existing issues.
 - Evidence: The interface has complete catalogs for Brazilian Portuguese, Argentine Spanish, Paraguayan Guarani and American English, with matching keys/placeholders and automated functional checks. New translations have not received native-speaker review.
 - Impact: Linguistic accuracy, natural phrasing and Sudoku terminology, especially Paraguayan Guarani, remain unverified despite complete catalog coverage.
 - Acceptance: Native speakers review all new regional catalogs, including help text, technical Sudoku terminology, accessibility descriptions and storage/sharing notices. Apply corrections without removing behavior details or placeholders, rerun localization checks, and record review evidence in the resolving PR.
+
+## ISSUE-012: Verify physical mobile audio recovery
+
+- Evidence: Rust synthesis, shared Web Audio lifecycle and saved volume/balloon controls replace the former JavaScript effects. Automated tests cover synthesis levels, compatible saves and browser flows; physical Android Chrome lifecycle acceptance remains pending.
+- Impact: Headless Chromium cannot establish audible loudness or recovery after phone screen locking and operating-system audio interruption.
+- Acceptance: On physical Android Chrome, verify repeated entries, Test sound, victory explosions, volume 0/25/75/100, balloon counts 0/25/100, background/foreground and screen lock recovery, with no delayed stale sounds. Repeat in the Android wrapper and record results.

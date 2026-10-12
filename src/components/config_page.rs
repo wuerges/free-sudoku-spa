@@ -210,6 +210,28 @@ pub fn ConfigPage() -> impl IntoView {
                         }
                     }).collect::<Vec<_>>()}
                 </fieldset>
+                <div class="preference-slider">
+                    <label for="sound-volume" class="slider-label"><span>{move || i18n.text(Message::SoundVolume)}</span>
+                        <output for="sound-volume">{move || format!("{}%", state.0.get().effects.volume)}</output></label>
+                    <p id="volume-description" class="preference-description">{move || i18n.text(Message::SoundVolumeIntro)}</p>
+                    <input id="sound-volume" type="range" min="0" max="100" step="1" aria-describedby="volume-description"
+                        prop:value=move || state.0.get().effects.volume.to_string()
+                        on:input=move |ev| {if let Ok(value)=event_target_value(&ev).parse::<u8>() {state.set_effect_volume(value);}} />
+                </div>
+                <button type="button" class="ui-action" id="sound-preview"
+                    disabled=move || {let s=state.0.get();s.sound_type==SoundType::None || s.effects.volume==0}
+                    on:click=move |_| state.preview_sound()><Icon name=IconName::Sound />{move || i18n.text(Message::TestSound)}</button>
+            </section>
+            <section class="settings-section" aria-labelledby="victory-effects-settings">
+                <h2 id="victory-effects-settings">{move || i18n.text(Message::VictoryEffects)}</h2>
+                <div class="preference-slider">
+                    <label for="balloon-count" class="slider-label"><span>{move || i18n.text(Message::BalloonCount)}</span>
+                        <output for="balloon-count">{move || state.0.get().effects.balloons.to_string()}</output></label>
+                    <p id="balloon-description" class="preference-description">{move || i18n.text(Message::BalloonCountIntro)}</p>
+                    <input id="balloon-count" type="range" min="0" max="100" step="1" aria-describedby="balloon-description"
+                        prop:value=move || state.0.get().effects.balloons.to_string()
+                        on:input=move |ev| {if let Ok(value)=event_target_value(&ev).parse::<u8>() {state.set_balloon_count(value);}} />
+                </div>
             </section>
 
             <footer class="settings-footer">

@@ -19,6 +19,8 @@
 
 ## Project conventions
 
+- Prefer Rust for new code and substantive changes. Use JavaScript only when it offers a substantial advantage in capability, maintainability, or integration, and explain that choice in the change description. Existing JavaScript does not need rewriting solely to change its language.
+
 - This is a client-side Rust/Leptos 0.7 Sudoku PWA compiled to WebAssembly with Trunk. Node is used for Tailwind CSS tooling.
 - Keep Sudoku algorithms in `src/sudoku_engine.rs`, reactive state and persistence in `src/state.rs`, and UI in `src/components/`.
 - Keep identifiers and technical documentation in English. Put player-facing strings in all four catalogs under `locales/` (Brazilian Portuguese, Argentine Spanish, Paraguayan Guarani and American English); preserve matching keys and named placeholders.

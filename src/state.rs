@@ -137,6 +137,8 @@ pub struct GameState {
     #[serde(default)]
     pub sound_type: SoundType,
     #[serde(default)]
+    pub effects: crate::effects::EffectsSettings,
+    #[serde(default)]
     pub highlights: HighlightSettings,
     #[serde(default)]
     pub domino: DominoSettings,
@@ -194,6 +196,7 @@ impl Default for GameState {
             domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),
+            effects: crate::effects::EffectsSettings::default(),
             highlights: HighlightSettings::default(),
             just_filled: None,
             selected: None,
@@ -237,6 +240,7 @@ impl GameState {
             domino: s.domino,
             domino_gen: s.domino_gen.wrapping_add(1),
             sound_type: s.sound_type,
+            effects: s.effects,
             highlights: s.highlights,
             just_filled: None,
             selected: None,
@@ -412,7 +416,7 @@ impl GameState {
         self.just_filled = Some((row, col));
         self.won = self.board == self.solution;
         #[cfg(target_arch = "wasm32")]
-        play_sound(self.sound_type);
+        crate::audio::play(self.sound_type, self.effects.volume, false);
         self.domino_eligible()
     }
 
@@ -668,9 +672,9 @@ impl AppState {
     #[cfg(target_arch = "wasm32")]
     fn celebrate(signal: RwSignal<GameState>) {
         if signal.with(|s| s.won && !s.celebrated) {
-            let sound = signal.with(|s| s.sound_type);
+            let (sound, effects) = signal.with(|s| (s.sound_type, s.effects));
             signal.update(|s| s.celebrated = true);
-            play_fireworks(sound);
+            crate::effects::celebrate(sound, effects);
         }
     }
 
@@ -681,7 +685,7 @@ impl AppState {
                 let mut filled = false;
                 signal.update(|s| filled = s.domino_step(generation));
                 if filled {
-                    play_sound(signal.with(|s| s.sound_type));
+                    signal.with(|s| crate::audio::play(s.sound_type, s.effects.volume, false));
                     Self::celebrate(signal);
                     if signal.with(|s| s.domino_eligible() && s.domino_gen == generation) {
                         let next = signal.with(|s| s.domino.next_delay(delay_ms));
@@ -698,7 +702,12 @@ impl AppState {
     }
 
     pub fn redo(&self) {
+        let was_won = self.0.get_untracked().won;
         self.0.update(|s| s.redo());
+        if !was_won {
+            #[cfg(target_arch = "wasm32")]
+            Self::celebrate(self.0);
+        }
     }
 
     pub fn toggle_note_mode(&self) {
@@ -750,6 +759,7 @@ impl AppState {
             s.domino_enabled = true;
             s.domino = DominoSettings::default();
             s.sound_type = SoundType::default();
+            s.effects = crate::effects::EffectsSettings::default();
             s.highlights = HighlightSettings::default();
         });
     }
@@ -814,11 +824,7 @@ impl AppState {
             }
         });
         #[cfg(target_arch = "wasm32")]
-        if self.0.with(|s| s.won && !s.celebrated) {
-            let sound = self.0.with(|s| s.sound_type);
-            self.0.update(|s| s.celebrated = true);
-            play_fireworks(sound);
-        }
+        Self::celebrate(self.0);
     }
 
     pub fn tick_timer(&self) {
@@ -856,93 +862,26 @@ impl AppState {
         });
     }
 
+    pub fn set_effect_volume(&self, volume: u8) {
+        self.0.update(|s| {
+            s.effects.volume = volume;
+            s.effects.normalize();
+        });
+    }
+    pub fn set_balloon_count(&self, count: u8) {
+        self.0.update(|s| {
+            s.effects.balloons = count;
+            s.effects.normalize();
+        });
+    }
+    pub fn preview_sound(&self) {
+        #[cfg(target_arch = "wasm32")]
+        self.0
+            .with_untracked(|s| crate::audio::play(s.sound_type, s.effects.volume, false));
+    }
+
     pub fn set_sound(&self, sound: SoundType) {
         self.0.update(|s| s.sound_type = sound);
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn play_sound(sound: SoundType) {
-    match sound {
-        SoundType::None => {}
-        SoundType::Beep => play_beep(),
-        SoundType::Explosion => play_explosion(),
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn play_beep() {
-    js_sys::eval(
-        "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();\
-         var o=a.createOscillator(),g=a.createGain();\
-         o.connect(g);g.connect(a.destination);\
-         o.frequency.value=660;o.type='sine';\
-         g.gain.value=0.25;g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);\
-         o.start(a.currentTime);o.stop(a.currentTime+0.12)}catch(e){}})()",
-    )
-    .ok();
-}
-
-#[cfg(target_arch = "wasm32")]
-fn play_explosion() {
-    js_sys::eval(
-        "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();\
-         var now=a.currentTime;\
-         var buf=a.createBuffer(1,a.sampleRate*0.25,a.sampleRate);\
-         var d=buf.getChannelData(0);\
-         for(var i=0;i<d.length;i++){d[i]=(2*Math.random()-1)*Math.pow(1-i/d.length,2)}\
-         var n=a.createBufferSource();n.buffer=buf;\
-         var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=300;\
-         var g=a.createGain();g.gain.setValueAtTime(0.5,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);\
-         n.connect(f);f.connect(g);g.connect(a.destination);\
-         n.start(now)}catch(e){}})()"
-    ).ok();
-}
-
-#[cfg(target_arch = "wasm32")]
-fn play_fireworks(sound: SoundType) {
-    // Visual fireworks — always the same
-    js_sys::eval(
-        "(function(){try{var c=document.createElement('canvas');c.style='position:fixed;inset:0;pointer-events:none;z-index:9999';c.width=window.innerWidth;c.height=window.innerHeight;document.body.appendChild(c);var x=c.getContext('2d');var p=[];\
-         function addBurst(n){for(var i=0;i<n;i++){p.push({x:Math.random()*c.width,y:c.height*(0.3+Math.random()*0.6),a:Math.random()*6.28,v:1+Math.random()*3,vy:-5-Math.random()*8,life:1,decay:0.003+Math.random()*0.005,h:Math.floor(Math.random()*360)})}}\
-         addBurst(80);setTimeout(function(){addBurst(60)},2000);setTimeout(function(){addBurst(60)},4000);setTimeout(function(){addBurst(40)},5500);\
-         var b=[];for(var i=0;i<25;i++){b.push({x:20+Math.random()*(c.width-40),y:c.height+50+Math.random()*100,s:0.9+Math.random()*0.6,w:16+Math.random()*10,drift:0.3-Math.random()*0.6,sway:Math.random()*0.02,h:Math.floor(Math.random()*360),str:Math.random()*40+20})}\
-         function d(){x.clearRect(0,0,c.width,c.height);var alive=false;\
-         for(var i=0;i<p.length;i++){var pt=p[i];pt.x+=Math.cos(pt.a)*pt.v;pt.y+=pt.vy;pt.vy+=0.12;pt.life-=pt.decay;if(pt.life>0){alive=true;x.globalAlpha=pt.life;x.fillStyle='hsl('+pt.h+',100%,60%)';x.beginPath();x.arc(pt.x,pt.y,2+pt.life*2,0,6.28);x.fill()}}\
-         for(var i=0;i<b.length;i++){var bl=b[i];bl.x+=Math.sin(i+Date.now()*bl.sway)*bl.drift;bl.y-=bl.s;if(bl.y>-80){alive=true;x.globalAlpha=1;\
-         var r=bl.w/2;x.strokeStyle='#999';x.lineWidth=1;x.beginPath();x.moveTo(bl.x,bl.y+r);x.lineTo(bl.x+2,bl.y+r+bl.str);x.stroke();\
-         x.fillStyle='hsl('+bl.h+',80%,55%)';x.beginPath();x.ellipse(bl.x,bl.y,r,r*1.2,0,0,6.28);x.fill();\
-         x.fillStyle='hsl('+bl.h+',80%,65%)';x.beginPath();x.ellipse(bl.x-r*0.3,bl.y-r*0.3,r*0.25,r*0.25,0,0,6.28);x.fill();\
-         x.strokeStyle='#666';x.lineWidth=1;x.beginPath();x.moveTo(bl.x-r*0.5,bl.y+r*1.1);x.lineTo(bl.x-r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.2,bl.y+r*1.3);x.lineTo(bl.x+r*0.5,bl.y+r*1.1);x.stroke()}}\
-         if(alive){requestAnimationFrame(d)}else{c.remove()}}d()}catch(e){}})()"
-    ).ok();
-    // Audio — varies by sound type
-    match sound {
-        SoundType::None => {}
-        SoundType::Beep => {
-            let _ = js_sys::eval(
-            "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;var freqs=[523,659,784];\
-             for(var i=0;i<3;i++){var o=a.createOscillator();var g=a.createGain();o.type='sine';\
-             o.frequency.setValueAtTime(freqs[i]*0.5,now);o.frequency.exponentialRampToValueAtTime(freqs[i]*1.5,now+3);\
-             o.frequency.exponentialRampToValueAtTime(freqs[i]*0.6,now+6);\
-             g.gain.setValueAtTime(0.18,now);g.gain.linearRampToValueAtTime(0.3,now+1.5);\
-             g.gain.exponentialRampToValueAtTime(0.001,now+8);\
-             o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+8)}}catch(e){}})()"
-        );
-        }
-        SoundType::Explosion => {
-            let _ = js_sys::eval(
-            "(function(){try{var a=new(window.AudioContext||window.webkitAudioContext)();var now=a.currentTime;\
-             function boom(t){var buf=a.createBuffer(1,a.sampleRate*0.4,a.sampleRate);\
-             var d=buf.getChannelData(0);for(var i=0;i<d.length;i++){d[i]=(2*Math.random()-1)*Math.pow(1-i/d.length,3)}\
-             var n=a.createBufferSource();n.buffer=buf;\
-             var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=200+Math.random()*400;\
-             var g=a.createGain();g.gain.setValueAtTime(0.4+Math.random()*0.2,now+t);\
-             g.gain.exponentialRampToValueAtTime(0.001,now+t+0.3);\
-             n.connect(f);f.connect(g);g.connect(a.destination);n.start(now+t)}\
-             boom(0.05);boom(0.15);boom(0.3);boom(0.5);boom(0.7);boom(0.95);boom(1.2);boom(1.5);boom(1.8);boom(2.1);boom(2.5);boom(2.9);boom(3.3);boom(3.7);boom(4.1);boom(4.5);boom(5.0);boom(5.5);boom(6.0);boom(6.5)}catch(e){}})()"
-        );
-        }
     }
 }
 
@@ -977,6 +916,7 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
     // A completed save has already been celebrated, including shared imports.
     state.celebrated = state.won;
     state.domino.normalize();
+    state.effects.normalize();
     state.highlights.selected_shading = state.highlights.selected_shading.min(100);
     state.highlights.matching_shading = state.highlights.matching_shading.min(100);
     state.highlights.available_shading = state.highlights.available_shading.min(100);
@@ -1239,6 +1179,46 @@ impl GameHistory {
 mod tests {
     use super::*;
     use crate::sudoku_engine::Difficulty;
+
+    #[test]
+    fn effects_preferences_load_legacy_progress_and_survive_game_changes() {
+        let mut saved = domino_fixture();
+        saved.push_snapshot();
+        saved.redo_stack = saved.history.clone();
+        let mut old = serde_json::to_value(&saved).unwrap();
+        old.as_object_mut().unwrap().remove("effects");
+        let loaded = decode_saved_state(&old.to_string()).unwrap();
+        assert_eq!(loaded.effects, crate::effects::EffectsSettings::default());
+        assert_eq!(loaded.board, saved.board);
+        assert_eq!(loaded.notes, saved.notes);
+        assert_eq!(loaded.cell_colors, saved.cell_colors);
+        assert_eq!(loaded.history.len(), saved.history.len());
+        assert_eq!(loaded.redo_stack.len(), saved.redo_stack.len());
+        old["effects"] = serde_json::json!({"volume":255,"balloons":255});
+        assert_eq!(
+            decode_saved_state(&old.to_string()).unwrap().effects,
+            crate::effects::EffectsSettings {
+                volume: 100,
+                balloons: 100
+            }
+        );
+        let app = AppState(RwSignal::new(loaded));
+        app.set_effect_volume(37);
+        app.set_balloon_count(100);
+        let preferred = app.0.get().effects;
+        app.new_game(Difficulty::Easy);
+        assert_eq!(app.0.get().effects, preferred);
+        let game = crate::sharing::SharedGame::capture(&saved, false);
+        app.0.update(|s| s.import_shared(&game));
+        assert_eq!(app.0.get().effects, preferred);
+        let board = app.0.get().board;
+        app.reset_config();
+        assert_eq!(
+            app.0.get().effects,
+            crate::effects::EffectsSettings::default()
+        );
+        assert_eq!(app.0.get().board, board);
+    }
 
     #[test]
     fn completed_import_reload_does_not_replay_celebration() {
@@ -2526,6 +2506,7 @@ mod tests {
             domino: DominoSettings::default(),
             domino_gen: 0,
             sound_type: SoundType::default(),
+            effects: crate::effects::EffectsSettings::default(),
             highlights: HighlightSettings::default(),
             just_filled: None,
             selected: None,
