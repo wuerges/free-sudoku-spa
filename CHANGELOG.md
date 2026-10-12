@@ -5,6 +5,14 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.27.0]
+
+### Fixed
+
+- Replace the font-dependent loading emoji with bundled Sudoku artwork shared by favicon, PWA and Android icons.
+- Restore the blank maskable icon, remove overlapping icon digits, and keep Android adaptive artwork inside the circular safe area with a matching background.
+- Respect reduced motion on the loading screen and align installation colors with the app shell.
+
 ## [0.26.0]
 
 ### Added
