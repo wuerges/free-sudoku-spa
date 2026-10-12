@@ -217,5 +217,14 @@
   "TestSound": "Eha’ã pu",
   "VictoryEffects": "Ñembosarái ñemohu’ã techaukaha",
   "BalloonCount": "Glóvo",
-  "BalloonCountIntro": "Glóvo papapy ñembosarái oñemohu’ã rire. Cero oheja tata rendy glóvo’ỹre."
+  "BalloonCountIntro": "Glóvo papapy ñembosarái oñemohu’ã rire. Cero oheja tata rendy glóvo’ỹre.",
+  "UpdateAvailable": "Oĩ peteĩ versión pyahu",
+  "UpdateNow": "Embopyahu ko’ág̃a",
+  "UpdateLater": "Ag̃ave",
+  "UpdateSaving": "Oñongatu hína ne ñembosarái…",
+  "UpdateWaiting": "Oha’arõ Sudoku ambue tendayke",
+  "UpdateWaitingIntro": "Emoneĩ ñembopyahu peteĩteĩ Sudoku tendayképe térã emboty ambue tendayke. Ne ñembosarái oñeñongatu.",
+  "UpdateApplying": "Oñembopyahu hína…",
+  "UpdateCancel": "Eñembosarái jey",
+  "UpdateSaveFailed": "Ndaikatúi oñeñongatu ne ñembosarái. Ñembopyahu ndojejapói. Eha’ã jey."
 }

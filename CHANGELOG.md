@@ -5,6 +5,17 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.28.0]
+
+### Added
+
+- An in-app update notice with Update now and Later, automatic checks on opening/returning/reconnecting, and localized progress/error messages.
+- Coordinated consent across open Sudoku tabs and per-tab reload snapshots that preserve each game when updating.
+
+### Fixed
+
+- Apply a downloaded PWA update without hard reloads or closing every tab, after all tabs accept or close. Failed downloads or saves leave the current app usable; downloaded updates can apply offline.
+
 ## [0.27.0]
 
 ### Fixed

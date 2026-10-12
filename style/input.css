@@ -353,3 +353,17 @@
 .drop-mode-options { margin-block: 16px; }
 .drop-mode-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .drop-mode-choices .sound-choice { flex-wrap: wrap; overflow-wrap: anywhere; }
+
+/* A downloaded update stays optional until every tab accepts it. */
+.update-banner {
+  width: min(calc(100% - 16px), 560px); margin: 8px auto; padding: 12px;
+  background: var(--ui-page); color: var(--ui-text);
+  border: 2px solid var(--ui-accent); border-radius: 12px;
+  box-shadow: 0 4px 24px #0003;
+}
+.update-banner p { margin-bottom: 8px; }
+.update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.update-dialog p { margin-block: 12px; }
+
+body:has(.update-banner) .app-shell { min-height: 0; }
+body:has(.update-banner) .game-page { height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--update-notice-height, 0px)); }

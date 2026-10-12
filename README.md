@@ -93,6 +93,7 @@ src/
 ├── audio.rs              # Rust synthesis and shared Web Audio lifecycle
 ├── celebration.rs        # Rust canvas fireworks and balloons
 ├── effects.rs            # saved volume and balloon preferences
+├── updates.rs            # PWA update consent and per-tab reload recovery
 ├── state.rs              # reactive game state (RwSignal)
 ├── serde_helpers.rs      # serde for large arrays
 └── components/
@@ -197,16 +198,26 @@ installation completes online, reload once to enter service-worker control;
 `/`, `/help`, and `/config` then reload offline using the same cached bundle.
 Offline support depends on the browser retaining its cache.
 
-Updates download a complete new bundle and wait until all app tabs close.
-An incomplete download leaves the previous version usable. Saved-game storage
-is unchanged. Serve production builds over HTTPS or localhost; opening
+Updates download a complete new bundle and show **Update now** and **Later**.
+The app checks on opening, returning to the foreground and reconnecting, with
+a one-minute throttle. Update now saves and pauses the current tab; every other
+Sudoku tab must also accept or close before activation. Continue playing cancels
+your consent while waiting. Each tab reloads once and resumes its own saved game.
+Failed downloads or saves leave the previous version usable. Saved-game storage
+is compatible; reload snapshots are temporary, version-bound session data.
+
+For the first release introducing this flow, an already-open older app cannot
+show the new controls. Close all Sudoku tabs/PWA windows and reopen once; future
+updates use the notice. The Android APK wrapper updates through APK releases. Serve production builds over HTTPS or localhost; opening
 `dist/index.html` directly does not install a service worker.
 
 Run `npm run test:offline` for generator and worker regression tests. For browser
 verification, serve `dist/`, wait for `navigator.serviceWorker.ready`, reload,
 then enable offline mode and check all three routes, saved-game resume, and
-new-game generation. For updates, keep two tabs open, serve a second build,
-verify its worker waits, close both tabs, and reopen the app.
+new-game generation. Run `node tests/updates-browser.mjs` after `just build` using the optional
+Playwright environment below to verify real two-bundle updates, all-tab consent,
+failed saves, cancellation, per-tab progress, rollback and offline application.
+Screenshots go to `/tmp/sudoku-updates-review`.
 
 Verified locally in Chromium at a 390×844 viewport: offline routes (including a
 query string), saved-game resume, new games, puzzle completion, all precached

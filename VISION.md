@@ -23,7 +23,7 @@ The repository contains:
 - Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop highlights follow only its selected digit; normal selection can be cleared with a second tap. Coloring enables Notes, and exiting painting retains Notes for safe entry. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
 - Four bundled interface languages with a saved browser-selected initial language, English fallback, country-flag choices, localized accessibility labels and offline switching. Native-speaker translation review remains open.
-- A manifest, icons, installation-prompt bridge, and service worker.
+- A manifest, icons, installation-prompt bridge, and service worker with explicit Update now/Later controls, all-tab consent and compatible per-tab reload recovery.
 - Engine and state unit tests, Trunk build configuration, and Vercel static-hosting configuration.
 
 These statements describe code present in the repository. Browser behavior, performance, and device compatibility still require verification; test presence does not imply complete coverage.
@@ -42,7 +42,7 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 1. Offline play and updates
 
-**Current behavior:** Trunk generates a content-versioned worker that precaches the complete app shell and assets. Controlled navigation serves the cached HTML for every SPA route, while assets come from the same bundle. Updates wait until all app tabs close; failed installations preserve the previous bundle.
+**Current behavior:** Trunk generates a content-versioned worker that precaches the complete app shell and assets. Controlled navigation serves the cached HTML for every SPA route, while assets come from the same bundle. Updates wait until all open Sudoku tabs accept or close; failed installations preserve the previous bundle.
 
 **Verified:** Local Chromium checks at a phone-sized viewport cover offline reload on `/`, `/help`, and `/config`, query-string navigation, saved-game resume, new-game generation and completion, all precached assets, multi-tab updates, and failed-update recovery. The production build and worker regression tests pass.
 

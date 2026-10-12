@@ -1,6 +1,6 @@
 {
   "name": "free-sudoku-spa",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "main": "index.js",
   "scripts": {
     "css": "tailwindcss -i style/input.css -o style/output.css --minify",
