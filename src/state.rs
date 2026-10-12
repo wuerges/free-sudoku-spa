@@ -1,9 +1,12 @@
 // ponytail: single RwSignal<GameState>. ceiling: 81 cells re-render on any change. upgrade: per-cell signals if frame drops on low-end devices.
 
+use crate::game_history::{evictions, HistoryEntry};
 use crate::serde_helpers::{u16_81, u8_81};
+use crate::sharing::SharedGame;
 use crate::sudoku_engine::{self, Difficulty};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 const fn yes() -> bool {
     true
@@ -81,6 +84,8 @@ impl DominoSettings {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
+    #[serde(default)]
+    pub game_id: String,
     #[serde(with = "u8_81")]
     pub board: [u8; 81],
     #[serde(with = "u8_81", default = "empty_givens")]
@@ -159,6 +164,7 @@ impl Default for GameState {
     fn default() -> Self {
         let board = sudoku_engine::generate(Difficulty::Easy);
         Self {
+            game_id: new_game_id(),
             board: board.cells,
             givens: board.cells,
             solution: board.solution,
@@ -209,6 +215,54 @@ pub fn color_name(color: u8) -> &'static str {
 }
 
 impl GameState {
+    pub fn start_new_game(&mut self, difficulty: Difficulty) {
+        let board = sudoku_engine::generate(difficulty);
+        let s = self;
+        *s = GameState {
+            game_id: new_game_id(),
+            board: board.cells,
+            givens: board.cells,
+            solution: board.solution,
+            notes: [0u16; 81],
+            cell_colors: [0; 81],
+            difficulty: board.difficulty,
+            requested_difficulty: Some(difficulty),
+            rating: board.rating,
+            seed: board.seed,
+            hinted: [0u8; 81],
+            error_count: 0,
+            note_mode: s.note_mode,
+            drop_mode: false,
+            paint_tool: None,
+            drop_number: None,
+            drop_pick_solved: s.drop_pick_solved,
+            undo_enabled: s.undo_enabled,
+            auto_notes_enabled: s.auto_notes_enabled,
+            hint_enabled: s.hint_enabled,
+            domino_enabled: s.domino_enabled,
+            domino: s.domino,
+            domino_gen: s.domino_gen.wrapping_add(1),
+            sound_type: s.sound_type,
+            highlights: s.highlights,
+            just_filled: None,
+            selected: None,
+            timer_seconds: 0,
+            paused: false,
+            won: false,
+            celebrated: false,
+            secondary_highlight_value: None,
+            secondary_highlight_rows: 0,
+            secondary_highlight_cols: 0,
+            history: Vec::new(),
+            redo_stack: Vec::new(),
+        };
+    }
+
+    pub fn freeze_for_replacement(&mut self) {
+        self.cancel_domino();
+        self.paused = true;
+    }
+
     /// Replace only game data, preserving every recipient preference.
     pub fn import_shared(&mut self, game: &crate::sharing::SharedGame) {
         self.cancel_domino();
@@ -479,51 +533,16 @@ pub struct AppState(pub RwSignal<GameState>);
 impl AppState {
     pub fn new() -> Self {
         // ponytail: localStorage load with console.warn on failure. ceiling: user doesn't see console. upgrade: toast notification if players report lost progress.
-        let saved = load_state();
-        AppState(RwSignal::new(saved.unwrap_or_default()))
+        let mut saved = load_state().unwrap_or_default();
+        if saved.game_id.is_empty() {
+            saved.game_id = new_game_id();
+        }
+        AppState(RwSignal::new(saved))
     }
 
+    #[cfg(test)]
     pub fn new_game(&self, difficulty: Difficulty) {
-        let board = sudoku_engine::generate(difficulty);
-        self.0.update(|s| {
-            *s = GameState {
-                board: board.cells,
-                givens: board.cells,
-                solution: board.solution,
-                notes: [0u16; 81],
-                cell_colors: [0; 81],
-                difficulty: board.difficulty,
-                requested_difficulty: Some(difficulty),
-                rating: board.rating,
-                seed: board.seed,
-                hinted: [0u8; 81],
-                error_count: 0,
-                note_mode: s.note_mode,
-                drop_mode: false,
-                paint_tool: None,
-                drop_number: None,
-                drop_pick_solved: s.drop_pick_solved,
-                undo_enabled: s.undo_enabled,
-                auto_notes_enabled: s.auto_notes_enabled,
-                hint_enabled: s.hint_enabled,
-                domino_enabled: s.domino_enabled,
-                domino: s.domino,
-                domino_gen: s.domino_gen.wrapping_add(1),
-                sound_type: s.sound_type,
-                highlights: s.highlights,
-                just_filled: None,
-                selected: None,
-                timer_seconds: 0,
-                paused: false,
-                won: false,
-                celebrated: false,
-                secondary_highlight_value: None,
-                secondary_highlight_rows: 0,
-                secondary_highlight_cols: 0,
-                history: Vec::new(),
-                redo_stack: Vec::new(),
-            };
-        });
+        self.0.update(|s| s.start_new_game(difficulty));
     }
 
     pub fn select_cell(&self, r: usize, c: usize) {
@@ -997,6 +1016,223 @@ pub fn save_state(_state: &GameState) {
                 let _ = storage.set_item("sudoku_state", &json);
             }
         }
+    }
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = __sudokuHistory, js_name = list, catch)]
+    async fn store_list() -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(js_namespace = __sudokuHistory, js_name = save, catch)]
+    async fn store_save(json: &str, activate: bool) -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(js_namespace = __sudokuHistory, js_name = pin, catch)]
+    async fn store_pin(id: &str, pinned: bool) -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(js_namespace = __sudokuHistory, js_name = prune, catch)]
+    async fn store_prune(ids: &str, active: &str) -> Result<JsValue, JsValue>;
+}
+
+#[derive(Clone, Copy)]
+pub struct GameHistory {
+    pub entries: RwSignal<Vec<HistoryEntry>>,
+    pub ready: RwSignal<bool>,
+    pub busy: RwSignal<bool>,
+    pub error: RwSignal<String>,
+}
+impl GameHistory {
+    pub fn new(state: AppState) -> Self {
+        let value = Self {
+            entries: RwSignal::new(Vec::new()),
+            ready: RwSignal::new(false),
+            busy: RwSignal::new(false),
+            error: RwSignal::new(String::new()),
+        };
+        value.refresh(state);
+        value
+    }
+    async fn read(&self) -> Result<Vec<HistoryEntry>, &'static str> {
+        let result = store_list()
+            .await
+            .map_err(|_| "Não foi possível acessar o histórico. Seu jogo atual foi mantido.")?;
+        let json = result.as_string().ok_or("Histórico inválido.")?;
+        let values: Vec<serde_json::Value> =
+            serde_json::from_str(&json).map_err(|_| "Histórico inválido.")?;
+        let mut entries = Vec::new();
+        for value in values {
+            match serde_json::from_value::<HistoryEntry>(value) {
+                Ok(entry) if entry.valid()=>entries.push(entry),
+                _=>self.error.set("Alguns jogos do histórico estão inválidos e foram preservados no armazenamento.".into()),
+            }
+        }
+        Ok(entries)
+    }
+    async fn save_entry(entry: &HistoryEntry, activate: bool) -> Result<(), &'static str> {
+        let json =
+            serde_json::to_string(entry).map_err(|_| "Não foi possível salvar no histórico.")?;
+        store_save(&json, activate)
+            .await
+            .map_err(|_| "Não foi possível salvar no histórico. Seu jogo atual foi mantido.")?;
+        Ok(())
+    }
+    async fn cleanup(&self, state: AppState) -> Result<(), &'static str> {
+        let entries = self.read().await?;
+        self.entries.set(entries.clone());
+        let active = state.0.get_untracked().game_id;
+        let ids = evictions(&entries, &active);
+        if !ids.is_empty() {
+            let candidates: Vec<_> = entries
+                .iter()
+                .filter(|e| ids.contains(&e.id))
+                .map(|e| serde_json::json!({"id":e.id,"order":e.order}))
+                .collect();
+            store_prune(&serde_json::to_string(&candidates).unwrap(),&active).await.map_err(|_|"Não foi possível limitar o histórico. Os jogos extras foram mantidos; tente abrir o histórico novamente.")?;
+        }
+        self.entries.set(self.read().await?);
+        Ok(())
+    }
+    pub fn refresh(self, state: AppState) {
+        if self.busy.get_untracked() {
+            return;
+        }
+        self.busy.set(true);
+        self.error.set(String::new());
+        leptos::task::spawn_local(async move {
+            let result = async {
+                Self::save_entry(&HistoryEntry::capture(&state.0.get_untracked()), false).await?;
+                self.ready.set(true);
+                self.cleanup(state).await
+            }
+            .await;
+            if let Err(error) = result {
+                self.error.set(error.into());
+            }
+            self.busy.set(false);
+        });
+    }
+    pub fn new_game(self, state: AppState, difficulty: Difficulty) {
+        let mut candidate = state.0.get_untracked();
+        candidate.start_new_game(difficulty);
+        self.replace(state, candidate, None, |_| {});
+    }
+    pub fn import(self, state: AppState, game: SharedGame, done: impl FnOnce(bool) + 'static) {
+        let mut candidate = state.0.get_untracked();
+        candidate.import_shared(&game);
+        candidate.game_id = new_game_id();
+        self.replace(state, candidate, None, done);
+    }
+    pub fn load(
+        self,
+        state: AppState,
+        entry: HistoryEntry,
+        initial: bool,
+        done: impl FnOnce(bool) + 'static,
+    ) {
+        if !entry.valid() {
+            self.error
+                .set("Este jogo do histórico está inválido.".into());
+            done(false);
+            return;
+        }
+        let candidate = entry.restore(&state.0.get_untracked(), initial);
+        // Retain the previous attempt when restarting even at the ten-game limit.
+        self.replace(
+            state,
+            candidate,
+            if initial { Some(entry) } else { None },
+            done,
+        );
+    }
+    fn replace(
+        self,
+        state: AppState,
+        candidate: GameState,
+        source_attempt: Option<HistoryEntry>,
+        done: impl FnOnce(bool) + 'static,
+    ) {
+        if self.busy.get_untracked() || !self.ready.get_untracked() {
+            self.error.set(
+                "Aguarde o histórico ou tente abrir Histórico novamente antes de trocar o jogo."
+                    .into(),
+            );
+            done(false);
+            return;
+        }
+        let outgoing = state.0.get_untracked();
+        self.busy.set(true);
+        self.error.set(String::new());
+        state.0.update(|s| s.freeze_for_replacement());
+        leptos::task::spawn_local(async move {
+            let saved = async {
+                Self::save_entry(&HistoryEntry::capture(&outgoing), false).await?;
+                if let Some(source) = source_attempt {
+                    Self::save_entry(&source, true).await?;
+                }
+                Ok(())
+            }
+            .await;
+            if let Err(error) = saved.and_then(|_| try_save_state(&candidate)) {
+                state.0.update(|s| s.paused = outgoing.paused);
+                self.error.set(error.into());
+                self.busy.set(false);
+                done(false);
+                return;
+            }
+            // Keep the invalidation counter from the frozen outgoing game.
+            let mut candidate = candidate;
+            candidate.domino_gen = state.0.get_untracked().domino_gen;
+            state.0.set(candidate.clone());
+            let result = async {
+                Self::save_entry(&HistoryEntry::capture(&candidate), true).await?;
+                self.cleanup(state).await
+            }
+            .await;
+            if let Err(error) = result {
+                self.error.set(format!(
+                    "{error} O jogo anterior está salvo; abra Histórico para tentar novamente."
+                ));
+            }
+            self.busy.set(false);
+            done(true);
+        });
+    }
+    pub fn set_pinned(self, state: AppState, id: String, pinned: bool) {
+        if self.busy.get_untracked() {
+            return;
+        }
+        self.busy.set(true);
+        self.error.set(String::new());
+        leptos::task::spawn_local(async move {
+            let result = async {
+                if id == state.0.get_untracked().game_id {
+                    Self::save_entry(&HistoryEntry::capture(&state.0.get_untracked()), false)
+                        .await?;
+                }
+                store_pin(&id, pinned)
+                    .await
+                    .map_err(|_| "Não foi possível alterar a fixação. Nenhum jogo foi removido.")?;
+                self.cleanup(state).await
+            }
+            .await;
+            if let Err(error) = result {
+                self.error.set(error.into());
+            }
+            self.busy.set(false);
+            set_timeout(
+                move || {
+                    use wasm_bindgen::JsCast;
+                    if let Some(element) =
+                        web_sys::window().and_then(|w| w.document()).and_then(|d| {
+                            d.get_element_by_id(&format!("pin-{id}"))
+                                .or_else(|| d.query_selector(".history-heading a").ok().flatten())
+                        })
+                    {
+                        if let Some(element) = element.dyn_ref::<web_sys::HtmlElement>() {
+                            let _ = element.focus();
+                        }
+                    }
+                },
+                std::time::Duration::ZERO,
+            );
+        });
     }
 }
 
@@ -2043,6 +2279,7 @@ mod tests {
         // Same board + same seed = same hint result
         let board = sudoku_engine::generate(Difficulty::Easy);
         let state1 = GameState {
+            game_id: new_game_id(),
             board: board.cells,
             givens: board.cells,
             solution: board.solution,
@@ -2227,5 +2464,37 @@ mod tests {
             board,
             "Hint preference applies at every level"
         );
+    }
+}
+
+pub fn try_save_state(state: &GameState) -> Result<(), &'static str> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let storage = web_sys::window()
+            .and_then(|w| w.local_storage().ok().flatten())
+            .ok_or("Não foi possível salvar o jogo. Seu jogo atual foi mantido.")?;
+        let json = serde_json::to_string(state).map_err(|_| "Não foi possível salvar o jogo.")?;
+        storage
+            .set_item("sudoku_state", &json)
+            .map_err(|_| "Não foi possível salvar o jogo. Seu jogo atual foi mantido.")?;
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = state;
+    Ok(())
+}
+
+pub fn new_game_id() -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        js_sys::eval("crypto.randomUUID()")
+            .ok()
+            .and_then(|v| v.as_string())
+            .unwrap_or_else(|| format!("{}-{}", js_sys::Date::now(), js_sys::Math::random()))
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(1);
+        format!("native-{}", NEXT.fetch_add(1, Ordering::Relaxed))
     }
 }

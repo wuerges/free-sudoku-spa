@@ -12,6 +12,7 @@ pub struct ShareUi(pub RwSignal<bool>);
 
 #[component]
 pub fn ShareDialogs(state: AppState) -> impl IntoView {
+    let history = expect_context::<crate::state::GameHistory>();
     let sharing = expect_context::<ShareUi>().0;
     let initial = RwSignal::new(false);
     let url = RwSignal::new(String::new());
@@ -108,15 +109,17 @@ pub fn ShareDialogs(state: AppState) -> impl IntoView {
                     <label><input type="radio" name="import-mode" prop:checked=move || import_initial.get() on:change=move |_| import_initial.set(true)/>" Sudoku inicial"</label>
                 </fieldset>
             </Show>
+            <Show when=move || incoming.get().is_some() && !history.error.get().is_empty()>
+                <p role="alert">{move ||history.error.get()}</p>
+                <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_|history.refresh(state)>"Tentar novamente"</button>
+            </Show>
             {move || preview().map(|game| {
                 let difficulty=match game.difficulty {crate::sudoku_engine::Difficulty::Easy=>"Fácil",crate::sudoku_engine::Difficulty::Medium=>"Médio",crate::sudoku_engine::Difficulty::Hard=>"Difícil",crate::sudoku_engine::Difficulty::Expert=>"Expert",crate::sudoku_engine::Difficulty::Master=>"Mestre"};
                 view! {
                     <p>{format!("{} · Tempo: {}min {}s · Erros: {}{}",difficulty,game.seconds/60,game.seconds%60,game.errors,if game.board==game.solution {" · Concluído"}else{""})}</p>
-                    <div class="share-preview" role="img" aria-label="Prévia do Sudoku compartilhado">
-                        {game.board.into_iter().enumerate().map(|(i,n)|view! {<span class="share-preview-cell" data-color=game.colors[i] data-given=(game.givens[i]!=0).to_string() data-error=(n!=0 && n!=game.solution[i]).to_string() data-hint=(game.hinted[i]!=0).to_string() style=format!("border-right-width:{}px;border-bottom-width:{}px",if i%9==2 || i%9==5 {3}else{1},if i/9==2 || i/9==5 {3}else{1})>{if n==0 {String::new()}else{n.to_string()}}<small>{if n==0 {(1..=9).filter(|v| game.notes[i] & (1<<(v-1))!=0).map(|v| v.to_string()).collect::<Vec<_>>().join(" ")}else{String::new()}}</small></span>}).collect::<Vec<_>>()}
-                    </div>
-                    <p>"Carregar substitui seu progresso salvo. Suas configurações serão mantidas. O jogo começa pausado."</p>
-                    <button class="ui-action" on:click=move |_| {if let Some(game)=incoming.get_untracked() {let selected=if import_initial.get_untracked() {game.initial_position()} else {game}; state.0.update(|s|s.import_shared(&selected));} close_import();}>"Carregar jogo"</button>
+                    <crate::components::board_preview::BoardPreview game=game/>
+                    <p>"Seu jogo atual será guardado no histórico. Suas configurações serão mantidas. O jogo começa pausado."</p>
+                    <button class="ui-action" disabled=move || history.busy.get() || !history.ready.get() on:click=move |_| {if let Some(game)=incoming.get_untracked() {let selected=if import_initial.get_untracked() {game.initial_position()} else {game}; history.import(state,selected,move |success|if success {close_import();});}}>"Carregar jogo"</button>
                 }
             })}
             <button class="ui-action" on:click=move |_| close_import()>"Cancelar"</button>

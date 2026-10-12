@@ -9,3 +9,6 @@ pub mod number_pad;
 pub mod sudoku_grid;
 
 pub mod share_dialog;
+
+pub mod board_preview;
+pub mod history_page;

@@ -80,6 +80,7 @@ src/
 ├── main.rs               # WASM entry
 ├── app.rs                # root component
 ├── sudoku_engine.rs      # generation, solving, validation
+├── game_history.rs       # local archive policy and safe game replacement
 ├── state.rs              # reactive game state (RwSignal)
 ├── serde_helpers.rs      # serde for large arrays
 └── components/
@@ -387,3 +388,35 @@ to a temporary directory to retain the checked-in default captures.
 `tests/public-url-browser.mjs` checks configured links/metadata in both web and
 Android-staged assets; it requires `SHARING_EXPECTED_ORIGIN` and optionally
 `SHARING_BUILD_DIR` (default `dist`), with the same Playwright environment.
+
+
+## Local game history
+
+Ações → Histórico opens `/history` with miniature boards, difficulty, elapsed
+time, errors, completion and last-played dates. Jogo atual is kept separately;
+Recentes retains ten unpinned past games, and Fixados retains every pinned game
+without automatic expiration. Pin the current game or any saved game. Unpinning
+an older game requires confirmation when it would immediately leave the ten-game
+window. Browsing or pinning does not change its recency.
+
+Starting a new game, confirming a shared-link import or opening a saved game
+archives the outgoing progress first. Previewing/cancelling a link leaves the
+current game unchanged. Estado atual resumes the same identity with undo/redo;
+Sudoku inicial creates a separate attempt and retains the previous one (and its
+pin). Restarting marks the source as recently used so it is not immediately
+removed at the ten-game limit. Both history load modes preserve current settings,
+clear temporary inputs/selection and start paused. Completed games remain completed.
+
+History is versioned in the `sudoku_game_history` IndexedDB database. The active
+`sudoku_state` save remains in localStorage, with a defaulted `game_id` assigned
+to older saves without changing progress. Archive failures block replacement and
+show an error. Failed cleanup retains extra games and retries on reopening
+history. Invalid archive records are reported and retained rather than deleted.
+Pinned games have no application expiration, but browser data clearing, device
+loss and browser storage limits still apply. Web/PWA and APK storage are separate;
+there is no account or synchronization.
+
+Run `node tests/history-browser.mjs` after `just build` using the optional
+Playwright environment above. `HISTORY_SCREENSHOTS` overrides the default
+`docs/screenshots/history`. The audit checks retention, pins, identity/undo resume,
+separate restarts, safe shared-link imports, save failures and offline `/history`.

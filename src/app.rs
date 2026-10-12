@@ -19,6 +19,8 @@ fn set_html_dark(dark: bool) {
 #[component]
 pub fn App() -> impl IntoView {
     let state = AppState::new();
+    let history = crate::state::GameHistory::new(state);
+    provide_context(history);
 
     // Timer
     let timer_state = state;
@@ -75,6 +77,7 @@ pub fn App() -> impl IntoView {
             }
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>
+        <crate::components::history_page::HistoryFeedback state=state history=history/>
         <crate::components::share_dialog::ShareDialogs state=state />
         <Router>
             <div class="app-shell min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
@@ -82,6 +85,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("") view=GamePage />
                     <Route path=path!("/help") view=HelpPage />
                     <Route path=path!("/config") view=ConfigPage />
+                    <Route path=path!("/history") view=crate::components::history_page::HistoryPage />
                 </Routes>
             </div>
         </Router>
