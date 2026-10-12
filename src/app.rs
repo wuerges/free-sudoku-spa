@@ -18,6 +18,8 @@ fn set_html_dark(dark: bool) {
 
 #[component]
 pub fn App() -> impl IntoView {
+    provide_context(crate::i18n::I18n::default());
+    let i18n = crate::i18n::use_i18n();
     let state = AppState::new();
     let history = crate::state::GameHistory::new(state);
     provide_context(history);
@@ -77,11 +79,14 @@ pub fn App() -> impl IntoView {
             }
             .cell-flash{animation:cell-pop .4s ease-out;z-index:1;position:relative}"
         </style>
+        <Show when=move || i18n.save_failed.get()>
+            <p class="locale-storage-error" role="alert">{move || i18n.text(crate::i18n::Message::LocaleSaveFailed)}</p>
+        </Show>
         <crate::components::history_page::HistoryFeedback state=state history=history/>
         <crate::components::share_dialog::ShareDialogs state=state />
         <Router>
             <div class="app-shell min-h-screen flex flex-col items-center p-2 sm:p-4 font-sans transition-colors bg-page text-text">
-                <Routes fallback=|| "Not found">
+                <Routes fallback=move || i18n.text(crate::i18n::Message::NotFound)>
                     <Route path=path!("") view=GamePage />
                     <Route path=path!("/help") view=HelpPage />
                     <Route path=path!("/config") view=ConfigPage />

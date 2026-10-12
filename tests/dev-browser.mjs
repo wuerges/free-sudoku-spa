@@ -50,7 +50,7 @@ async function restore(file,original,probe) {
   await writeFile(file,original);
 }
 try {
-  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const context=await browser.newContext({locale: 'pt-BR', viewport:{width:390,height:844}});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')));

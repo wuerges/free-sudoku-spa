@@ -22,7 +22,7 @@ try {
   let sharedFixture;
   for(const theme of ['light','dark']) {
     for(const {width,height} of [{width:320,height:844},{width:390,height:844},{width:768,height:900},{width:800,height:1280},{width:1024,height:768},{width:1280,height:800},{width:1280,height:900}]) {
-      const context = await browser.newContext({viewport:{width,height},colorScheme:theme,serviceWorkers:'block'});
+      const context = await browser.newContext({locale: 'pt-BR', viewport:{width,height},colorScheme:theme,serviceWorkers:'block'});
       const page = await context.newPage(); const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
       const read = ()=>page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')));
@@ -43,7 +43,7 @@ try {
         await page.reload(); await page.locator('.sudoku-cell').first().waitFor(); await ready();
       } else sharedFixture=await read();
       await overflow('game');
-      const allTargets=await page.locator('.ui-action, .ui-icon-button, .number-choices > button').evaluateAll(es=>es.map(e=>({label:e.getAttribute('aria-label')||e.textContent.trim(),r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})));
+      const allTargets=await page.locator('.ui-action:visible, .ui-icon-button:visible, .number-choices > button:visible').evaluateAll(es=>es.map(e=>({label:e.getAttribute('aria-label')||e.textContent.trim(),r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})));
       for(const {label,r,minimum} of allTargets) {
         assert.ok(r.height>=minimum && r.width>=minimum,`${width}: ${label} touch target ${r.width}×${r.height}`);
         if(/^\d$/.test(label)) assert.ok(r.width>=44 && r.height>=44,`${label}: number target`);
@@ -107,7 +107,7 @@ try {
       await settingsLink.click();
       await page.getByRole('heading',{name:'Configurações',exact:true}).waitFor();
       await overflow('settings');
-      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Destaques do tabuleiro','Números concluídos','Assistências','Som']);
+      assert.deepEqual(await page.locator('.settings-section > h2').allTextContents(),['Idioma','Destaques do tabuleiro','Números concluídos','Assistências','Som']);
       assert.equal(await page.locator('.timing-details').getAttribute('open'),null);
       assert.equal(await page.locator('#domino-initial').isVisible(),false);
       assert.equal(await page.locator('#domino-threshold').inputValue(),'10');

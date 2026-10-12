@@ -2,14 +2,15 @@ use crate::components::{
     game_controls::GameStatus,
     icon::{Icon, IconName},
 };
+use crate::i18n::{use_i18n, Message};
 use crate::state::AppState;
-use crate::sudoku_engine::Difficulty;
 use leptos::prelude::*;
 use leptos_router::components::A;
 use wasm_bindgen::JsCast;
 
 #[component]
 pub fn Header() -> impl IntoView {
+    let i18n = use_i18n();
     let state: AppState = use_context().unwrap();
     let dark_mode: RwSignal<bool> = use_context().unwrap();
     let install_visible = RwSignal::new(false);
@@ -34,37 +35,33 @@ pub fn Header() -> impl IntoView {
 
     let difficulty_label = move || {
         let s = state.0.get();
-        let label = match s.difficulty {
-            Difficulty::Easy => "Fácil",
-            Difficulty::Medium => "Médio",
-            Difficulty::Hard => "Difícil",
-            Difficulty::Expert => "Expert",
-            Difficulty::Master => "Mestre",
-        };
-        match &s.rating {
-            Some(rating) => format!("{label} · {}", rating.strongest.label()),
-            None => format!("{label} · jogo anterior"),
-        }
+        let label = i18n.difficulty(s.difficulty);
+        let technique = s
+            .rating
+            .as_ref()
+            .map(|rating| i18n.technique(rating.strongest))
+            .unwrap_or_else(|| i18n.text(Message::PreviousGame));
+        format!("{label} · {technique}")
     };
 
     view! {
         <header class="game-header">
             <div class="header-main">
                 <GameStatus state=state />
-                <nav class="header-tools" aria-label="Opções do jogo">
-                    <A href="/config" attr:aria-label="Configurações" attr:title="Configurações" attr:class="ui-icon-button">
+                <nav class="header-tools" aria-label=move || i18n.text(Message::GameOptions)>
+                    <A href="/config" attr:aria-label=move || i18n.text(Message::Settings) attr:title=move || i18n.text(Message::Settings) attr:class="ui-icon-button">
                         <Icon name=IconName::Settings />
                     </A>
-                    <A href="/help" attr:aria-label="Ajuda" attr:title="Ajuda" attr:class="ui-icon-button">
+                    <A href="/help" attr:aria-label=move || i18n.text(Message::Help) attr:title=move || i18n.text(Message::Help) attr:class="ui-icon-button">
                         <Icon name=IconName::Help />
                     </A>
-                    <button class="ui-icon-button" aria-label=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
-                        title=move || if dark_mode.get() { "Ativar tema claro" } else { "Ativar tema escuro" }
+                    <button class="ui-icon-button" aria-label=move || if dark_mode.get() { i18n.text(Message::LightTheme) } else { i18n.text(Message::DarkTheme) }
+                        title=move || if dark_mode.get() { i18n.text(Message::LightTheme) } else { i18n.text(Message::DarkTheme) }
                         on:click=move |_| dark_mode.update(|d| *d = !*d)>
                         {move || view! { <Icon name=if dark_mode.get() { IconName::Sun } else { IconName::Moon } /> }}
                     </button>
                     <Show when=move || install_visible.get()>
-                        <button class="ui-icon-button" aria-label="Instalar aplicativo" title="Instalar aplicativo" on:click=move |_| {
+                        <button class="ui-icon-button" aria-label=move || i18n.text(Message::InstallApp) title=move || i18n.text(Message::InstallApp) on:click=move |_| {
                             let _ = js_sys::eval("window.__sudoku&&window.__sudoku.showInstall()");
                             install_visible.set(false);
                         }><Icon name=IconName::Install /></button>

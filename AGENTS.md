@@ -21,7 +21,7 @@
 
 - This is a client-side Rust/Leptos 0.7 Sudoku PWA compiled to WebAssembly with Trunk. Node is used for Tailwind CSS tooling.
 - Keep Sudoku algorithms in `src/sudoku_engine.rs`, reactive state and persistence in `src/state.rs`, and UI in `src/components/`.
-- Keep identifiers and technical documentation in English and player-facing strings in Brazilian Portuguese.
+- Keep identifiers and technical documentation in English. Put player-facing strings in all four catalogs under `locales/` (Brazilian Portuguese, Argentine Spanish, Paraguayan Guarani and American English); preserve matching keys and named placeholders.
 - Preserve mobile/touch usability, offline behavior, and existing saved games. Avoid HTML input fields in the game board and number pad, which uses custom buttons.
 - Treat persisted state changes as compatibility-sensitive: inspect serialization and loading before changing fields.
 - Edit `style/input.css`, not generated `style/output.css`. Do not hand-edit `dist/`, `target/`, or `node_modules/`.

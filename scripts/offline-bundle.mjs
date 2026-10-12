@@ -1,3 +1,4 @@
+import { configureLocalization } from './localization.mjs';
 import { configureSocialMetadata } from './public-url.mjs';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
@@ -39,5 +40,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const directory = process.env.TRUNK_STAGING_DIR || process.argv[2];
   if (!directory) throw new Error('TRUNK_STAGING_DIR or output directory argument is required');
   await configureSocialMetadata(directory);
+  await configureLocalization(directory);
   await generateOfflineBundle(directory);
 }

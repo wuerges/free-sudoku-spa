@@ -12,7 +12,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try {
  for(const theme of ['light','dark']) for(const width of [390,800]) {
   console.log(`History ${theme} ${width}`);
-  const context=await browser.newContext({viewport:{width,height:width===390?844:1280},colorScheme:theme});
+  const context=await browser.newContext({locale: 'pt-BR', viewport:{width,height:width===390?844:1280},colorScheme:theme});
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(url);await page.locator('#loading').waitFor({state:'detached'});await page.locator('#history-saving').waitFor({state:'hidden'});
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.sudoku_state));

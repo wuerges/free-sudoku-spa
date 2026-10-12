@@ -78,6 +78,7 @@ Set `PLAYWRIGHT_MODULE` to the module path if Playwright is installed elsewhere.
 ```
 src/
 ├── main.rs               # WASM entry
+├── i18n.rs               # interface language, labels, and named messages
 ├── app.rs                # root component
 ├── sudoku_engine.rs      # generation, solving, validation
 ├── game_history.rs       # local archive policy and safe game replacement
@@ -94,6 +95,35 @@ src/
     ├── header.rs         # dark mode, install button
     └── icon.rs           # shared local line icons
 ```
+
+## Interface languages
+
+The entire interface supports 🇦🇷 Español (Argentina), 🇵🇾 Avañe’ẽ (Paraguái),
+🇧🇷 Português (Brasil), and 🇺🇸 English (United States). On first launch, the
+app selects the first supported language in browser preference order, including
+base-language matching (for example, `es-MX` selects `es-AR`). If browser settings
+are missing or unsupported, it selects English. The resolved choice is immediately
+saved to the separate `sudoku_locale` localStorage key.
+
+Settings offers four country-flag language buttons with native language names.
+Your saved selection takes precedence on later launches; browser language changes
+do not override it. Settings reset preserves your language. Games, history and
+shared links do not store or replace it. If storage is unavailable, a localized
+notice explains that the choice applies only to the current session.
+
+All catalogs are bundled for offline play and APK staging. History dates use the
+selected locale; browsers without Guarani date support use Spanish Paraguay for
+dates. Technical documentation stays in English. Native-speaker review of new
+translations remains open in `ISSUES.md`.
+
+Run `npm run test:i18n` for catalog, selection, persistence and offline asset
+regressions. After `just build`, run `node tests/localization-browser.mjs` using
+`PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` as described below. It checks all four
+languages on phones/tablets in both themes, fallback and storage failures, game
+preservation, sharing, and offline routes. Screenshots go to
+`/tmp/sudoku-localization` (override with `I18N_SCREENSHOTS`).
+See the [localization screenshot gallery](docs/screenshots/localization/README.md)
+for flag selectors, gameplay and complete Settings pages in both themes.
 
 ## Features
 

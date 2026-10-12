@@ -5,6 +5,19 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.23.0]
+
+### Added
+
+- Complete interface catalogs for Argentine Spanish, Paraguayan Guarani, Brazilian Portuguese and American English, including help, accessibility labels, sharing and history messages.
+- Country-flag language choices in Settings. First launch selects a supported browser language or English and saves that choice; manual selections persist independently of games.
+- Localized loading screen, document language/title and history dates. All translations are bundled for offline and Android use.
+- Feedback when the language preference cannot be saved; the selected language remains usable for the session.
+
+### Changed
+
+- Settings reset preserves the interface language and game progress. Shared links and archived games retain the recipient's local language.
+
 ## [0.22.0]
 
 ### Added

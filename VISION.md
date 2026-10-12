@@ -4,7 +4,7 @@
 
 Build a free, open-source Sudoku game with no ads or trackers, designed first for phones and tablets. Players should be able to start quickly, resume their game, and play offline after a successful online app installation.
 
-The primary interface language is Brazilian Portuguese. Rust and Leptos provide the client-side game and UI, compiled to WebAssembly. Static hosting serves the app; game generation and play do not require a backend.
+The interface supports Brazilian Portuguese, Argentine Spanish, Paraguayan Guarani and American English. First launch selects and saves a supported browser language, falling back to English; Settings provides country-flag language choices. Rust and Leptos provide the client-side game and UI, compiled to WebAssembly. Static hosting serves the app; game generation and play do not require a backend.
 
 This document defines product direction and acceptance criteria. It is not a claim that every goal has shipped. See [README.md](README.md) for setup, [docs/architecture.md](docs/architecture.md) for the current implementation, and [AGENTS.md](AGENTS.md) for Codex working instructions.
 
@@ -12,7 +12,7 @@ This document defines product direction and acceptance criteria. It is not a cla
 
 The repository contains:
 
-- A 9×9 board with five selectable difficulty labels: Fácil, Médio, Difícil, Expert, and Mestre.
+- A 9×9 board with five localized difficulty levels: Easy, Medium, Hard, Expert, and Master.
 - A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
 - A button-based number pad, pencil notes, drop mode, conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
 - Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
@@ -22,6 +22,7 @@ The repository contains:
 - Game-state serialization to the `sudoku_state` localStorage key.
 - Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop edits preserve the highlight anchor and painting keeps an independently selected highlight digit. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
+- Four bundled interface languages with a saved browser-selected initial language, English fallback, country-flag choices, localized accessibility labels and offline switching. Native-speaker translation review remains open.
 - A manifest, icons, installation-prompt bridge, and service worker.
 - Engine and state unit tests, Trunk build configuration, and Vercel static-hosting configuration.
 
@@ -101,7 +102,7 @@ These are candidates, not committed scope:
 - Explanations of hints using human solving techniques.
 - A daily puzzle backed by deterministic generation.
 - Additional puzzle import formats and result sharing.
-- Additional interface languages.
+- Additional interface languages beyond the four bundled locales.
 
 Prioritize correctness, saved-game compatibility, offline reliability, and usability before expanding features. No implementation deadline or delivery estimate is set by this document.
 

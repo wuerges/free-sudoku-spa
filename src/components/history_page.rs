@@ -1,47 +1,37 @@
+use crate::i18n::{use_i18n, I18n, Message};
 use crate::{
     components::board_preview::BoardPreview,
     game_history::{evictions, HistoryEntry},
     sharing::SharedGame,
     state::{AppState, GameHistory},
-    sudoku_engine::Difficulty,
 };
 use leptos::prelude::*;
 use leptos_router::{components::A, hooks::use_navigate};
 
-fn details(game: &SharedGame) -> String {
-    let label = match game.difficulty {
-        Difficulty::Easy => "Fácil",
-        Difficulty::Medium => "Médio",
-        Difficulty::Hard => "Difícil",
-        Difficulty::Expert => "Expert",
-        Difficulty::Master => "Mestre",
-    };
-    format!(
-        "{label} · {}min {}s · {} erros · {}",
-        game.seconds / 60,
-        game.seconds % 60,
-        game.errors,
-        if game.board == game.solution {
-            "Concluído"
-        } else {
-            "Em andamento"
-        }
-    )
-}
-fn played_date(ms: f64) -> String {
-    let date = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms));
-    format!(
-        "{:02}/{:02}/{} às {:02}:{:02}",
-        date.get_date(),
-        date.get_month() + 1,
-        date.get_full_year(),
-        date.get_hours(),
-        date.get_minutes()
+fn details(i18n: I18n, game: &SharedGame) -> String {
+    i18n.format(
+        Message::HistorySummary,
+        &[
+            ("difficulty", i18n.difficulty(game.difficulty).into()),
+            ("minutes", (game.seconds / 60).to_string()),
+            ("seconds", (game.seconds % 60).to_string()),
+            ("errors", game.errors.to_string()),
+            (
+                "status",
+                i18n.text(if game.board == game.solution {
+                    Message::Completed
+                } else {
+                    Message::InProgress
+                })
+                .into(),
+            ),
+        ],
     )
 }
 
 #[component]
 pub fn HistoryFeedback(state: AppState, history: GameHistory) -> impl IntoView {
+    let i18n = use_i18n();
     Effect::new(move || {
         let busy = history.busy.get();
         let _ = js_sys::eval(if busy {
@@ -52,13 +42,13 @@ pub fn HistoryFeedback(state: AppState, history: GameHistory) -> impl IntoView {
     });
     view! {
         <dialog id="history-saving" class="share-dialog" aria-labelledby="saving-title" on:cancel=move |event: web_sys::Event| event.prevent_default()>
-            <h2 id="saving-title">"Salvando histórico…"</h2><p>"Aguarde um instante."</p>
+            <h2 id="saving-title">{move || i18n.text(Message::SavingHistory)}</h2><p>{move || i18n.text(Message::PleaseWait)}</p>
         </dialog>
-        <Show when=move || !history.error.get().is_empty()>
+        <Show when=move || history.error.get().is_some()>
             <div class="history-error" role="alert">
-                <p>{move || history.error.get()}</p>
-                <button class="ui-action" disabled=move || history.busy.get() on:click=move |_|history.refresh(state)>"Tentar novamente"</button>
-                <button class="ui-action" on:click=move |_|history.error.set(String::new())>"Fechar aviso"</button>
+                <p>{move || i18n.notice(history.error.get())}</p>
+                <button class="ui-action" disabled=move || history.busy.get() on:click=move |_|history.refresh(state)>{move || i18n.text(Message::TryAgain)}</button>
+                <button class="ui-action" on:click=move |_|history.error.set(None)>{move || i18n.text(Message::CloseNotice)}</button>
             </div>
         </Show>
     }
@@ -71,6 +61,7 @@ fn HistoryCard(
     selected: RwSignal<Option<HistoryEntry>>,
     initial: RwSignal<bool>,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let state = expect_context::<AppState>();
     let history = expect_context::<GameHistory>();
     let entry = StoredValue::new(entry);
@@ -90,8 +81,16 @@ fn HistoryCard(
                     e.pinned = false;
                 }
             }
-            if evictions(&entries,&state.0.get_untracked().game_id).contains(&value.id)
-                && !web_sys::window().and_then(|w|w.confirm_with_message("Ao desafixar, este jogo ficará fora dos 10 mais recentes e será removido do histórico. Desafixar?").ok()).unwrap_or(false) {return;}
+            if evictions(&entries, &state.0.get_untracked().game_id).contains(&value.id)
+                && !web_sys::window()
+                    .and_then(|w| {
+                        w.confirm_with_message(i18n.text(Message::UnpinConfirm))
+                            .ok()
+                    })
+                    .unwrap_or(false)
+            {
+                return;
+            }
         }
         history.set_pinned(state, value.id, !value.pinned);
     };
@@ -99,15 +98,15 @@ fn HistoryCard(
         <article class="history-card" data-game-id=entry.get_value().id data-pinned=entry.get_value().pinned.to_string()>
             <div>{move || view! {<BoardPreview game=game() miniature=true/>}}</div>
             <div class="history-card-info">
-                <h3>{if active {"Jogo atual"}else if entry.get_value().pinned {"Jogo fixado"}else{"Jogo salvo"}}</h3>
-                <p>{move || details(&game())}</p>
-                <p class="text-muted text-sm">{format!("Última partida: {}",played_date(entry.get_value().last_played_ms))}</p>
+                <h3>{move || if active {i18n.text(Message::CurrentGame)}else if entry.get_value().pinned {i18n.text(Message::PinnedGame)}else{i18n.text(Message::SavedGame)}}</h3>
+                <p>{move || details(i18n, &game())}</p>
+                <p class="text-muted text-sm">{move || i18n.format(Message::LastPlayed, &[("date", i18n.date(entry.get_value().last_played_ms))])}</p>
                 <div class="history-card-actions">
                     <Show when=move || !active>
-                        <button class="ui-action" on:click=move |_| {initial.set(false);selected.set(Some(entry.get_value()));}>"Abrir jogo"</button>
+                        <button class="ui-action" on:click=move |_| {initial.set(false);selected.set(Some(entry.get_value()));}>{move || i18n.text(Message::OpenGame)}</button>
                     </Show>
                     <button id=format!("pin-{}",entry.get_value().id) class="ui-action" aria-pressed=entry.get_value().pinned.to_string()
-                        on:click=pin>{if entry.get_value().pinned {"Desafixar"}else{"Fixar"}}</button>
+                        on:click=pin>{move || if entry.get_value().pinned {i18n.text(Message::Unpin)}else{i18n.text(Message::Pin)}}</button>
                 </div>
             </div>
         </article>
@@ -116,6 +115,7 @@ fn HistoryCard(
 
 #[component]
 pub fn HistoryPage() -> impl IntoView {
+    let i18n = use_i18n();
     let state = expect_context::<AppState>();
     let history = expect_context::<GameHistory>();
     let selected = RwSignal::new(None::<HistoryEntry>);
@@ -143,42 +143,42 @@ pub fn HistoryPage() -> impl IntoView {
     };
     view! {
         <main class="history-page w-full max-w-4xl">
-            <div class="history-heading"><h1>"Histórico"</h1><A href="/" attr:class="ui-action">"Voltar"</A></div>
-            <p>"Seu jogo atual, os 10 jogos anteriores mais recentes e todos os jogos fixados ficam salvos neste aparelho."</p>
-            <section aria-label="Jogo atual">
-                <h2>"Jogo atual"</h2>
+            <div class="history-heading"><h1>{move || i18n.text(Message::History)}</h1><A href="/" attr:class="ui-action">{move || i18n.text(Message::Back)}</A></div>
+            <p>{move || i18n.text(Message::HistoryIntro)}</p>
+            <section aria-label=move || i18n.text(Message::CurrentGame)>
+                <h2>{move || i18n.text(Message::CurrentGame)}</h2>
                 {move || history.entries.get().into_iter().find(|e| e.id==active_id.get()).map(|entry|view! {<HistoryCard entry=entry active=true selected=selected initial=initial/>})}
             </section>
-            <section aria-label="Jogos fixados">
-                <h2>"Fixados"</h2>
-                <Show when=move || records(true).is_empty()><p class="text-muted">"Nenhum jogo fixado."</p></Show>
+            <section aria-label=move || i18n.text(Message::PinnedGames)>
+                <h2>{move || i18n.text(Message::Pinned)}</h2>
+                <Show when=move || records(true).is_empty()><p class="text-muted">{move || i18n.text(Message::NoPinned)}</p></Show>
                 <div class="history-cards">{move || records(true).into_iter().map(|entry|view! {<HistoryCard entry=entry active=false selected=selected initial=initial/>}).collect::<Vec<_>>()}</div>
             </section>
-            <section aria-label="Jogos recentes">
-                <h2>"Recentes"</h2>
-                <Show when=move || records(false).is_empty()><p class="text-muted">"Seus jogos anteriores aparecerão aqui."</p></Show>
+            <section aria-label=move || i18n.text(Message::RecentGames)>
+                <h2>{move || i18n.text(Message::Recent)}</h2>
+                <Show when=move || records(false).is_empty()><p class="text-muted">{move || i18n.text(Message::NoRecent)}</p></Show>
                 <div class="history-cards">{move || records(false).into_iter().map(|entry|view! {<HistoryCard entry=entry active=false selected=selected initial=initial/>}).collect::<Vec<_>>()}</div>
             </section>
         </main>
         <dialog id="history-load" class="share-dialog" aria-labelledby="history-load-title" on:cancel=move |_:web_sys::Event|selected.set(None)>
-            <h2 id="history-load-title">"Abrir jogo salvo"</h2>
-            <fieldset><legend>"Como deseja começar?"</legend>
-                <label><input type="radio" name="history-mode" prop:checked=move || !initial.get() on:change=move |_|initial.set(false)/>" Estado atual"</label>
-                <label><input type="radio" name="history-mode" prop:checked=move || initial.get() on:change=move |_|initial.set(true)/>" Sudoku inicial"</label>
+            <h2 id="history-load-title">{move || i18n.text(Message::OpenSaved)}</h2>
+            <fieldset><legend>{move || i18n.text(Message::HowStart)}</legend>
+                <label><input type="radio" name="history-mode" prop:checked=move || !initial.get() on:change=move |_|initial.set(false)/>{move || i18n.text(Message::CurrentState)}</label>
+                <label><input type="radio" name="history-mode" prop:checked=move || initial.get() on:change=move |_|initial.set(true)/>{move || i18n.text(Message::InitialSudoku)}</label>
             </fieldset>
-            <Show when=move ||selected.get().is_some() && !history.error.get().is_empty()>
-                <p role="alert">{move ||history.error.get()}</p>
-                <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_|history.refresh(state)>"Tentar novamente"</button>
+            <Show when=move ||selected.get().is_some() && history.error.get().is_some()>
+                <p role="alert">{move ||i18n.notice(history.error.get())}</p>
+                <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_|history.refresh(state)>{move || i18n.text(Message::TryAgain)}</button>
             </Show>
             {move ||selected.get().map(|entry|{
                 let game=if initial.get(){entry.game.initial_position()}else{entry.game};
-                view! {<p>{details(&game)}</p><BoardPreview game=game/>}
+                view! {<p>{details(i18n, &game)}</p><BoardPreview game=game/>}
             })}
-            <p>{move ||if initial.get(){"Começar do início cria outra partida e mantém o progresso anterior no histórico."}else{"Seu jogo atual será guardado no histórico. O jogo salvo começa pausado, com suas configurações atuais."}}</p>
+            <p>{move ||if initial.get(){i18n.text(Message::RestartIntro)}else{i18n.text(Message::ResumeIntro)}}</p>
             <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_| {
                 if let Some(entry)=selected.get_untracked(){let nav=navigate.clone();history.load(state,entry,initial.get_untracked(),move |success|{if success {selected.set(None);nav("/",Default::default());}});}
-            }>"Carregar jogo"</button>
-            <button class="ui-action" on:click=move |_|selected.set(None)>"Cancelar"</button>
+            }>{move || i18n.text(Message::LoadGame)}</button>
+            <button class="ui-action" on:click=move |_|selected.set(None)>{move || i18n.text(Message::Cancel)}</button>
         </dialog>
     }
 }
