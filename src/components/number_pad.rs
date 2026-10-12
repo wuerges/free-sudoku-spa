@@ -3,7 +3,7 @@ use crate::components::{
     icon::{Icon, IconName},
 };
 use crate::i18n::{use_i18n, Message};
-use crate::state::AppState;
+use crate::state::{AppState, DropAvailability};
 use leptos::prelude::*;
 
 #[component]
@@ -33,7 +33,7 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                     disabled=move || { let s = state.0.get(); s.paused || s.won || s.cell_colors.iter().all(|&c| c == 0) }
                     on:click=move |_| state.clear_colors()><Icon name=IconName::ClearColors /><span aria-hidden="true">{move || i18n.text(Message::Clear)}</span></button>
             </div>
-            <div class="entry-actions" data-history=move || state.0.get().undo_enabled.to_string() role="group" aria-label=move || i18n.text(Message::EntryMode)>
+            <div class="entry-actions" data-history=move || state.0.get().undo_enabled.to_string() data-drop-toggle=move || (state.0.get().drop_availability == DropAvailability::Both).to_string() role="group" aria-label=move || i18n.text(Message::EntryMode)>
                 <Show when=move || state.0.get().undo_enabled>
                     <button type="button" class="ui-action history-action" aria-label=move || i18n.text(Message::Undo)
                         title=move || i18n.text(Message::Undo) on:click=move |_| state.undo()
@@ -42,15 +42,17 @@ pub fn NumberPad(state: AppState) -> impl IntoView {
                         title=move || i18n.text(Message::Redo) on:click=move |_| state.redo()
                         disabled=move || state.0.get().redo_stack.is_empty()><Icon name=IconName::Redo /></button>
                 </Show>
-                <button class="ui-action" data-active=move || note_mode().to_string()
+                <button class="ui-action notes-action" data-active=move || note_mode().to_string()
                     aria-pressed=move || note_mode().to_string() on:click=move |_| state.toggle_note_mode()>
                     <Icon name=IconName::Pencil />{move || i18n.text(Message::Notes)}
                 </button>
-                <button class="ui-action" data-active=move || drop_mode().to_string()
-                    aria-pressed=move || drop_mode().to_string() on:click=move |_| state.toggle_drop_mode()>
-                    <Icon name=IconName::Drop />{move || i18n.text(Message::Drop)}
-                    <span class="drop-number" aria-hidden="true">{move || drop_number().map(|n| n.to_string()).unwrap_or_default()}</span>
-                </button>
+                <Show when=move || state.0.get().drop_availability == DropAvailability::Both>
+                    <button class="ui-action" data-active=move || drop_mode().to_string()
+                        aria-pressed=move || drop_mode().to_string() on:click=move |_| state.toggle_drop_mode()>
+                        <Icon name=IconName::Drop />{move || i18n.text(Message::Drop)}
+                        <span class="drop-number" aria-hidden="true">{move || drop_number().map(|n| n.to_string()).unwrap_or_default()}</span>
+                    </button>
+                </Show>
                 <GameControls state=state />
             </div>
             <p class="paint-instruction" role="status" aria-live="polite">{move || state.0.get().paint_tool.map(|color|

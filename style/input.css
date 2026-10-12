@@ -277,9 +277,11 @@
   .paint-instruction { font-size: 12px; line-height: 16px; color: var(--ui-muted); margin-top: 4px; }
   .paint-instruction:empty { display: none; }
   .game-page .ui-action { flex-wrap: wrap; overflow-wrap: anywhere; }
-  .game-page .entry-actions { grid-template-columns: repeat(5, minmax(44px, 1fr)); margin-top: 4px; gap: 4px; }
-  .game-page .entry-actions[data-history="false"] { grid-template-columns: repeat(3, minmax(44px, 1fr)); }
-  .game-page .entry-actions > .ui-action, .actions-trigger { font-size: 12px; padding: 2px; gap: 4px; }
+  .game-page .entry-actions { grid-template-columns: minmax(44px, 1fr) minmax(44px, 1fr) minmax(66px, 1.5fr) minmax(44px, 1fr) minmax(44px, 1fr); margin-top: 4px; gap: 4px; }
+  .game-page .entry-actions[data-history="false"] { grid-template-columns: minmax(66px, 1.5fr) repeat(2, minmax(44px, 1fr)); }
+  .game-page .entry-actions[data-drop-toggle="false"] { grid-template-columns: repeat(2, minmax(44px, 1fr)) minmax(66px, 1.5fr) minmax(44px, 1fr); }
+  .game-page .entry-actions[data-history="false"][data-drop-toggle="false"] { grid-template-columns: minmax(66px, 1.5fr) minmax(44px, 1fr); }
+  .game-page .entry-actions > .ui-action, .game-page .actions-trigger { font-size: 12px; padding: 2px; gap: 4px; }
   .game-page .drop-instruction { margin-top: 4px; line-height: 16px; }
   .game-page .game-actions { position: relative; width: 100%; max-width: none; display: block; margin: 0; padding: 0; }
   .actions-trigger { width: 100%; }
@@ -347,3 +349,7 @@
 .language-choice { justify-content: flex-start; text-align: left; white-space: normal; min-height: 44px; }
 .language-choice[aria-pressed="true"] { outline: 2px solid var(--ui-accent); outline-offset: -2px; }
 .locale-storage-error { position: relative; z-index: 60; padding: .75rem; background: var(--ui-error); color: var(--ui-error-text); }
+
+.drop-mode-options { margin-block: 16px; }
+.drop-mode-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.drop-mode-choices .sound-choice { flex-wrap: wrap; overflow-wrap: anywhere; }

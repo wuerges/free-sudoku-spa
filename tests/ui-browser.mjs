@@ -21,7 +21,7 @@ const browser = await chromium.launch({headless:true,executablePath:process.env.
 try {
   let sharedFixture;
   for(const theme of ['light','dark']) {
-    for(const {width,height} of [{width:320,height:844},{width:390,height:844},{width:768,height:900},{width:800,height:1280},{width:1024,height:768},{width:1280,height:800},{width:1280,height:900}]) {
+    for(const {width,height} of [{width:320,height:844},{width:390,height:844},{width:768,height:900},{width:800,height:1280},{width:1024,height:768},{width:1280,height:800},{width:1280,height:900}].filter(v=>!process.env.UI_WIDTHS || process.env.UI_WIDTHS.split(',').map(Number).includes(v.width))) {
       const context = await browser.newContext({locale: 'pt-BR', viewport:{width,height},colorScheme:theme,serviceWorkers:'block'});
       const page = await context.newPage(); const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
@@ -36,6 +36,13 @@ try {
         }).map(e=>e.textContent));
         assert.deepEqual(escaped,[]);
       }
+      async function notesWidth() {
+        const notes=await page.locator('.notes-action').boundingBox();
+        for(const box of await page.locator('.entry-actions > button:not(.notes-action),.actions-trigger').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().toJSON()))) {
+          assert.ok(Math.abs(notes.width-1.5*box.width)<1,`${width}: Notes width ratio`);
+          assert.ok(Math.abs(notes.height-box.height)<1,`${width}: equal action heights`);
+        }
+      }
       async function ready() { await page.locator('#loading').waitFor({state:'detached'}); }
       await page.goto(url); await page.locator('.sudoku-cell').first().waitFor(); await ready();
       if(sharedFixture) {
@@ -43,6 +50,7 @@ try {
         await page.reload(); await page.locator('.sudoku-cell').first().waitFor(); await ready();
       } else sharedFixture=await read();
       await overflow('game');
+      await notesWidth();
       const allTargets=await page.locator('.ui-action:visible, .ui-icon-button:visible, .number-choices > button:visible').evaluateAll(es=>es.map(e=>({label:e.getAttribute('aria-label')||e.textContent.trim(),r:e.getBoundingClientRect().toJSON(),minimum:e.closest('.game-header')?36:44})));
       for(const {label,r,minimum} of allTargets) {
         assert.ok(r.height>=minimum && r.width>=minimum,`${width}: ${label} touch target ${r.width}×${r.height}`);
@@ -153,6 +161,7 @@ try {
       await page.getByRole('link',{name:'Voltar',exact:true}).click();
       await page.getByRole('button',{name:'Ações',exact:true}).click();
       assert.equal(await page.getByRole('button',{name:'Desfazer',exact:true}).count(),0);
+      await notesWidth();
       await page.keyboard.press('Escape');
       await page.getByRole('link',{name:'Configurações',exact:true}).click();
       await page.getByRole('button',{name:'Restaurar padrões',exact:true}).click();
@@ -164,6 +173,7 @@ try {
       await page.getByRole('link',{name:'Voltar',exact:true}).click();
       await page.getByRole('button',{name:'Ações',exact:true}).click();
       assert.equal(await page.getByRole('button',{name:'Desfazer',exact:true}).count(),1);
+      await notesWidth();
       await page.keyboard.press('Escape');
       await page.evaluate(()=>{
         window.__sudoku={_installPrompt:{},showInstall:()=>window.__installTest=true};

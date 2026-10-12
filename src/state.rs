@@ -9,6 +9,14 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Default)]
+pub enum DropAvailability {
+    DropOnly,
+    NoDrop,
+    #[default]
+    Both,
+}
+
 const fn yes() -> bool {
     true
 }
@@ -107,12 +115,14 @@ pub struct GameState {
     pub hinted: [u8; 81],
     pub error_count: u32,
     pub note_mode: bool,
-    #[serde(skip)]
+    #[serde(default)]
     pub drop_mode: bool,
+    #[serde(default)]
+    pub drop_availability: DropAvailability,
     /// Transient painting tool: 1–4 toggle a preset color.
     #[serde(skip)]
     pub paint_tool: Option<u8>,
-    #[serde(skip)]
+    #[serde(default)]
     pub drop_number: Option<u8>,
     #[serde(default = "yes")]
     pub drop_pick_solved: bool,
@@ -141,12 +151,6 @@ pub struct GameState {
     #[serde(skip)]
     #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
     pub celebrated: bool,
-    #[serde(skip)]
-    pub secondary_highlight_value: Option<u8>,
-    #[serde(skip, default)]
-    pub secondary_highlight_rows: u16,
-    #[serde(skip, default)]
-    pub secondary_highlight_cols: u16,
     pub history: Vec<Snapshot>,
     pub redo_stack: Vec<Snapshot>,
 }
@@ -179,6 +183,7 @@ impl Default for GameState {
             error_count: 0,
             note_mode: false,
             drop_mode: false,
+            drop_availability: DropAvailability::Both,
             paint_tool: None,
             drop_number: None,
             drop_pick_solved: true,
@@ -196,9 +201,6 @@ impl Default for GameState {
             paused: false,
             won: false,
             celebrated: false,
-            secondary_highlight_value: None,
-            secondary_highlight_rows: 0,
-            secondary_highlight_cols: 0,
             history: Vec::new(),
             redo_stack: Vec::new(),
         }
@@ -223,7 +225,8 @@ impl GameState {
             hinted: [0u8; 81],
             error_count: 0,
             note_mode: s.note_mode,
-            drop_mode: false,
+            drop_mode: s.drop_mode,
+            drop_availability: s.drop_availability,
             paint_tool: None,
             drop_number: None,
             drop_pick_solved: s.drop_pick_solved,
@@ -241,9 +244,6 @@ impl GameState {
             paused: false,
             won: false,
             celebrated: false,
-            secondary_highlight_value: None,
-            secondary_highlight_rows: 0,
-            secondary_highlight_cols: 0,
             history: Vec::new(),
             redo_stack: Vec::new(),
         };
@@ -272,14 +272,9 @@ impl GameState {
         self.history.clear();
         self.redo_stack.clear();
         self.selected = None;
-        self.note_mode = false;
-        self.drop_mode = false;
         self.drop_number = None;
         self.paint_tool = None;
         self.just_filled = None;
-        self.secondary_highlight_value = None;
-        self.secondary_highlight_rows = 0;
-        self.secondary_highlight_cols = 0;
         self.paused = true;
         self.won = self.board == self.solution;
         self.celebrated = self.won;
@@ -339,10 +334,12 @@ impl GameState {
             return None;
         }
         let number = self.active_number();
-        if self.selected.is_some_and(|(sr, sc)| {
-            ((!self.drop_mode && number.is_none()) || number == Some(self.get(sr, sc)))
-                && (sr == r || sc == c || (sr / 3 == r / 3 && sc / 3 == c / 3))
-        }) {
+        if !self.drop_mode
+            && self.selected.is_some_and(|(sr, sc)| {
+                ((!self.drop_mode && number.is_none()) || number == Some(self.get(sr, sc)))
+                    && (sr == r || sc == c || (sr / 3 == r / 3 && sc / 3 == c / 3))
+            })
+        {
             Some("selected")
         } else {
             Some("matching")
@@ -553,44 +550,18 @@ impl AppState {
                     && value == s.solution[GameState::idx(r, c)]
                 {
                     s.drop_number = Some(value);
-                    s.selected = Some((r, c));
-                    s.secondary_highlight_value = None;
-                    s.secondary_highlight_rows = 0;
-                    s.secondary_highlight_cols = 0;
+                    s.selected = None;
                 } else if let Some(number) = s.drop_number {
                     trigger_domino = s.enter_number(r, c, number);
                 }
                 return;
             }
 
-            if !s.drop_mode && s.selected == Some((r, c)) && s.get(r, c) != 0 {
-                // Second click on same number cell — toggle expanded highlight
-                let v = s.get(r, c);
-                if s.secondary_highlight_value == Some(v) {
-                    s.secondary_highlight_value = None;
-                    s.secondary_highlight_rows = 0;
-                    s.secondary_highlight_cols = 0;
-                } else {
-                    let mut rows = 0u16;
-                    let mut cols = 0u16;
-                    for i in 0..9 {
-                        for j in 0..9 {
-                            if s.get(i, j) == v {
-                                rows |= 1 << i;
-                                cols |= 1 << j;
-                            }
-                        }
-                    }
-                    s.secondary_highlight_value = Some(v);
-                    s.secondary_highlight_rows = rows;
-                    s.secondary_highlight_cols = cols;
-                }
-                return;
-            }
-            s.selected = Some((r, c));
-            s.secondary_highlight_value = None;
-            s.secondary_highlight_rows = 0;
-            s.secondary_highlight_cols = 0;
+            s.selected = if s.selected == Some((r, c)) {
+                None
+            } else {
+                Some((r, c))
+            };
         });
         self.finish_entry(trigger_domino);
     }
@@ -602,12 +573,14 @@ impl AppState {
             }
             if s.drop_mode {
                 s.cancel_domino();
+                s.note_mode = true;
                 s.paint_tool = if s.paint_tool == Some(color) {
                     None
                 } else {
                     Some(color)
                 };
             } else if let Some((row, col)) = s.selected {
+                s.note_mode = true;
                 s.paint_cell(row, col, color);
             }
         });
@@ -625,9 +598,31 @@ impl AppState {
 
     pub fn toggle_drop_mode(&self) {
         self.0.update(|s| {
+            if s.drop_availability != DropAvailability::Both {
+                return;
+            }
             s.paint_tool = None;
             s.drop_mode = !s.drop_mode;
             s.drop_number = None;
+            s.selected = None;
+        });
+    }
+
+    pub fn set_drop_availability(&self, availability: DropAvailability) {
+        self.0.update(|s| {
+            if s.drop_availability == availability {
+                return;
+            }
+            s.cancel_domino();
+            s.drop_availability = availability;
+            s.drop_mode = match availability {
+                DropAvailability::DropOnly => true,
+                DropAvailability::NoDrop => false,
+                DropAvailability::Both => s.drop_mode,
+            };
+            s.drop_number = None;
+            s.paint_tool = None;
+            s.selected = None;
         });
     }
 
@@ -708,8 +703,11 @@ impl AppState {
 
     pub fn toggle_note_mode(&self) {
         self.0.update(|s| {
-            s.paint_tool = None;
-            s.note_mode = !s.note_mode;
+            if s.paint_tool.take().is_some() {
+                s.note_mode = true;
+            } else {
+                s.note_mode = !s.note_mode;
+            }
         });
     }
 
@@ -743,6 +741,7 @@ impl AppState {
 
     pub fn reset_config(&self) {
         self.0.update(|s| {
+            s.drop_availability = DropAvailability::Both;
             s.drop_pick_solved = true;
             s.undo_enabled = true;
             s.auto_notes_enabled = true;
@@ -963,6 +962,17 @@ fn decode_saved_state(json: &str) -> Result<GameState, serde_json::Error> {
                 *color = 0;
             }
         }
+    }
+    state.drop_mode = match state.drop_availability {
+        DropAvailability::DropOnly => true,
+        DropAvailability::NoDrop => false,
+        DropAvailability::Both => state.drop_mode,
+    };
+    state.drop_number = state
+        .drop_number
+        .filter(|n| state.drop_mode && (1..=9).contains(n));
+    if state.drop_mode {
+        state.selected = None;
     }
     // A completed save has already been celebrated, including shared imports.
     state.celebrated = state.won;
@@ -1242,6 +1252,244 @@ mod tests {
     }
 
     #[test]
+    fn color_exit_keeps_notes_safe_and_explicit_toggle_restores_numbers() {
+        for notes in [false, true] {
+            let app = AppState(RwSignal::new(domino_fixture()));
+            app.0.update(|s| {
+                s.note_mode = notes;
+                s.notes = [0; 81];
+                s.domino_enabled = false;
+            });
+            app.select_paint_tool(1); // No target: ignore, including mode changes.
+            assert_eq!(app.0.get().note_mode, notes);
+            app.select_cell(0, 0);
+            app.select_paint_tool(1);
+            assert!(app.0.get().note_mode);
+            app.toggle_drop_mode();
+            assert_eq!(app.0.get().selected, None);
+            app.select_drop_number(1);
+            app.select_paint_tool(2);
+            app.select_paint_tool(3);
+            app.select_paint_tool(3); // Same-color exit stays in Notes.
+            assert!(app.0.get().note_mode);
+            assert_eq!(app.0.get().paint_tool, None);
+            let board = app.0.get().board;
+            app.select_cell(0, 0);
+            assert_eq!(app.0.get().board, board);
+            assert_eq!(app.0.get().notes[0], 1);
+            app.select_paint_tool(2);
+            app.toggle_note_mode(); // First Notes tap exits painting safely.
+            assert!(app.0.get().note_mode);
+            assert_eq!(app.0.get().paint_tool, None);
+            app.toggle_note_mode();
+            assert!(!app.0.get().note_mode);
+            app.select_cell(0, 0);
+            assert_eq!(app.0.get().board[0], 1);
+            app.select_paint_tool(2);
+            app.toggle_drop_mode();
+            assert!(app.0.get().note_mode);
+            assert_eq!(app.0.get().selected, None);
+        }
+    }
+
+    #[test]
+    fn repeated_normal_cell_taps_deselect_without_editing_progress() {
+        let app = AppState(RwSignal::new(domino_fixture()));
+        app.0.update(|s| {
+            s.board[1] = 8;
+            s.givens[1] = 0;
+        });
+        for target in [(0, 0), (0, 1), (0, 2)] {
+            app.select_cell(target.0, target.1);
+            let before = app.0.get();
+            app.select_cell(target.0, target.1);
+            let after = app.0.get();
+            assert_eq!(after.selected, None);
+            assert_eq!(after.active_number(), None);
+            for r in 0..9 {
+                for c in 0..9 {
+                    assert_eq!(after.placement_available(r, c), None);
+                }
+            }
+            app.place_number(9);
+            app.select_paint_tool(1);
+            let ignored = app.0.get();
+            assert_eq!(ignored.board, before.board);
+            assert_eq!(ignored.notes, before.notes);
+            assert_eq!(ignored.cell_colors, before.cell_colors);
+            assert_eq!(ignored.history.len(), before.history.len());
+        }
+    }
+
+    #[test]
+    fn drop_saves_default_legacy_fields_and_normalize_digits_without_losing_progress() {
+        let mut s = domino_fixture();
+        s.note_mode = true;
+        s.drop_mode = true;
+        s.drop_number = Some(3);
+        s.selected = Some((0, 2));
+        s.paint_tool = Some(2);
+        s.push_snapshot();
+        let json = serde_json::to_string(&s).unwrap();
+        let loaded = decode_saved_state(&json).unwrap();
+        assert!(loaded.drop_mode && loaded.note_mode);
+        assert_eq!(loaded.drop_number, Some(3));
+        assert_eq!(loaded.selected, None);
+        assert_eq!(loaded.paint_tool, None);
+        assert_eq!(loaded.board, s.board);
+        assert_eq!(loaded.notes, s.notes);
+        assert_eq!(loaded.history.len(), s.history.len());
+        let mut value = serde_json::to_value(&s).unwrap();
+        for invalid in [0, 10, 255] {
+            value["drop_number"] = invalid.into();
+            assert_eq!(
+                decode_saved_state(&value.to_string()).unwrap().drop_number,
+                None
+            );
+        }
+        value.as_object_mut().unwrap().remove("drop_mode");
+        value.as_object_mut().unwrap().remove("drop_number");
+        let legacy = decode_saved_state(&value.to_string()).unwrap();
+        assert!(!legacy.drop_mode);
+        assert_eq!(legacy.drop_number, None);
+        assert_eq!(legacy.board, s.board);
+        assert_eq!(legacy.notes, s.notes);
+        assert_eq!(legacy.history.len(), s.history.len());
+    }
+
+    #[test]
+    fn drop_availability_forces_modes_and_protects_progress() {
+        let app = AppState(RwSignal::new(domino_fixture()));
+        let original = app.0.get();
+        app.0.update(|s| {
+            s.note_mode = true;
+            s.selected = Some((0, 2));
+        });
+        app.set_drop_availability(DropAvailability::DropOnly);
+        assert!(app.0.get().drop_mode);
+        app.select_drop_number(3);
+        app.select_paint_tool(2);
+        app.toggle_drop_mode(); // Hidden controls cannot bypass the policy.
+        assert!(app.0.get().drop_mode);
+        assert_eq!(app.0.get().drop_number, Some(3));
+        app.set_drop_availability(DropAvailability::NoDrop);
+        let disabled = app.0.get();
+        assert!(!disabled.drop_mode);
+        assert!(disabled.note_mode);
+        assert_eq!(disabled.drop_number, None);
+        assert_eq!(disabled.paint_tool, None);
+        assert_eq!(disabled.selected, None);
+        app.toggle_drop_mode();
+        assert!(!app.0.get().drop_mode);
+        app.set_drop_availability(DropAvailability::Both);
+        assert!(!app.0.get().drop_mode);
+        app.toggle_drop_mode();
+        let after = app.0.get();
+        assert!(after.drop_mode);
+        assert_eq!(after.board, original.board);
+        assert_eq!(after.notes, original.notes);
+        assert_eq!(after.cell_colors, original.cell_colors);
+        assert_eq!(after.history.len(), original.history.len());
+        app.set_drop_availability(DropAvailability::NoDrop);
+        app.reset_config();
+        assert_eq!(app.0.get().drop_availability, DropAvailability::Both);
+        app.toggle_drop_mode();
+        assert!(app.0.get().drop_mode);
+    }
+
+    #[test]
+    fn saved_drop_availability_defaults_to_both_and_enforces_fixed_modes() {
+        let s = domino_fixture();
+        let mut json = serde_json::to_value(&s).unwrap();
+        json.as_object_mut().unwrap().remove("drop_availability");
+        assert_eq!(
+            decode_saved_state(&json.to_string())
+                .unwrap()
+                .drop_availability,
+            DropAvailability::Both
+        );
+        for (policy, enabled) in [
+            (DropAvailability::DropOnly, true),
+            (DropAvailability::NoDrop, false),
+        ] {
+            json["drop_availability"] = serde_json::to_value(policy).unwrap();
+            json["drop_mode"] = (!enabled).into();
+            json["drop_number"] = 3.into();
+            let loaded = decode_saved_state(&json.to_string()).unwrap();
+            assert_eq!(loaded.drop_mode, enabled);
+            assert_eq!(loaded.drop_availability, policy);
+            assert_eq!(loaded.drop_number, if enabled { Some(3) } else { None });
+            assert_eq!(loaded.board, s.board);
+            assert_eq!(loaded.notes, s.notes);
+        }
+    }
+
+    #[test]
+    fn game_replacement_keeps_fixed_drop_policy() {
+        let app = AppState(RwSignal::new(domino_fixture()));
+        for policy in [DropAvailability::DropOnly, DropAvailability::NoDrop] {
+            app.set_drop_availability(policy);
+            app.new_game(Difficulty::Easy);
+            let current = app.0.get();
+            let enabled = policy == DropAvailability::DropOnly;
+            assert_eq!(current.drop_mode, enabled);
+            assert_eq!(current.drop_availability, policy);
+            let entry = HistoryEntry::capture(&domino_fixture());
+            for initial in [false, true] {
+                let restored = entry.restore(&current, initial);
+                assert_eq!(restored.drop_mode, enabled);
+                assert_eq!(restored.drop_availability, policy);
+            }
+        }
+    }
+
+    #[test]
+    fn new_games_keep_modes_but_clear_digits_colors_and_selection() {
+        let mut s = domino_fixture();
+        s.note_mode = true;
+        s.drop_mode = true;
+        s.drop_number = Some(3);
+        s.paint_tool = Some(2);
+        s.selected = Some((0, 2));
+        s.start_new_game(Difficulty::Easy);
+        assert!(s.note_mode && s.drop_mode);
+        assert_eq!(s.drop_number, None);
+        assert_eq!(s.paint_tool, None);
+        assert_eq!(s.selected, None);
+    }
+
+    #[test]
+    fn drop_highlights_ignore_any_legacy_anchor() {
+        let mut s = domino_fixture();
+        s.drop_mode = true;
+        s.drop_number = Some(3);
+        let expected: Vec<_> = (0..81)
+            .map(|i| {
+                (
+                    s.placement_available(i / 9, i % 9),
+                    s.placement_blocker(i / 9, i % 9),
+                )
+            })
+            .collect();
+        for anchor in [None, Some((0, 2)), Some((8, 8)), Some((0, 0))] {
+            s.selected = anchor;
+            assert_eq!(s.active_number(), Some(3));
+            let actual: Vec<_> = (0..81)
+                .map(|i| {
+                    (
+                        s.placement_available(i / 9, i % 9),
+                        s.placement_blocker(i / 9, i % 9),
+                    )
+                })
+                .collect();
+            assert_eq!(actual, expected);
+            assert!(actual
+                .iter()
+                .all(|(_, blocker)| *blocker != Some("selected")));
+        }
+    }
+
+    #[test]
     fn paint_preserves_values_and_groups_clear_with_mixed_history() {
         let owner = Owner::new();
         owner.set();
@@ -1281,6 +1529,7 @@ mod tests {
         assert_eq!(app.0.get().cell_colors[2], 1);
         app.0.update(|s| s.domino_enabled = false);
         app.toggle_drop_mode();
+        app.toggle_note_mode();
         app.select_cell(0, 0);
         app.place_number(before.solution[0]);
         assert_eq!(app.0.get().paint_tool, None);
@@ -1353,7 +1602,7 @@ mod tests {
         assert!(app.0.get().history.is_empty());
         assert_eq!(app.0.get().paint_tool, None);
         app.select_cell(0, 2);
-        app.select_cell(0, 2); // Expanded highlighting must survive coloring.
+        // Coloring preserves the selected target.
         let before = app.0.get();
         app.select_paint_tool(2);
         let colored = app.0.get();
@@ -1361,10 +1610,6 @@ mod tests {
         assert_eq!(colored.board, before.board);
         assert_eq!(colored.notes, before.notes);
         assert_eq!(colored.selected, before.selected);
-        assert_eq!(
-            colored.secondary_highlight_value,
-            before.secondary_highlight_value
-        );
         assert_eq!(colored.paint_tool, None);
         app.select_cell(0, 0);
         assert_eq!(app.0.get().cell_colors[0], 0);
@@ -1378,15 +1623,13 @@ mod tests {
     }
 
     #[test]
-    fn drop_edits_preserve_anchor_and_independent_highlight_digit() {
+    fn drop_edits_use_only_the_independent_highlight_digit() {
         let owner = Owner::new();
         owner.set();
         let mut s = domino_fixture();
         s.domino_enabled = false;
         let app = AppState(RwSignal::new(s));
         app.select_cell(0, 2);
-        app.select_cell(0, 2);
-        let anchor = app.0.get();
         app.toggle_drop_mode();
         app.select_paint_tool(1);
         assert_eq!(app.0.get().active_number(), None);
@@ -1405,7 +1648,7 @@ mod tests {
         assert_eq!(app.0.get().active_number(), Some(5));
         app.select_paint_tool(1); // Resume entry without changing the digit.
         assert_eq!(app.0.get().paint_tool, None);
-        app.toggle_note_mode();
+        assert!(app.0.get().note_mode);
         let before_notes = app.0.get();
         app.select_cell(1, 1); // Notes cannot pick a solved digit.
         assert_eq!(app.0.get().drop_number, Some(5));
@@ -1417,21 +1660,9 @@ mod tests {
         app.select_cell(0, 0);
         let after = app.0.get();
         assert_eq!(after.board[0], 1);
-        assert_eq!(after.selected, anchor.selected);
-        assert_eq!(
-            after.secondary_highlight_value,
-            anchor.secondary_highlight_value
-        );
-        assert_eq!(
-            after.secondary_highlight_rows,
-            anchor.secondary_highlight_rows
-        );
-        assert_eq!(
-            after.secondary_highlight_cols,
-            anchor.secondary_highlight_cols
-        );
+        assert_eq!(after.selected, None);
         app.select_cell(1, 1); // Ordinary solved-cell picking is still intentional.
-        assert_eq!(app.0.get().selected, Some((1, 1)));
+        assert_eq!(app.0.get().selected, None);
         assert_eq!(app.0.get().drop_number, Some(after.board[10]));
     }
 
@@ -1514,10 +1745,12 @@ mod tests {
             }
             let after = app.0.get();
             assert_eq!(after.drop_number, Some(after.solution[2]));
-            assert_eq!(after.selected, Some((0, 2)));
+            assert_eq!(after.selected, None);
             assert_eq!(after.domino_gen, generation);
             let mut encoded = serde_json::to_value(&after).unwrap();
             encoded["selected"] = before["selected"].clone();
+            encoded["drop_mode"] = before["drop_mode"].clone();
+            encoded["drop_number"] = before["drop_number"].clone();
             assert_eq!(
                 encoded, before,
                 "picking must not mutate persisted gameplay"
@@ -2282,6 +2515,7 @@ mod tests {
             error_count: 0,
             note_mode: false,
             drop_mode: false,
+            drop_availability: DropAvailability::Both,
             paint_tool: None,
             drop_number: None,
             drop_pick_solved: true,
@@ -2299,9 +2533,6 @@ mod tests {
             paused: false,
             won: false,
             celebrated: false,
-            secondary_highlight_value: None,
-            secondary_highlight_rows: 0,
-            secondary_highlight_cols: 0,
             history: Vec::new(),
             redo_stack: Vec::new(),
         };

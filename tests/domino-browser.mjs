@@ -37,7 +37,7 @@ try {
         s.solution = Array.from({length:81},(_,i)=>(Math.floor(i/9)*3+Math.floor(i/27)+i%9)%9+1);
         s.board = [...s.solution]; for(const i of [0,1,9]) s.board[i]=0;
         s.givens = [...s.board]; s.hinted=Array(81).fill(0); s.notes=Array(81).fill(0);
-        s.history=[];s.redo_stack=[];s.won=false;s.paused=false;s.selected=null;s.note_mode=false;s.sound_type='None';s.domino_enabled=true;
+        s.history=[];s.redo_stack=[];s.won=false;s.paused=false;s.selected=null;s.note_mode=false;s.drop_mode=false;s.drop_number=null;s.sound_type='None';s.domino_enabled=true;
         s.domino={initial_delay_ms:delay, acceleration_percent:0, minimum_delay_ms:100, empty_cell_threshold:threshold};
         if(legacy) { delete s.domino; s.domino_gen=4294967295; }
         localStorage.setItem('sudoku_state',JSON.stringify(s));

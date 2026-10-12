@@ -35,6 +35,7 @@ try {
     s.history=[{board:[...s.board],notes:[...s.notes]}];s.redo_stack=[...s.history];
     s.error_count=2;s.timer_seconds=123;s.selected=null;s.paused=false;s.won=false;
     s.domino_enabled=false;s.sound_type='None';s.note_mode=false;
+    delete s.drop_mode;delete s.drop_number;
     delete s.drop_pick_solved; // Previous-version save keeps progress and gains the default.
     async function seed() {
       await page.evaluate(s=>localStorage.setItem('sudoku_state',JSON.stringify(s)),s);
@@ -56,7 +57,7 @@ try {
     }
     const entryAnchor=(await read()).selected;
     await number(9).click();await cell(6).click();
-    assert.deepEqual((await read()).selected,entryAnchor,'number placement preserves highlight anchor');
+    assert.deepEqual((await read()).selected,entryAnchor,'Drop number placement has no anchor');
     assert.equal((await read()).board[6],9); // Incorrect cells remain editable.
     await seed();await page.getByRole('button',{name:'Drop',exact:true}).click();
     await page.getByRole('button',{name:'Notas',exact:true}).click();

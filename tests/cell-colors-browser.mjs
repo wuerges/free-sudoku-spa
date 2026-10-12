@@ -71,7 +71,7 @@ try {
     await button('Instalar aplicativo').click();
     await fit();
     assert.equal(await button('Verde').isDisabled(),true);
-    await cell(2).click();await cell(2).click();
+    await cell(2).click();
     const selected=await read();
     await button('Verde').click();assert.equal((await read()).cell_colors[2],1);
     assert.equal(await button('Verde').getAttribute('aria-pressed'),'false');
@@ -79,15 +79,14 @@ try {
     await page.screenshot({path:path.join(output,`selection-${theme}-${width}x${height}.png`)});
     await button('Verde').click();assert.equal((await read()).cell_colors[2],0);
     await cell(0).click();assert.equal((await read()).cell_colors[0],0);
-    await cell(2).click();await cell(2).click();
-    const anchor=await read();
+    await cell(2).click();
     await button('Drop').click();
     const number=n=>page.getByRole('group',{name:'Números',exact:true}).getByRole('button',{name:String(n),exact:true});
     await number(3).click();
     const stableAnchor=async()=>{
       const after=await read();
-      assert.deepEqual(after.selected,anchor.selected,'highlight anchor');
-      assert.equal(await cell(2).getAttribute('data-selected'),'true');
+      assert.equal(after.selected,null,'Drop has no anchor');
+      assert.equal(await page.locator('[data-selected="true"]').count(),0);
     };
     const highlightView=()=>page.locator('.sudoku-cell').evaluateAll(es=>es.map(e=>[e.dataset.selected,e.dataset.matching,e.dataset.placement,e.dataset.blocker,e.dataset.cellState]));
     const highlightsBeforePainting=await highlightView();
@@ -135,7 +134,9 @@ try {
     await page.screenshot({path:path.join(output,`painting-${theme}-${width}x${height}.png`)});
     await page.reload();await ready();assert.deepEqual((await read()).cell_colors,marked.cell_colors);
     assert.equal(await button('Laranja').getAttribute('aria-pressed'),'false');
-    await button('Drop').click();await page.getByRole('group',{name:'Números',exact:true}).getByRole('button',{name:'3',exact:true}).click();await fit();
+    assert.equal((await read()).drop_mode,true);
+    assert.equal((await read()).drop_number,5);
+    await number(3).click();await fit();
     await button('Verde').click();assert.equal(await button('Drop').getAttribute('aria-pressed'),'true');
     assert.equal(await number(3).getAttribute('aria-pressed'),'true');
     await button('Notas').click();assert.equal(await button('Verde').getAttribute('aria-pressed'),'false');
@@ -151,7 +152,7 @@ try {
     const completedSave={...(await read()),board:s.solution.map(v=>v===1?1:0),givens:s.solution.map(v=>v===1?1:0),notes:Array(81).fill(0),hinted:Array(81).fill(0)};
     await completedPage.evaluate(s=>localStorage.setItem('sudoku_state',JSON.stringify(s)),completedSave);
     await completedPage.reload();await completedPage.locator('#loading').waitFor({state:'detached'});
-    await completedPage.getByRole('button',{name:'Drop',exact:true}).click();
+    assert.equal((await completedPage.evaluate(()=>JSON.parse(localStorage.sudoku_state))).drop_mode,true);
     const completedDigit=completedPage.getByRole('group',{name:'Números',exact:true}).getByRole('button',{name:'1',exact:true});
     assert.equal(await completedDigit.isDisabled(),true);
     await completedPage.getByRole('button',{name:'Roxo',exact:true}).click();

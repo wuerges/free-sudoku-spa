@@ -62,12 +62,12 @@ try {
   await page.getByRole('button',{name:'Cancelar',exact:true}).click();assert.equal(await page.evaluate(()=>location.hash),'');assert.deepEqual((await read()).board,fixture.board);
   await page.goto(url+'/#sudoku=!!!');await page.getByText('Link de Sudoku inválido.',{exact:true}).waitFor();assert.deepEqual((await read()).board,fixture.board);await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>location.hash),'');
   // Initial-load import, retaining a distinct recipient preference and wiping history.
-  const recipient=await read();recipient.highlights.completed_contrast=37;recipient.board=[...recipient.givens];recipient.history=[{board:recipient.board,notes:recipient.notes,cell_colors:recipient.cell_colors}];
+  const recipient=await read();recipient.highlights.completed_contrast=37;recipient.note_mode=true;recipient.drop_mode=true;recipient.drop_number=3;recipient.paint_tool=2;recipient.board=[...recipient.givens];recipient.history=[{board:recipient.board,notes:recipient.notes,cell_colors:recipient.cell_colors}];
   await page.evaluate(s=>localStorage.setItem('sudoku_state',JSON.stringify(s)),recipient);
   await page.reload();await page.locator('#loading').waitFor({state:'detached'});
   await page.goto(url+'/#'+link.split('#')[1]);await page.reload();await page.getByRole('button',{name:'Carregar jogo',exact:true}).waitFor();await page.getByRole('button',{name:'Carregar jogo',exact:true}).click();
   await page.waitForFunction(()=>JSON.parse(localStorage.sudoku_state).history.length===0);
-  const imported=await read();assert.deepEqual(imported.board,fixture.board);assert.deepEqual(imported.notes,fixture.notes);assert.deepEqual(imported.cell_colors,fixture.cell_colors);assert.equal(imported.highlights.completed_contrast,37);assert.equal(imported.paused,true);assert.equal(imported.selected,null);assert.equal(imported.note_mode,false);assert.equal(await page.evaluate(()=>location.hash),'');
+  const imported=await read();assert.deepEqual(imported.board,fixture.board);assert.deepEqual(imported.notes,fixture.notes);assert.deepEqual(imported.cell_colors,fixture.cell_colors);assert.equal(imported.highlights.completed_contrast,37);assert.equal(imported.paused,true);assert.equal(imported.selected,null);assert.equal(imported.note_mode,true);assert.equal(imported.drop_mode,true);assert.equal(imported.drop_number,null);assert.equal(await page.evaluate(()=>location.hash),'');
   await page.evaluate(async()=>{await navigator.serviceWorker.ready});await page.reload();await page.locator('#loading').waitFor({state:'detached'});
   await context.setOffline(true);await page.reload();await page.locator('#loading').waitFor({state:'detached'});assert.deepEqual((await read()).board,fixture.board);assert.equal(await page.locator('#import-dialog').isVisible(),false);
   await page.getByRole('button',{name:'Retomar jogo',exact:true}).click();assert.equal((await read()).paused,false);
