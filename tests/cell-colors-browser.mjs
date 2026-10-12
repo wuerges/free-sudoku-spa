@@ -19,7 +19,7 @@ const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({headless:true, executablePath:process.env.CHROMIUM_PATH || undefined, args:['--no-sandbox']});
 try {
   for(const theme of ['light','dark']) for(const [width,height] of [[320,844],[384,700],[384,824],[412,915],[800,1280],[960,1280]]) {
-    const context=await browser.newContext({viewport:{width,height},colorScheme:theme});
+    const context=await browser.newContext({locale: 'pt-BR', viewport:{width,height},colorScheme:theme});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     const ready=async()=>{ await page.locator('.sudoku-cell').first().waitFor(); await page.locator('#loading').waitFor({state:'detached'}); };
@@ -145,7 +145,7 @@ try {
     assert.equal(await number(3).getAttribute('aria-pressed'),'true');
     await page.screenshot({path:path.join(output,`notes-${theme}-${width}x${height}.png`)});
     await button('Notas').click();
-    const completedContext=await browser.newContext({viewport:{width,height},colorScheme:theme,serviceWorkers:'block'});
+    const completedContext=await browser.newContext({locale: 'pt-BR', viewport:{width,height},colorScheme:theme,serviceWorkers:'block'});
     const completedPage=await completedContext.newPage();await completedPage.goto(url);await completedPage.locator('.sudoku-cell').first().waitFor();
     const completedSave={...(await read()),board:s.solution.map(v=>v===1?1:0),givens:s.solution.map(v=>v===1?1:0),notes:Array(81).fill(0),hinted:Array(81).fill(0)};
     await completedPage.evaluate(s=>localStorage.setItem('sudoku_state',JSON.stringify(s)),completedSave);

@@ -14,6 +14,7 @@
 | `src/game_history.rs` | Archive DTO and retention policy |
 | `src/state.rs` | Game state, user actions, undo/redo, hints, domino behavior, localStorage persistence, and state tests |
 | `src/serde_helpers.rs` | Serialization helpers for 81-element arrays |
+| `src/i18n.rs`, `locales/` | Reactive interface language and four complete translation catalogs |
 | `src/components/cell.rs` | Cell rendering and interaction |
 | `src/components/sudoku_grid.rs` | Board layout |
 | `src/components/number_pad.rs` | Number, delete, notes, and drop-mode controls |
@@ -74,7 +75,7 @@ dot when inspecting a Drop digit; errors and hints retain precedence.
 
 `placement_blocker` classifies blocked empty cells as selected or matching.
 Selected-source stripes win overlaps; a keypad digit with no selected matching
-occurrence classifies all blockers as matching. Source metadata and Portuguese accessible
+occurrence classifies all blockers as matching. Source metadata and localized accessible
 labels expose the distinction without persisting the classifications. The board has
 no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
 matching-source blockers.
@@ -228,7 +229,7 @@ editing values, cancels pending domino work, and rejects paused/won states.
 Same-color removal and clear-all use existing snapshots.
 
 The palette sits immediately after the digits. Cell exposes `data-color` and
-a Portuguese color description. Manual background colors override highlight
+a localized color description. Manual background colors override highlight
 fills, preserving selection/focus outlines, matching underlines, placement
 stripes/dots and error/hint text. There is no cell-edge marker. Theme tests cover
 board text, error/hint text, grid and selection contrast on each manual fill.
@@ -303,3 +304,30 @@ the current localStorage-backed state, and replacement captures the latest snaps
 The new bridge is precached with the app shell; generic SPA offline navigation
 also covers `/history`. APK staging retains the bridge and its separate WebView
 storage. Browser/device data retention remains a platform constraint.
+
+## Localization
+
+`locales/{en-US,es-AR,gn-PY,pt-BR}.json` supplies complete, named-message catalogs.
+`scripts/localization.mjs` validates keys and placeholders and generates a typed
+Rust `Message` enum and static tables into Cargo's `OUT_DIR` from `build.rs`.
+`src/i18n.rs` owns the reactive locale context, presentation labels and single-pass
+named interpolation. Game/engine enums and saved state remain language independent.
+History and sharing failures use message IDs; history notices carry a separate
+previous-game-saved flag and translate when rendered.
+
+Trunk's development and release post-build hooks prepend the same catalogs to
+`public/localization.js` in staging before offline asset hashing. The bootstrap
+resolves a valid saved `sudoku_locale`, otherwise the first supported browser
+preference (regional/base language matching), otherwise English. It persists the
+resolved choice immediately and localizes the loading screen and document title
+before WASM mounts. Rust reads that choice through the typed JavaScript bridge;
+language buttons update both the bridge/storage and the reactive signal.
+Storage failure feedback is session-local. No locale enters game saves, IndexedDB
+archives or shared-link payloads; resets and replacements preserve language.
+
+Every language is available offline without runtime translation downloads. APK
+staging carries the generated bootstrap with the web assets. Country flags are
+decorative beside native language names; locale buttons expose pressed states and
+language tags. Guarani dates fall back to `es-PY` when `Intl` lacks `gn-PY`.
+`tests/localization.test.mjs` checks catalogs, resolver/persistence, notices and
+bundle/APK staging; `tests/localization-browser.mjs` audits production flows.

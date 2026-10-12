@@ -1,3 +1,4 @@
+use crate::i18n::Message;
 // ponytail: single RwSignal<GameState>. ceiling: 81 cells re-render on any change. upgrade: per-cell signals if frame drops on low-end devices.
 
 use crate::game_history::{evictions, HistoryEntry};
@@ -201,16 +202,6 @@ impl Default for GameState {
             history: Vec::new(),
             redo_stack: Vec::new(),
         }
-    }
-}
-
-pub fn color_name(color: u8) -> &'static str {
-    match color {
-        1 => "Verde",
-        2 => "Roxo",
-        3 => "Rosa",
-        4 => "Laranja",
-        _ => "Sem cor",
     }
 }
 
@@ -1036,7 +1027,7 @@ pub struct GameHistory {
     pub entries: RwSignal<Vec<HistoryEntry>>,
     pub ready: RwSignal<bool>,
     pub busy: RwSignal<bool>,
-    pub error: RwSignal<String>,
+    pub error: RwSignal<Option<crate::i18n::Notice>>,
 }
 impl GameHistory {
     pub fn new(state: AppState) -> Self {
@@ -1044,36 +1035,35 @@ impl GameHistory {
             entries: RwSignal::new(Vec::new()),
             ready: RwSignal::new(false),
             busy: RwSignal::new(false),
-            error: RwSignal::new(String::new()),
+            error: RwSignal::new(None),
         };
         value.refresh(state);
         value
     }
-    async fn read(&self) -> Result<Vec<HistoryEntry>, &'static str> {
+    async fn read(&self) -> Result<Vec<HistoryEntry>, Message> {
         let result = store_list()
             .await
-            .map_err(|_| "Não foi possível acessar o histórico. Seu jogo atual foi mantido.")?;
-        let json = result.as_string().ok_or("Histórico inválido.")?;
+            .map_err(|_| Message::HistoryAccessFailed)?;
+        let json = result.as_string().ok_or(Message::InvalidHistory)?;
         let values: Vec<serde_json::Value> =
-            serde_json::from_str(&json).map_err(|_| "Histórico inválido.")?;
+            serde_json::from_str(&json).map_err(|_| Message::InvalidHistory)?;
         let mut entries = Vec::new();
         for value in values {
             match serde_json::from_value::<HistoryEntry>(value) {
-                Ok(entry) if entry.valid()=>entries.push(entry),
-                _=>self.error.set("Alguns jogos do histórico estão inválidos e foram preservados no armazenamento.".into()),
+                Ok(entry) if entry.valid() => entries.push(entry),
+                _ => self.error.set(Some(Message::InvalidHistoryRecords.into())),
             }
         }
         Ok(entries)
     }
-    async fn save_entry(entry: &HistoryEntry, activate: bool) -> Result<(), &'static str> {
-        let json =
-            serde_json::to_string(entry).map_err(|_| "Não foi possível salvar no histórico.")?;
+    async fn save_entry(entry: &HistoryEntry, activate: bool) -> Result<(), Message> {
+        let json = serde_json::to_string(entry).map_err(|_| Message::HistorySerializeFailed)?;
         store_save(&json, activate)
             .await
-            .map_err(|_| "Não foi possível salvar no histórico. Seu jogo atual foi mantido.")?;
+            .map_err(|_| Message::HistorySaveFailed)?;
         Ok(())
     }
-    async fn cleanup(&self, state: AppState) -> Result<(), &'static str> {
+    async fn cleanup(&self, state: AppState) -> Result<(), Message> {
         let entries = self.read().await?;
         self.entries.set(entries.clone());
         let active = state.0.get_untracked().game_id;
@@ -1084,7 +1074,9 @@ impl GameHistory {
                 .filter(|e| ids.contains(&e.id))
                 .map(|e| serde_json::json!({"id":e.id,"order":e.order}))
                 .collect();
-            store_prune(&serde_json::to_string(&candidates).unwrap(),&active).await.map_err(|_|"Não foi possível limitar o histórico. Os jogos extras foram mantidos; tente abrir o histórico novamente.")?;
+            store_prune(&serde_json::to_string(&candidates).unwrap(), &active)
+                .await
+                .map_err(|_| Message::HistoryCleanupFailed)?;
         }
         self.entries.set(self.read().await?);
         Ok(())
@@ -1094,7 +1086,7 @@ impl GameHistory {
             return;
         }
         self.busy.set(true);
-        self.error.set(String::new());
+        self.error.set(None);
         leptos::task::spawn_local(async move {
             let result = async {
                 Self::save_entry(&HistoryEntry::capture(&state.0.get_untracked()), false).await?;
@@ -1103,7 +1095,7 @@ impl GameHistory {
             }
             .await;
             if let Err(error) = result {
-                self.error.set(error.into());
+                self.error.set(Some(error.into()));
             }
             self.busy.set(false);
         });
@@ -1127,8 +1119,7 @@ impl GameHistory {
         done: impl FnOnce(bool) + 'static,
     ) {
         if !entry.valid() {
-            self.error
-                .set("Este jogo do histórico está inválido.".into());
+            self.error.set(Some(Message::InvalidHistoryGame.into()));
             done(false);
             return;
         }
@@ -1149,16 +1140,13 @@ impl GameHistory {
         done: impl FnOnce(bool) + 'static,
     ) {
         if self.busy.get_untracked() || !self.ready.get_untracked() {
-            self.error.set(
-                "Aguarde o histórico ou tente abrir Histórico novamente antes de trocar o jogo."
-                    .into(),
-            );
+            self.error.set(Some(Message::HistoryNotReady.into()));
             done(false);
             return;
         }
         let outgoing = state.0.get_untracked();
         self.busy.set(true);
-        self.error.set(String::new());
+        self.error.set(None);
         state.0.update(|s| s.freeze_for_replacement());
         leptos::task::spawn_local(async move {
             let saved = async {
@@ -1171,7 +1159,7 @@ impl GameHistory {
             .await;
             if let Err(error) = saved.and_then(|_| try_save_state(&candidate)) {
                 state.0.update(|s| s.paused = outgoing.paused);
-                self.error.set(error.into());
+                self.error.set(Some(error.into()));
                 self.busy.set(false);
                 done(false);
                 return;
@@ -1186,9 +1174,10 @@ impl GameHistory {
             }
             .await;
             if let Err(error) = result {
-                self.error.set(format!(
-                    "{error} O jogo anterior está salvo; abra Histórico para tentar novamente."
-                ));
+                self.error.set(Some(crate::i18n::Notice {
+                    message: error,
+                    previous_saved: true,
+                }));
             }
             self.busy.set(false);
             done(true);
@@ -1199,7 +1188,7 @@ impl GameHistory {
             return;
         }
         self.busy.set(true);
-        self.error.set(String::new());
+        self.error.set(None);
         leptos::task::spawn_local(async move {
             let result = async {
                 if id == state.0.get_untracked().game_id {
@@ -1208,12 +1197,12 @@ impl GameHistory {
                 }
                 store_pin(&id, pinned)
                     .await
-                    .map_err(|_| "Não foi possível alterar a fixação. Nenhum jogo foi removido.")?;
+                    .map_err(|_| Message::PinFailed)?;
                 self.cleanup(state).await
             }
             .await;
             if let Err(error) = result {
-                self.error.set(error.into());
+                self.error.set(Some(error.into()));
             }
             self.busy.set(false);
             set_timeout(
@@ -2467,16 +2456,16 @@ mod tests {
     }
 }
 
-pub fn try_save_state(state: &GameState) -> Result<(), &'static str> {
+pub fn try_save_state(state: &GameState) -> Result<(), Message> {
     #[cfg(target_arch = "wasm32")]
     {
         let storage = web_sys::window()
             .and_then(|w| w.local_storage().ok().flatten())
-            .ok_or("Não foi possível salvar o jogo. Seu jogo atual foi mantido.")?;
-        let json = serde_json::to_string(state).map_err(|_| "Não foi possível salvar o jogo.")?;
+            .ok_or(Message::SaveFailedKept)?;
+        let json = serde_json::to_string(state).map_err(|_| Message::SaveFailed)?;
         storage
             .set_item("sudoku_state", &json)
-            .map_err(|_| "Não foi possível salvar o jogo. Seu jogo atual foi mantido.")?;
+            .map_err(|_| Message::SaveFailedKept)?;
     }
     #[cfg(not(target_arch = "wasm32"))]
     let _ = state;

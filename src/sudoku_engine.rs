@@ -51,20 +51,6 @@ impl Technique {
             Self::XChain => Difficulty::Master,
         }
     }
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::NakedSingle => "Candidato único",
-            Self::HiddenSingle => "Único na unidade",
-            Self::LockedCandidates => "Candidatos bloqueados",
-            Self::NakedSubset => "Pares/trios nus",
-            Self::HiddenSubset => "Pares/trios ocultos",
-            Self::XWing => "X-Wing",
-            Self::XYWing => "XY-Wing",
-            Self::SimpleColoring => "Coloração simples",
-            Self::ShortChain => "Cadeia curta",
-            Self::XChain => "Cadeia alternada",
-        }
-    }
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rating {

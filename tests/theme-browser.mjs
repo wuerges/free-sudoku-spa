@@ -20,7 +20,7 @@ const browser = await chromium.launch({headless:true, executablePath:process.env
 try {
   let sharedFixture;
   for (const theme of ['light','dark']) {
-    const context = await browser.newContext({viewport:{width:390,height:844},colorScheme:theme,serviceWorkers:'block'});
+    const context = await browser.newContext({locale: 'pt-BR', viewport:{width:390,height:844},colorScheme:theme,serviceWorkers:'block'});
     const page = await context.newPage();
     const errors=[]; page.on('pageerror',e=>errors.push(e.message));
     await page.goto(url); await page.locator('.sudoku-cell').first().waitFor();

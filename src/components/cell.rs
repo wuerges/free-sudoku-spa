@@ -1,8 +1,10 @@
-use crate::state::{color_name, AppState};
+use crate::i18n::{use_i18n, Message};
+use crate::state::AppState;
 use leptos::prelude::*;
 
 #[component]
 pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
+    let i18n = use_i18n();
     let value = move || state.0.get().get(row, col);
     let selected = move || state.0.get().selected == Some((row, col));
     let given = move || state.0.get().is_given(row, col);
@@ -85,22 +87,29 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             data-blocker=move || blocker().unwrap_or("none")
             data-number-origin=origin
             aria-pressed=move || selected().to_string()
-            aria-label=move || format!(
-                "Linha {}, coluna {}, {}{}{}{}{}",
-                row + 1, col + 1,
-                if value() == 0 { "vazia".to_string() } else { format!("número {}", value()) },
-                match origin() { "given" => ", número original", "hint" => ", dica", _ => "" },
-                if error() { ", erro ou conflito" } else { "" },
-                match placement() {
-                    Some(true) => state.0.get().active_number().map_or_else(|| ", fora da linha, coluna e bloco selecionados".to_string(), |n| format!(", disponível para {n} pelas regras")),
-                    Some(false) => state.0.get().active_number().map_or_else(|| ", na linha, coluna ou bloco selecionado".to_string(), |n| format!(", bloqueada para {n} pelas regras, {}",
-                        if blocker() == Some("selected") { "pela célula selecionada" } else { "por outro número igual" })),
+            aria-label=move || {
+                let placement = match placement() {
+                    Some(true) => state.0.get().active_number().map_or_else(
+                        || i18n.text(Message::OutsideUnits).to_string(),
+                        |n| i18n.format(Message::AvailableFor, &[("number", n.to_string())])),
+                    Some(false) => state.0.get().active_number().map_or_else(
+                        || i18n.text(Message::InsideUnits).to_string(),
+                        |n| i18n.format(Message::BlockedFor, &[("number", n.to_string()),
+                            ("source", i18n.text(if blocker() == Some("selected") { Message::SelectedBlocker } else { Message::MatchingBlocker }).into())])),
                     None => String::new(),
-                },
-                match state.0.get().cell_colors[row * 9 + col] {
-                    0 => String::new(), color => format!(", cor {}", color_name(color).to_lowercase()),
-                },
-            )
+                };
+                let color = state.0.get().cell_colors[row * 9 + col];
+                i18n.format(Message::CellLabel, &[
+                    ("row", (row + 1).to_string()), ("column", (col + 1).to_string()),
+                    ("value", if value() == 0 { i18n.text(Message::Empty).into() }
+                        else { i18n.format(Message::CellNumber, &[("number", value().to_string())]) }),
+                    ("origin", match origin() { "given" => i18n.text(Message::OriginalNumber),
+                        "hint" => i18n.text(Message::HintCell), _ => "" }.into()),
+                    ("error", if error() { i18n.text(Message::ErrorCell) } else { "" }.into()),
+                    ("placement", placement),
+                    ("color", if color == 0 { String::new() } else { i18n.format(Message::CellColor, &[("color", i18n.color(color).to_lowercase())]) }),
+                ])
+            }
             on:click=move |_| state.select_cell(row, col)
             style="min-width: 0; min-height: 0;"
         >

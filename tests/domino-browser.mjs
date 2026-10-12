@@ -20,7 +20,7 @@ let browser;
 try {
   browser = await chromium.launch({ headless:true, executablePath:process.env.CHROMIUM_PATH || undefined, args:['--no-sandbox'] });
   for (const width of [390, 1280]) {
-    const context = await browser.newContext({ viewport:{width, height:width===390?844:900}, serviceWorkers:'block' });
+    const context = await browser.newContext({locale: 'pt-BR',  viewport:{width, height:width===390?844:900}, serviceWorkers:'block' });
     const page = await context.newPage();
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     const read = () => page.evaluate(() => JSON.parse(localStorage.getItem('sudoku_state')));

@@ -1,6 +1,7 @@
 mod app;
 mod components;
 mod game_history;
+mod i18n;
 mod serde_helpers;
 mod sharing;
 mod state;

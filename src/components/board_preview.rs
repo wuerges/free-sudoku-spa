@@ -1,11 +1,13 @@
+use crate::i18n::{use_i18n, Message};
 use crate::sharing::SharedGame;
 use leptos::prelude::*;
 
 #[component]
 pub fn BoardPreview(game: SharedGame, #[prop(default = false)] miniature: bool) -> impl IntoView {
+    let i18n = use_i18n();
     view! {
         <div class=if miniature {"share-preview history-miniature"} else {"share-preview"}
-            role="img" aria-label="Prévia do Sudoku">
+            role="img" aria-label=move || i18n.text(Message::Preview)>
             {game.board.into_iter().enumerate().map(|(i,n)|view! {
                 <span class="share-preview-cell" data-color=game.colors[i]
                     data-given=(game.givens[i]!=0).to_string()

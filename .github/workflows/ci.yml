@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '24'
       - run: sh scripts/setup-build.sh
-      - run: npm run test:build && npm run test:dev && npm run test:theme && npm run test:release
+      - run: npm run test:i18n && npm run test:build && npm run test:dev && npm run test:theme && npm run test:release
       - run: |
           export SUDOKU_PROJECT_ROOT="$GITHUB_WORKSPACE"
           . scripts/build-env.sh

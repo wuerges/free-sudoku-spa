@@ -1,4 +1,5 @@
 //! Untrusted, versioned link format, independent from local save serialization.
+use crate::i18n::Message;
 use crate::{
     serde_helpers::{u16_81, u8_81},
     state::GameState,
@@ -67,9 +68,9 @@ impl SharedGame {
         game
     }
 
-    pub fn validate(&self) -> Result<(), &'static str> {
+    pub fn validate(&self) -> Result<(), Message> {
         if self.v != 1 {
-            return Err("Versão de compartilhamento não suportada.");
+            return Err(Message::UnsupportedShareVersion);
         }
         for i in 0..81 {
             let n = self.solution[i];
@@ -83,28 +84,28 @@ impl SharedGame {
                 || (self.givens[i] != 0 && (self.givens[i] != n || self.board[i] != n))
                 || (self.hinted[i] != 0 && self.board[i] != n)
             {
-                return Err("O link contém um Sudoku inválido.");
+                return Err(Message::InvalidSudoku);
             }
         }
         Ok(())
     }
-    pub fn link(&self) -> Result<String, &'static str> {
+    pub fn link(&self) -> Result<String, Message> {
         self.validate()?;
         let payload = URL_SAFE_NO_PAD
-            .encode(serde_json::to_vec(self).map_err(|_| "Não foi possível gerar o link.")?);
+            .encode(serde_json::to_vec(self).map_err(|_| Message::GenerateLinkFailed)?);
         if payload.len() > MAX_PAYLOAD {
-            return Err("O link é grande demais.");
+            return Err(Message::LinkTooLarge);
         }
         Ok(format!("{PUBLIC_URL}/#sudoku={payload}"))
     }
-    pub fn decode(payload: &str) -> Result<Self, &'static str> {
+    pub fn decode(payload: &str) -> Result<Self, Message> {
         if payload.len() > MAX_PAYLOAD {
-            return Err("O link é grande demais.");
+            return Err(Message::LinkTooLarge);
         }
         let bytes = URL_SAFE_NO_PAD
             .decode(payload)
-            .map_err(|_| "Link de Sudoku inválido.")?;
-        let game: Self = serde_json::from_slice(&bytes).map_err(|_| "Link de Sudoku inválido.")?;
+            .map_err(|_| Message::InvalidLink)?;
+        let game: Self = serde_json::from_slice(&bytes).map_err(|_| Message::InvalidLink)?;
         game.validate()?;
         Ok(game)
     }

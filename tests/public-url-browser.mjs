@@ -24,7 +24,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try {
   for(const isNative of [false,true]) {
     directory=isNative?native:source;
-    const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+    const context=await browser.newContext({locale: 'pt-BR', viewport:{width:390,height:844},serviceWorkers:'block'});
     const page=await context.newPage();
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.locator('#loading').waitFor({state:'detached'});

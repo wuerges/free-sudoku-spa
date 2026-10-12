@@ -1,3 +1,4 @@
+use crate::i18n::{use_i18n, Message};
 use crate::{sharing::SharedGame, state::AppState};
 use leptos::prelude::*;
 
@@ -12,12 +13,13 @@ pub struct ShareUi(pub RwSignal<bool>);
 
 #[component]
 pub fn ShareDialogs(state: AppState) -> impl IntoView {
+    let i18n = use_i18n();
     let history = expect_context::<crate::state::GameHistory>();
     let sharing = expect_context::<ShareUi>().0;
     let initial = RwSignal::new(false);
     let url = RwSignal::new(String::new());
-    let error = RwSignal::new(String::new());
-    let generation_error = RwSignal::new(String::new());
+    let error = RwSignal::new(None::<Message>);
+    let generation_error = RwSignal::new(None::<Message>);
     let incoming = RwSignal::new(None::<SharedGame>);
     let import_initial = RwSignal::new(false);
     let preview = move || {
@@ -39,11 +41,11 @@ pub fn ShareDialogs(state: AppState) -> impl IntoView {
             match SharedGame::decode(payload) {
                 Ok(game) => {
                     incoming.set(Some(game));
-                    error.set(String::new());
+                    error.set(None);
                 }
                 Err(message) => {
                     incoming.set(None);
-                    error.set(message.into());
+                    error.set(Some(message));
                 }
             }
             run("document.getElementById('import-dialog').showModal()");
@@ -53,15 +55,15 @@ pub fn ShareDialogs(state: AppState) -> impl IntoView {
     set_timeout(inspect, std::time::Duration::ZERO);
     window_event_listener(leptos::ev::hashchange, move |_| inspect());
     let generate = move |initial_mode: bool| {
-        run("document.getElementById('share-status').textContent=''");
+        run("window.__sudokuI18n.shareStatus('')");
         match SharedGame::capture(&state.0.get_untracked(), initial_mode).link() {
             Ok(link) => {
                 url.set(link);
-                generation_error.set(String::new());
+                generation_error.set(None);
             }
             Err(message) => {
                 url.set(String::new());
-                generation_error.set(message.into());
+                generation_error.set(Some(message));
             }
         }
     };
@@ -83,46 +85,46 @@ pub fn ShareDialogs(state: AppState) -> impl IntoView {
     };
     view! {
         <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title" on:cancel=move |_: web_sys::Event| sharing.set(false)>
-            <h2 id="share-title">"Compartilhar Sudoku"</h2>
-            <p>"O link inclui o Sudoku e sua solução, sem suas configurações."</p>
-            <label><input type="radio" name="share-mode" prop:checked=move || !initial.get() on:change=move |_| {initial.set(false); generate(false);}/>" Estado atual"</label>
-            <label><input type="radio" name="share-mode" prop:checked=move || initial.get() on:change=move |_| {initial.set(true); generate(true);}/>" Sudoku inicial"</label>
+            <h2 id="share-title">{move || i18n.text(Message::ShareSudoku)}</h2>
+            <p>{move || i18n.text(Message::ShareIntro)}</p>
+            <label><input type="radio" name="share-mode" prop:checked=move || !initial.get() on:change=move |_| {initial.set(false); generate(false);}/>{move || i18n.text(Message::CurrentState)}</label>
+            <label><input type="radio" name="share-mode" prop:checked=move || initial.get() on:change=move |_| {initial.set(true); generate(true);}/>{move || i18n.text(Message::InitialSudoku)}</label>
             <Show when=move || !url.get().is_empty()>
-                <label for="share-url">"Link gerado"</label>
+                <label for="share-url">{move || i18n.text(Message::GeneratedLink)}</label>
                 <textarea id="share-url" readonly prop:value=move || url.get() rows="4"></textarea>
-                <button class="ui-action" on:click=move |_| run("window.__sudoku.copyShare()")>"Copiar link"</button>
+                <button class="ui-action" on:click=move |_| run("window.__sudoku.copyShare()")>{move || i18n.text(Message::CopyLink)}</button>
                 <Show when=move || js_sys::eval("typeof navigator.share==='function'").ok().and_then(|v|v.as_bool()).unwrap_or(false)>
-                    <button class="ui-action" on:click=move |_| run("window.__sudoku.sendShare()")>"Compartilhar link"</button>
+                    <button class="ui-action" on:click=move |_| run("window.__sudoku.sendShare()")>{move || i18n.text(Message::ShareLink)}</button>
                 </Show>
             </Show>
-            <p role="alert">{move || generation_error.get()}</p>
+            <p role="alert">{move || generation_error.get().map(|message| i18n.text(message)).unwrap_or_default()}</p>
             <p id="share-status" role="status"></p>
-            <button class="ui-action" on:click=move |_| close_share()>"Fechar"</button>
+            <button class="ui-action" on:click=move |_| close_share()>{move || i18n.text(Message::Close)}</button>
         </dialog>
         <dialog id="import-dialog" class="share-dialog" aria-labelledby="import-title" on:cancel=move |_: web_sys::Event| {incoming.set(None); clear_fragment();}>
-            <h2 id="import-title">"Sudoku compartilhado"</h2>
-            <p role="alert">{move || error.get()}</p>
+            <h2 id="import-title">{move || i18n.text(Message::SharedSudoku)}</h2>
+            <p role="alert">{move || error.get().map(|message| i18n.text(message)).unwrap_or_default()}</p>
             <Show when=move || incoming.get().is_some()>
                 <fieldset>
-                    <legend>"Como deseja começar?"</legend>
-                    <label><input type="radio" name="import-mode" prop:checked=move || !import_initial.get() on:change=move |_| import_initial.set(false)/>" Estado atual"</label>
-                    <label><input type="radio" name="import-mode" prop:checked=move || import_initial.get() on:change=move |_| import_initial.set(true)/>" Sudoku inicial"</label>
+                    <legend>{move || i18n.text(Message::HowStart)}</legend>
+                    <label><input type="radio" name="import-mode" prop:checked=move || !import_initial.get() on:change=move |_| import_initial.set(false)/>{move || i18n.text(Message::CurrentState)}</label>
+                    <label><input type="radio" name="import-mode" prop:checked=move || import_initial.get() on:change=move |_| import_initial.set(true)/>{move || i18n.text(Message::InitialSudoku)}</label>
                 </fieldset>
             </Show>
-            <Show when=move || incoming.get().is_some() && !history.error.get().is_empty()>
-                <p role="alert">{move ||history.error.get()}</p>
-                <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_|history.refresh(state)>"Tentar novamente"</button>
+            <Show when=move || incoming.get().is_some() && history.error.get().is_some()>
+                <p role="alert">{move ||i18n.notice(history.error.get())}</p>
+                <button class="ui-action" disabled=move ||history.busy.get() on:click=move |_|history.refresh(state)>{move || i18n.text(Message::TryAgain)}</button>
             </Show>
             {move || preview().map(|game| {
-                let difficulty=match game.difficulty {crate::sudoku_engine::Difficulty::Easy=>"Fácil",crate::sudoku_engine::Difficulty::Medium=>"Médio",crate::sudoku_engine::Difficulty::Hard=>"Difícil",crate::sudoku_engine::Difficulty::Expert=>"Expert",crate::sudoku_engine::Difficulty::Master=>"Mestre"};
+                let difficulty=i18n.difficulty(game.difficulty);
                 view! {
-                    <p>{format!("{} · Tempo: {}min {}s · Erros: {}{}",difficulty,game.seconds/60,game.seconds%60,game.errors,if game.board==game.solution {" · Concluído"}else{""})}</p>
+                    <p>{i18n.format(Message::ImportSummary, &[("difficulty", difficulty.into()), ("minutes", (game.seconds/60).to_string()), ("seconds", (game.seconds%60).to_string()), ("errors", game.errors.to_string()), ("completed", if game.board==game.solution { i18n.text(Message::CompletedSuffix).into() } else { String::new() })])}</p>
                     <crate::components::board_preview::BoardPreview game=game/>
-                    <p>"Seu jogo atual será guardado no histórico. Suas configurações serão mantidas. O jogo começa pausado."</p>
-                    <button class="ui-action" disabled=move || history.busy.get() || !history.ready.get() on:click=move |_| {if let Some(game)=incoming.get_untracked() {let selected=if import_initial.get_untracked() {game.initial_position()} else {game}; history.import(state,selected,move |success|if success {close_import();});}}>"Carregar jogo"</button>
+                    <p>{move || i18n.text(Message::ImportIntro)}</p>
+                    <button class="ui-action" disabled=move || history.busy.get() || !history.ready.get() on:click=move |_| {if let Some(game)=incoming.get_untracked() {let selected=if import_initial.get_untracked() {game.initial_position()} else {game}; history.import(state,selected,move |success|if success {close_import();});}}>{move || i18n.text(Message::LoadGame)}</button>
                 }
             })}
-            <button class="ui-action" on:click=move |_| close_import()>"Cancelar"</button>
+            <button class="ui-action" on:click=move |_| close_import()>{move || i18n.text(Message::Cancel)}</button>
         </dialog>
     }
 }

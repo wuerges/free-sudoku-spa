@@ -7,7 +7,7 @@ const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
 const mime = {'.html':'text/html','.js':'application/javascript','.wasm':'application/wasm','.css':'text/css','.png':'image/png','.json':'application/json'};
 try {
   for (const viewport of [{width:390,height:844},{width:800,height:1280}]) {
-    const context = await browser.newContext({viewport,offline:true});
+    const context = await browser.newContext({locale: 'pt-BR', viewport,offline:true});
     // Intercept the stable local origin exactly as the native asset server does.
     await context.route('https://localhost/**', async route => {
       const pathname = new URL(route.request().url()).pathname;

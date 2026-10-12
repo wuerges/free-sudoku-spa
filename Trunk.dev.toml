@@ -5,7 +5,7 @@ release = false
 filehash = true
 
 [watch]
-watch = ["src", "build.rs", "scripts/public-url.mjs", "style/input.css", "index.html", "manifest.json", "public", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Trunk.dev.toml", "scripts/dev-bundle.mjs", "scripts/dev-worker.js"]
+watch = ["locales", "scripts/localization.mjs", "src", "build.rs", "scripts/public-url.mjs", "style/input.css", "index.html", "manifest.json", "public", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Trunk.dev.toml", "scripts/dev-bundle.mjs", "scripts/dev-worker.js"]
 
 [[hooks]]
 stage = "pre_build"

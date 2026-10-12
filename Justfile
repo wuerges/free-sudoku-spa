@@ -41,6 +41,7 @@ test:
 
 # Validate build/dev scripts, offline caching, contrast and release policy
 test-tooling:
+    npm run test:i18n
     npm run test:build
     npm run test:dev
     npm run test:offline

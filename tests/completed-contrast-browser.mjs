@@ -19,7 +19,7 @@ const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({headless:true, executablePath:process.env.CHROMIUM_PATH || undefined, args:['--no-sandbox']});
 try {
   for (const theme of ['light','dark']) for (const width of [320,800]) {
-    const context = await browser.newContext({viewport:{width,height:width===320?844:1280},colorScheme:theme,serviceWorkers:'block'});
+    const context = await browser.newContext({locale: 'pt-BR', viewport:{width,height:width===320?844:1280},colorScheme:theme,serviceWorkers:'block'});
     const page = await context.newPage(), errors=[];
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(url);
