@@ -116,6 +116,10 @@ mod tests {
         let mut local = GameState::default();
         local.highlights.completed_contrast = 37;
         local.undo_enabled = false;
+        local.note_mode = true;
+        local.drop_mode = true;
+        local.drop_number = Some(3);
+        local.paint_tool = Some(2);
         let resume = entry.restore(&local, false);
         assert_eq!(resume.game_id, source.game_id);
         assert_eq!(resume.timer_seconds, 321);
@@ -131,6 +135,11 @@ mod tests {
         assert_eq!(initial.timer_seconds, 0);
         assert!(initial.history.is_empty() && initial.redo_stack.is_empty());
         assert_eq!(entry.game.seconds, 321);
+        for restored in [resume, initial] {
+            assert!(restored.note_mode && restored.drop_mode);
+            assert_eq!(restored.drop_number, None);
+            assert_eq!(restored.paint_tool, None);
+        }
     }
     #[test]
     fn legacy_save_accepts_missing_identity_and_completed_archives_do_not_celebrate() {

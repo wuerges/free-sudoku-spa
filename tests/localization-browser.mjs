@@ -47,11 +47,15 @@ try {
     const index=fixture.board.findIndex(value=>value===0);
     const cell=page.locator(`[data-row="${Math.floor(index/9)}"][data-col="${index%9}"]`);
     await cell.click();
+    await cell.click();
+    assert.equal((await read(page)).selected,null);
+    assert.equal(await page.locator('[data-selected="true"],[data-matching="true"],[data-placement="available"],[data-placement="blocked"]').count(),0);
+    await cell.click();
     await page.getByRole('button',{name:String(fixture.solution[index]),exact:true}).click();
     await page.getByRole('button',{name:catalogs[locale].Green,exact:true}).click();
+    assert.equal(await page.getByRole('button',{name:catalogs[locale].Notes,exact:true}).getAttribute('aria-pressed'),'true');
     const next=fixture.board.findIndex((value,i)=>value===0 && i!==index);
     await page.locator(`[data-row="${Math.floor(next/9)}"][data-col="${next%9}"]`).click();
-    await page.getByRole('button',{name:catalogs[locale].Notes,exact:true}).click();
     await page.getByRole('button',{name:'1',exact:true}).click();
     await page.getByRole('button',{name:catalogs[locale].Notes,exact:true}).click();
     const before=progress(await read(page));
@@ -76,9 +80,37 @@ try {
     await redo.click();
     assert.deepEqual((await read(page)).cell_colors,Array(81).fill(0));
     await undo.click();
+    const notesButton=page.locator('.notes-action');
+    const assertNotesWidth=async()=>{
+      const notes=await notesButton.boundingBox();
+      for(const box of await page.locator('.entry-actions > button:not(.notes-action),.actions-trigger').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().toJSON()))) {
+        assert.ok(Math.abs(notes.width-1.5*box.width)<1,'Notes is 50% wider');
+        assert.ok(Math.abs(notes.height-box.height)<1,'same row height');
+        assert.ok(box.width>=44 && box.height>=44,'touch target');
+      }
+    };
+    await assertNotesWidth();
+    const dropButton=page.getByRole('button',{name:catalogs[locale].Drop,exact:true});
+    await dropButton.click();
+    await page.getByRole('button',{name:'1',exact:true}).click();
+    await page.getByRole('button',{name:catalogs[locale].Green,exact:true}).click();
+    await notesButton.click();
+    assert.equal(await notesButton.getAttribute('aria-pressed'),'true');
+    assert.equal(await page.getByRole('button',{name:catalogs[locale].Green,exact:true}).getAttribute('aria-pressed'),'false');
+    const unfilled=await read(page);
+    await page.locator(`[data-row="${Math.floor(next/9)}"][data-col="${next%9}"]`).click();
+    assert.deepEqual((await read(page)).board,unfilled.board,'leaving color does not place a number');
+    await undo.click();
+    await page.reload();await mounted(page);
+    const restored=await read(page);
+    assert.equal(restored.drop_mode,true);assert.equal(restored.drop_number,1);assert.equal(restored.note_mode,true);assert.equal(restored.selected,null);
+    await dropButton.click();
+    assert.equal((await read(page)).selected,null);
+    assert.equal(await page.locator('[data-selected="true"],[data-matching="true"],[data-placement="available"],[data-placement="blocked"]').count(),0);
+    await assertNotesWidth();
     // Capture the restored game's history, including the redo of clear colors.
     Object.assign(before,progress(await read(page)));
-    await page.screenshot({path:path.join(screenshots,`${locale}-${theme}-${width}-game.png`),fullPage:true});
+    await page.screenshot({path:path.join(screenshots,`${locale}-${theme}-${width}-game.png`),fullPage:true,animations:'disabled'});
     assert.ok((await page.locator('.sudoku-cell').first().getAttribute('aria-label')).startsWith(catalogs[locale].CellLabel.split('{')[0]));
     await fit(page,`${locale}/${theme}/${width}/game`);
     await page.getByRole('button',{name:catalogs[locale].Actions,exact:true}).click();

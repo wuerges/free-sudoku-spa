@@ -14,13 +14,13 @@ The repository contains:
 
 - A 9×9 board with five localized difficulty levels: Easy, Medium, Hard, Expert, and Master.
 - A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
-- A button-based number pad, pencil notes, drop mode, conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
+- A button-based number pad, pencil notes, saved Drop configuration with Drop only, No Drop and Both (the default), conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
 - Optional domino cascades with saved timing and empty-cell activation settings, plus sound settings. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
 - Self-contained current/initial Sudoku links with validated import preview, recipient settings preserved and a generic social preview image.
 - Local game history with miniature boards, ten unpinned past games plus the active game and unlimited pins, guarded link/new-game replacement and resume/separate-restart choices. Archives use IndexedDB; preferences and older active saves remain compatible.
 - Game-state serialization to the `sudoku_state` localStorage key.
-- Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop edits preserve the highlight anchor and painting keeps an independently selected highlight digit. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
+- Manual green, purple, pink and orange cell marks are saved with undo/redo, tap-again removal and clear-all. Colors follow selection-first or Drop targeting; Drop highlights follow only its selected digit; normal selection can be cleared with a second tap. Coloring enables Notes, and exiting painting retains Notes for safe entry. The palette sits below equally sized digit buttons; a compact header and collapsible action panel leave more space for larger phone/tablet boards.
 - Completed keypad digits have shading, outlines and checkmarks, with a saved 0–100% contrast slider (default 100%). Completion counts nine correct occurrences; selected Drop styling and Drop notes remain available. Browser regressions cover phone/tablet layouts, slider changes, older saves, reloads, new games and reset in both themes.
 - Four bundled interface languages with a saved browser-selected initial language, English fallback, country-flag choices, localized accessibility labels and offline switching. Native-speaker translation review remains open.
 - A manifest, icons, installation-prompt bridge, and service worker.

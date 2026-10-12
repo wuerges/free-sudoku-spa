@@ -6,7 +6,10 @@ use leptos::prelude::*;
 pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
     let i18n = use_i18n();
     let value = move || state.0.get().get(row, col);
-    let selected = move || state.0.get().selected == Some((row, col));
+    let selected = move || {
+        let s = state.0.get();
+        !s.drop_mode && s.selected == Some((row, col))
+    };
     let given = move || state.0.get().is_given(row, col);
     let hinted = move || state.0.get().is_hinted(row, col);
     let error = move || {
@@ -18,19 +21,19 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
     };
     let matching = move || {
         let s = state.0.get();
-        s.active_number()
-            .is_some_and(|n| s.selected != Some((row, col)) && s.get(row, col) == n)
+        s.active_number().is_some_and(|n| {
+            (s.drop_mode || s.selected != Some((row, col))) && s.get(row, col) == n
+        })
     };
     let placement = move || state.0.get().placement_available(row, col);
     let blocker = move || state.0.get().placement_blocker(row, col);
     let peer = move || {
-        state.0.get().selected.is_some_and(|(r, c)| {
-            (r, c) != (row, col) && (r == row || c == col || (r / 3 == row / 3 && c / 3 == col / 3))
-        })
-    };
-    let secondary = move || {
         let s = state.0.get();
-        (s.secondary_highlight_rows >> row) & 1 == 1 || (s.secondary_highlight_cols >> col) & 1 == 1
+        !s.drop_mode
+            && s.selected.is_some_and(|(r, c)| {
+                (r, c) != (row, col)
+                    && (r == row || c == col || (r / 3 == row / 3 && c / 3 == col / 3))
+            })
     };
     let cell_state = move || {
         if error() {
@@ -51,8 +54,6 @@ pub fn Cell(state: AppState, row: usize, col: usize) -> impl IntoView {
             }
         } else if peer() {
             "peer"
-        } else if secondary() {
-            "secondary"
         } else {
             "default"
         }

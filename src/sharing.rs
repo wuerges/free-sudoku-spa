@@ -203,7 +203,7 @@ mod tests {
         assert_eq!(recipient.sound_type, crate::state::SoundType::None);
         assert!(recipient.history.is_empty() && recipient.redo_stack.is_empty());
         assert!(recipient.selected.is_none() && recipient.paint_tool.is_none());
-        assert!(!recipient.note_mode && !recipient.drop_mode);
+        assert!(recipient.note_mode && recipient.drop_mode);
         assert_ne!(recipient.domino_gen, generation);
     }
     #[test]

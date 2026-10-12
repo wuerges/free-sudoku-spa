@@ -71,7 +71,7 @@ try {
     }
     await page.locator('#loading').waitFor({state:'detached'});
     await page.screenshot({path:path.join(output,`${theme}-mobile.png`),fullPage:true});
-    await cell(fixture.user).click();await clickGameAction(page,'Desfazer');
+    await clickGameAction(page,'Desfazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
     await clickGameAction(page,'Refazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
@@ -101,11 +101,11 @@ try {
     // Completed digits still support preview and selection in Drop notes mode.
     await page.getByRole('button',{name:'Notas',exact:true}).click();
     for(const digit of [1,7]) {
-      await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${digit}$`)}).click();
+      await page.locator('.number-choices').getByRole('button',{name:String(digit),exact:true}).click();
       const board=await page.evaluate(()=>JSON.parse(localStorage.getItem('sudoku_state')).board);
       await verifyPreview(board,digit);
     }
-    await page.locator('.number-choices > button').filter({hasText:/^7$/}).click();
+    await page.locator('.number-choices').getByRole('button',{name:'7',exact:true}).click();
     assert.equal(await page.locator('[data-placement="available"], [data-placement="blocked"]').count(),0);
     await page.getByRole('button',{name:'Drop',exact:true}).click();
     await page.getByRole('button',{name:'Notas',exact:true}).click();
@@ -121,7 +121,7 @@ try {
     assert.match(await page.locator('header p').innerText(),/jogo anterior/);
     await clickGameAction(page,'Desfazer');
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'empty');
-    await cell(fixture.user).click();
+    assert.equal(await cell(fixture.user).getAttribute('data-selected'),'true');
     await page.locator('.number-choices > button').filter({hasText:new RegExp(`^${fixture.s.solution[fixture.user]}$`)}).click();
     assert.equal(await cell(fixture.user).getAttribute('data-number-origin'),'user');
     // Preferences persist, affect each source independently, and reset safely.

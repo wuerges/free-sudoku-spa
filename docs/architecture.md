@@ -55,7 +55,7 @@ Hosting defaults to revalidation, with immutable caching reserved for hashed Tru
 
 `style/input.css` defines light and dark `--ui-*` tokens exposed through Tailwind
 v4 semantic utilities. Cell state precedence is error, hint, selected, matching,
-available/blocked/matching-blocked (empty cells with an active digit or empty selection), peer, secondary, default. Selection has a separate 3px outline, including on errors
+available/blocked/matching-blocked (empty cells with an active digit or empty selection), peer, default. Selection has a separate 3px outline, including on errors
 and hints. The early theme script in `index.html` applies system preference
 before WASM renders.
 
@@ -69,13 +69,13 @@ so undo cannot leave an empty cell permanently locked.
 `GameState.active_number` derives the inspected digit from Drop selection or
 the selected filled cell. `placement_available` uses the existing engine
 `is_valid_move` on empty cells and the current board only. With no digit in normal
-mode, it instead classifies selected-unit peers versus outside empty cells. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. A selected empty
-cell retains its selection fill/outline, with placement metadata and an available
-dot when inspecting a Drop digit; errors and hints retain precedence.
+mode, it instead classifies selected-unit peers versus outside empty cells. Preview classifications are derived rather than serialized. Matching digits/notes use the same active digit. Normal selection retains its fill/outline; Drop renders no cell selection or
+anchor peers. Errors and hints retain precedence.
 
 `placement_blocker` classifies blocked empty cells as selected or matching.
 Selected-source stripes win overlaps; a keypad digit with no selected matching
-occurrence classifies all blockers as matching. Source metadata and localized accessible
+occurrence classifies all blockers as matching. Drop always uses matching-source
+blockers, regardless of legacy selection data. Source metadata and localized accessible
 labels expose the distinction without persisting the classifications. The board has
 no visible legend: `/` hatching denotes selected-source blockers and `\` denotes
 matching-source blockers.
@@ -162,8 +162,9 @@ Screenshots under `docs/screenshots/ui-ux/` document the verified production UI.
 `GameState.drop_pick_solved` is a saved preference with a true serde default.
 In normal Drop mode (outside Notes/painting), `select_cell` picks a nonzero
 correct value before attempting an entry, without creating history or editing
-the board. It intentionally changes the highlight digit and anchor. Normal
-selection and disabled-preference Drop entries keep their existing behavior. New games
+the board. It changes only the highlight digit, without selecting the cell. Normal
+selection toggles off on a second tap; disabled-preference Drop entries retain
+their entry behavior. New games
 preserve the preference; configuration reset enables it.
 
 `number_is_solved` counts nine board/solution matches for a digit. Drop keypad
@@ -222,11 +223,12 @@ Without Drop, the palette applies immediately to `selected` and never activates
 a tool; no selection means no action. With Drop, `paint_tool` selects repeated
 painting without clearing `drop_number`. Digit choices keep painting active and
 change the highlight digit. Tapping the active color exits painting. Toggling
-Drop clears its digit/tool, and Notes/erase leave painting.
+Drop clears its digit/tool and cell selection. Color selection enables Notes.
+Tapping Notes while painting exits painting and keeps Notes on; outside painting,
+it toggles Notes normally. Leaving painting or switching Drop preserves Notes.
 
 Drop painting, note entry and number placement use their target coordinates
-without changing `selected` or expanded highlight state. Normal solved-cell
-picking deliberately sets the digit/anchor and clears expanded highlights;
+without selecting a cell. Normal solved-cell picking changes only the digit;
 it is bypassed for painting and Notes. Painting can mark clues/hints without
 editing values, cancels pending domino work, and rejects paused/won states.
 Same-color removal and clear-all use existing snapshots.
@@ -334,3 +336,29 @@ decorative beside native language names; locale buttons expose pressed states an
 language tags. Guarani dates fall back to `es-PY` when `Intl` lacks `gn-PY`.
 `tests/localization.test.mjs` checks catalogs, resolver/persistence, notices and
 bundle/APK staging; `tests/localization-browser.mjs` audits production flows.
+
+## Input mode persistence
+
+`drop_mode` and `drop_number` are serde-defaulted saved fields. Older saves
+receive off/None without changing progress. Loading filters digits to 1–9,
+clears the digit if Drop is off, clears cell selection if Drop is on, and
+never restores `paint_tool`. Notes remains saved in the existing `note_mode`.
+New games, imports and archive restores preserve local Notes/Drop on/off and
+clear the digit, painting tool and selected cell. Shared DTOs and history entries
+do not carry recipient mode preferences.
+
+Normal selection toggles off on any second tap, clearing derived peer,
+matching and placement highlights while preserving numbers, notes and colors.
+Drop previews use only the selected digit; no anchor or expanded-highlight
+state is needed. Notes uses a 1.5fr grid column against its neighbors' 1fr,
+with 66px/44px minimum widths and equal heights.
+
+`drop_availability` is a serde-defaulted `DropAvailability` preference: Both,
+DropOnly or NoDrop. Missing fields default to Both without replacing progress.
+The setter clears input targets and cancels pending domino work while retaining
+Notes; fixed choices enforce Drop on/off and ignore attempts to toggle it.
+Loading enforces the saved policy before normalizing its digit. New games and
+imports/history keep the local policy. Settings reset returns to Both without
+changing the current mode or board. The keypad hides Drop for fixed policies;
+its grid supports both policy visibility and Undo/Redo visibility while retaining
+the 1.5 Notes width ratio. Settings uses localized native radios.

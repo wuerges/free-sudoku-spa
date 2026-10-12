@@ -1,6 +1,6 @@
 use crate::components::icon::{Icon, IconName};
 use crate::i18n::{use_i18n, Message};
-use crate::state::{AppState, GameState, SoundType};
+use crate::state::{AppState, DropAvailability, GameState, SoundType};
 use leptos::prelude::*;
 use leptos_router::components::A;
 
@@ -149,6 +149,20 @@ pub fn ConfigPage() -> impl IntoView {
             <section class="settings-section" aria-labelledby="assistance-settings">
                 <h2 id="assistance-settings">{move || i18n.text(Message::Assistances)}</h2>
                 <p class="section-description">{move || i18n.text(Message::AssistanceIntro)}</p>
+                <fieldset class="drop-mode-options">
+                    <legend class="preference-label">{move || i18n.text(Message::DropAvailability)}</legend>
+                    <p class="section-description" id="drop-availability-description">{move || i18n.text(Message::DropAvailabilityIntro)}</p>
+                    <div class="drop-mode-choices">
+                        {[(DropAvailability::DropOnly, Message::DropOnly), (DropAvailability::NoDrop, Message::NoDrop), (DropAvailability::Both, Message::BothModes)].into_iter().map(|(choice, label)| view! {
+                            <label class="sound-choice" data-selected=move || (state.0.get().drop_availability == choice).to_string()>
+                                <input type="radio" name="drop-availability" aria-describedby="drop-availability-description"
+                                    prop:checked=move || state.0.get().drop_availability == choice
+                                    on:change=move |_| state.set_drop_availability(choice) />
+                                <span>{move || i18n.text(label)}</span>
+                            </label>
+                        }).collect::<Vec<_>>()}
+                    </div>
+                </fieldset>
                 <PreferenceToggle id="undo-enabled" label=Message::UndoRedo
                     description=Message::UndoToggleIntro icon=IconName::Undo
                     get=|s| s.undo_enabled toggle=|s| s.toggle_undo() />

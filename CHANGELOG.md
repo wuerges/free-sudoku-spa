@@ -5,6 +5,24 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.25.0]
+
+### Added
+
+- Saved Drop modes setting: Drop only (always on, button hidden), No Drop (always off, button hidden), or Both (default, switchable button).
+- Save Drop on/off and its selected digit across reloads, including offline sessions. Older saves keep their progress and default to Drop off.
+
+### Changed
+
+- Preserve Notes and Drop preferences across new games, imports and history restores while clearing input targets.
+- Selecting a color enables Notes. Leaving painting keeps Notes on; tapping Notes while painting exits safely before a subsequent tap disables Notes.
+- Notes is 50% wider than the neighboring action buttons.
+- Tap the selected cell again in normal mode to deselect it and clear analytical highlights. Switching Drop clears cell selection.
+
+### Fixed
+
+- Drop highlights depend only on the selected digit, without stale cell-anchor shading or blocker patterns.
+
 ## [0.24.0]
 
 ### Changed

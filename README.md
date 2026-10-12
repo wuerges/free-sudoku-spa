@@ -281,7 +281,22 @@ marks. Actions opens a dismissible panel over the board with Auto notes, Hint,
 History, Share and New Game. Close it with
 its close button, Escape, or a tap outside. The panel keeps keyboard focus
 returning to Ações and does not shrink the board. Active entry modes expose
-pressed states, with a separate selected-number indicator for Drop.
+pressed states, with a separate selected-number indicator for Drop. Notes is
+50% wider than the other buttons, with the same height. Tap a selected cell
+again in normal mode to deselect it and remove analytical highlights; errors,
+hints and manual colors remain visible. Without selection, entry and direct
+coloring have no target.
+
+Settings → Assistances → Drop modes offers Drop only (always enabled, button
+hidden), No Drop (always disabled, button hidden), and Both (default, toggle
+button available). The choice survives reloads and game changes; restoring
+Settings defaults selects Both. With Drop hidden, the action row closes the gap
+and keeps Notes 50% wider than the remaining buttons.
+
+Drop on/off and its chosen digit survive reloads, including offline reloads.
+The active painting color is transient. New games, imports and history restores
+keep Notes/Drop on/off but clear the digit, color and cell selection. Switching
+Drop on or off also clears selection; Drop previews follow only its digit.
 
 The square board uses the space left by the compact controls, growing up to
 840px on tablets. Dynamic viewport height and safe-area insets support phone
@@ -340,10 +355,12 @@ layouts in both themes. Captures go to `/tmp/sudoku-completed-contrast`.
 With Drop off, select a cell and tap Verde, Roxo, Rosa or Laranja to color it.
 With Drop on, choose a color and tap cells to paint repeatedly. The palette
 avoids blue, which already identifies game highlights. Choosing a color keeps
-the Drop digit and highlight anchor. Number buttons change that digit while
+the Drop digit. Number buttons change that digit while
 painting stays active, including completed digits. Tap the active color again
-to resume number/note entry; Notes or toggling Drop also exits painting.
-Drop painting, notes and number placement preserve the highlight anchor.
+to resume Notes entry. Selecting any color enables Notes; leaving painting keeps
+Notes on. The first Notes tap while painting exits painting with Notes on;
+a subsequent tap disables Notes. Toggling Drop also exits painting and clears
+cell selection. Drop highlights follow only the selected digit, without an anchor.
 Normal Drop still supports picking a solved cell when enabled in Settings;
 painting and Notes never pick a digit from a target cell.
 Applying the same color again removes that cell’s mark; “Limpar cores” clears
@@ -453,3 +470,9 @@ Run `node tests/history-browser.mjs` after `just build` using the optional
 Playwright environment above. `HISTORY_SCREENSHOTS` overrides the default
 `docs/screenshots/history`. The audit checks retention, pins, identity/undo resume,
 separate restarts, safe shared-link imports, save failures and offline `/history`.
+
+`node tests/drop-availability-browser.mjs` checks all three Drop policies in all
+four languages, both themes and phone/tablet layouts, including older saves,
+Notes width with hidden controls, keyboard radios, reset, new games and offline
+reload. It uses the optional Playwright setup above and writes captures under
+`/tmp/sudoku-drop-availability` (override with `DROP_AVAILABILITY_SCREENSHOTS`).
