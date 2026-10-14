@@ -572,6 +572,7 @@ fn search_cell(grid: &[u8; 81]) -> Option<(usize, Vec<u8>)> {
     }
     best
 }
+#[allow(dead_code)]
 fn solve(grid: &mut [u8; 81], rng: &mut Rand, budget: &mut u32) -> bool {
     if *budget == 0 {
         return false;
@@ -612,9 +613,9 @@ fn count_bounded(grid: &mut [u8; 81], limit: u32, budget: &mut u32) -> Option<u3
         Some(1)
     }
 }
-#[cfg(test)]
-fn count_solutions(grid: &mut [u8; 81], limit: u32) -> u32 {
-    count_bounded(grid, limit, &mut 1_000_000).expect("Test uniqueness budget exhausted")
+#[allow(dead_code)]
+pub fn count_solutions(grid: &mut [u8; 81], limit: u32) -> u32 {
+    count_bounded(grid, limit, &mut 1_000_000).expect("Uniqueness budget exhausted")
 }
 
 /// Valid candidates for a cell (numbers not in same row/col/box).
@@ -683,10 +684,12 @@ pub fn conflicts(grid: &[u8; 81], row: usize, col: usize) -> Vec<(usize, usize)>
     res
 }
 
+#[allow(dead_code)]
 const SEARCH_BUDGET: u32 = 20_000;
 const GENERATION_ATTEMPTS: usize = 2;
 
 /// Bounds are secondary density constraints. Failure to reach them is explicit.
+#[allow(dead_code)]
 fn generate_clues(
     range: std::ops::RangeInclusive<u8>,
     rng: &mut Rand,
@@ -788,7 +791,7 @@ fn rated_board(
     })
 }
 /// Replay is deterministic for generator/grader v1 and this bundled corpus.
-/// All fallback puzzles are regraded; easier or unsupported puzzles are rejected.
+/// Variations are regraded; easier or unsupported puzzles are rejected.
 pub fn generate_seeded(difficulty: Difficulty, seed: u64) -> Board {
     let seed = if seed == 0 {
         0xDEAD_BEEF_CAFE_BABE
@@ -796,27 +799,23 @@ pub fn generate_seeded(difficulty: Difficulty, seed: u64) -> Board {
         seed
     };
     let mut rng = Rand(seed);
-    if difficulty <= Difficulty::Hard {
-        let range = if difficulty == Difficulty::Easy {
-            34..=46
-        } else {
-            24..=36
-        };
-        for _ in 0..GENERATION_ATTEMPTS {
-            if let Some((cells, solution)) = generate_clues(range.clone(), &mut rng) {
-                if let Some(board) = rated_board(cells, solution, difficulty, seed) {
-                    return board;
-                }
-            }
-        }
-    }
     let corpus = bank(difficulty);
-    let index = rng.next() as usize % corpus.len();
+    let index = (rng.next() % corpus.len() as u64) as usize;
+    varied_board(difficulty, seed, &corpus, index, &mut rng)
+}
+
+fn varied_board(
+    difficulty: Difficulty,
+    seed: u64,
+    corpus: &[([u8; 81], [u8; 81])],
+    index: usize,
+    rng: &mut Rand,
+) -> Board {
     let (cells, solution) = corpus[index];
     for _ in 0..GENERATION_ATTEMPTS {
         // Apply the same random transform to puzzle and solution.
         let mut solution_rng = Rand(rng.0);
-        let transformed_cells = transform(&cells, &mut rng);
+        let transformed_cells = transform(&cells, rng);
         let transformed_solution = transform(&solution, &mut solution_rng);
         if let Some(board) = rated_board(transformed_cells, transformed_solution, difficulty, seed)
         {
@@ -826,8 +825,53 @@ pub fn generate_seeded(difficulty: Difficulty, seed: u64) -> Board {
     rated_board(cells, solution, difficulty, seed)
         .expect("Bundled puzzle must retain its verified rating")
 }
+/// Selection history is separate from saved games and versioned with the corpus.
+#[derive(Default, Serialize, Deserialize)]
+pub(crate) struct BankProgress {
+    seeds: [u64; 5],
+    positions: [usize; 5],
+    last: [Option<usize>; 5],
+    swap_first: [bool; 5],
+}
+impl BankProgress {
+    fn take(&mut self, difficulty: Difficulty, len: usize, entropy: u64) -> usize {
+        let level = difficulty as usize;
+        if self.seeds[level] == 0 || self.positions[level] >= len {
+            self.seeds[level] = entropy.max(1);
+            self.positions[level] = 0;
+            let mut order: Vec<_> = (0..len).collect();
+            shuffle(&mut order, &mut Rand(self.seeds[level]));
+            self.swap_first[level] = len > 1 && self.last[level] == Some(order[0]);
+        }
+        let mut order: Vec<_> = (0..len).collect();
+        shuffle(&mut order, &mut Rand(self.seeds[level]));
+        // Keep the cycle boundary from immediately repeating the previous puzzle.
+        if self.swap_first[level] {
+            order.swap(0, 1);
+        }
+        let index = order[self.positions[level]];
+        self.positions[level] += 1;
+        self.last[level] = Some(index);
+        index
+    }
+}
+
+#[cfg(test)]
 pub fn generate(difficulty: Difficulty) -> Board {
-    generate_seeded(difficulty, Rand::new().0)
+    generate_with_progress(difficulty, &mut BankProgress::default())
+}
+
+pub(crate) fn generate_with_progress(difficulty: Difficulty, progress: &mut BankProgress) -> Board {
+    let mut seed = Rand::new().0;
+    let corpus = bank(difficulty);
+    let index = progress.take(difficulty, corpus.len(), seed);
+    // Find a replay seed whose first draw selects this position in the bank.
+    let mut rng = Rand(seed);
+    while (rng.next() % corpus.len() as u64) as usize != index {
+        seed = seed.wrapping_add(1).max(1);
+        rng = Rand(seed);
+    }
+    generate_seeded(difficulty, seed)
 }
 
 /// Simple xorshift PRNG — no need for `rand` dep just for shuffle.
@@ -859,7 +903,7 @@ impl Rand {
 
 fn shuffle<T>(slice: &mut [T], rng: &mut Rand) {
     for i in (1..slice.len()).rev() {
-        let j = (rng.next() as usize) % (i + 1);
+        let j = (rng.next() % (i + 1) as u64) as usize;
         slice.swap(i, j);
     }
 }
@@ -925,7 +969,6 @@ mod tests {
         assert!(board.solution.iter().all(|&v| (1..=9).contains(&v)));
         for i in 0..81 {
             assert!(board.cells[i] == 0 || board.cells[i] == board.solution[i]);
-            assert_eq!(board.cells[i] == 0, board.cells[80 - i] == 0);
             let mut without_cell = board.solution;
             without_cell[i] = 0;
             assert!(is_valid_move(
@@ -1102,7 +1145,7 @@ mod tests {
             Difficulty::Master,
         ] {
             let corpus = bank(difficulty);
-            assert!(corpus.len() >= 2);
+            assert_eq!(corpus.len(), 1000);
             for (cells, solution) in corpus {
                 let board =
                     rated_board(cells, solution, difficulty, 1).expect("Catalog rating mismatch");
@@ -1115,6 +1158,42 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn bank_cycles_survive_reload_and_do_not_repeat() {
+        let mut progress = BankProgress::default();
+        for cycle in 0..3 {
+            let mut seen = std::collections::HashSet::new();
+            let previous = progress.last[0];
+            for position in 0..1000 {
+                let index = progress.take(Difficulty::Easy, 1000, 42 + cycle);
+                if position == 0 {
+                    assert_ne!(Some(index), previous);
+                }
+                assert!(seen.insert(index));
+                progress =
+                    serde_json::from_str(&serde_json::to_string(&progress).unwrap()).unwrap();
+            }
+            assert_eq!(seen.len(), 1000);
+        }
+        assert_eq!(progress.positions[1..], [0; 4]);
+    }
+
+    #[test]
+    fn selected_game_replays_from_its_recorded_seed() {
+        for difficulty in [
+            Difficulty::Easy,
+            Difficulty::Medium,
+            Difficulty::Hard,
+            Difficulty::Expert,
+            Difficulty::Master,
+        ] {
+            let board = generate(difficulty);
+            let replay = generate_seeded(difficulty, board.seed);
+            assert_eq!(board.cells, replay.cells);
+            assert_eq!(board.solution, replay.solution);
+        }
+    }
+
     #[test]
     fn every_selected_level_replays_and_matches_its_rating() {
         for difficulty in [

@@ -106,7 +106,7 @@ primary-source comparisons, raw datasets, and a proposed grading policy.
 
 `src/sudoku_engine.rs` owns grader v1, deterministic deduction traces, bounded
 MRV verification, density-constrained clue removal, and seeded selection.
-`src/puzzle_bank.csv` contains self-generated verified fallback puzzles compiled
+`src/puzzle_bank.csv` contains 5,000 imported and locally verified puzzles compiled
 into WASM. `grade` never reads a solution; an unsupported/stalled puzzle has no
 rating. Only matching ratings enter a new game.
 
@@ -385,3 +385,12 @@ Zero balloons retains fireworks. Audio failure cannot prevent visual feedback.
 Fresh completion through entry, hint, domino or redo celebrates; loading or importing
 an already completed game does not. `tests/effects-browser.mjs` checks native Chromium
 context reuse/recovery, saved sliders, mute and victory at phone/tablet widths.
+
+## Puzzle-bank selection
+
+New games use 1,000 bases per level from Sudoku Exchange's public-domain bank.
+`src/bin/import_puzzle_bank.rs` reproduces filtering and grading offline; see
+[puzzle-bank provenance](puzzle-bank.md). `state.rs` persists seeded
+shuffle cursors separately in localStorage (`sudoku_bank_v2`), with no game-save
+schema changes. Corrupt/unavailable selection storage resets only selection
+history. Existing saved boards, archives and shared snapshots are not regenerated.

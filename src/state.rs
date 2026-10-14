@@ -167,9 +167,31 @@ pub struct Snapshot {
     pub cell_colors: [u8; 81],
 }
 
+// Selection history is independent of game saves, archives and shared links.
+fn generate_board(difficulty: Difficulty) -> sudoku_engine::Board {
+    #[cfg(target_arch = "wasm32")]
+    let storage = web_sys::window().and_then(|w| w.local_storage().ok().flatten());
+    #[cfg(target_arch = "wasm32")]
+    let mut progress: sudoku_engine::BankProgress = storage
+        .as_ref()
+        .and_then(|s| s.get_item("sudoku_bank_v2").ok().flatten())
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    #[cfg(not(target_arch = "wasm32"))]
+    let mut progress = sudoku_engine::BankProgress::default();
+    let board = sudoku_engine::generate_with_progress(difficulty, &mut progress);
+    #[cfg(target_arch = "wasm32")]
+    if let Some(storage) = storage {
+        if let Ok(json) = serde_json::to_string(&progress) {
+            let _ = storage.set_item("sudoku_bank_v2", &json);
+        }
+    }
+    board
+}
+
 impl Default for GameState {
     fn default() -> Self {
-        let board = sudoku_engine::generate(Difficulty::Easy);
+        let board = generate_board(Difficulty::Easy);
         Self {
             game_id: new_game_id(),
             board: board.cells,
@@ -212,7 +234,7 @@ impl Default for GameState {
 
 impl GameState {
     pub fn start_new_game(&mut self, difficulty: Difficulty) {
-        let board = sudoku_engine::generate(difficulty);
+        let board = generate_board(difficulty);
         let s = self;
         *s = GameState {
             game_id: new_game_id(),
@@ -2482,7 +2504,7 @@ mod tests {
     #[test]
     fn test_hint_deterministic_from_seed() {
         // Same board + same seed = same hint result
-        let board = sudoku_engine::generate(Difficulty::Easy);
+        let board = generate_board(Difficulty::Easy);
         let state1 = GameState {
             game_id: new_game_id(),
             board: board.cells,

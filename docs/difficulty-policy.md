@@ -26,28 +26,35 @@ historical 100-puzzle corpus and every bundled fixture.
   the removal; it is never accepted as evidence of uniqueness.
 - Clue removal includes the center, honors both bounds, and returns failure if
   it cannot reach the requested density range. Density is secondary to rating.
-- Easy gets 34–46 clue targets; Medium/Hard get 24–36. Each gets at most two
-  fresh attempts, accepting only a complete logical solve in the selected band.
-- Expert/Master use the bundled bank directly. All levels have a fallback bank
-  and try at most two randomized digit/rotation/reflection variations. Every
-  variation is regraded. The verified original is the final fallback.
+- All five levels select from the bundled bank, 1,000 puzzles per level.
+- Each level walks a seeded shuffled permutation, persisted separately in
+  `sudoku_bank_v2`. A cycle contains no repeated base puzzle; the next cycle's
+  first puzzle cannot equal the previous cycle's last. Storage failure falls
+  back to playable games without a durable repeat guarantee. Tabs share the
+  cursor but concurrent selections are not transactional.
+- Digit/rotation/reflection variations get two attempts and are regraded.
+  The verified original is the final fallback.
 - A logical trace is bounded to 810 progress steps. Chain searches are capped
   at seven links and 10,000 visits per digit; exhausting these limits is unrated.
 
-The bank has 30 original, self-generated puzzles: eight Easy, eight Medium,
-two Hard, eight Expert, and four Master. Validity, uniqueness, and local rating
-are checked in normal tests. No network or external engine is needed in the app.
-Seed zero is normalized to a nonzero constant. Puzzle completion, removal,
-selection, and variation consume one RNG stream. `generate_seeded` replays the
-same board/solution/rating for the same seed, selected level, implementation,
-and corpus. Stored old seeds keep their old meaning; they are not converted.
+The bank has 5,000 puzzles imported from the public-domain Sudoku Exchange
+collection. See [provenance and reproduction](puzzle-bank.md). The importer
+checks uniqueness and local rating and filters equivalents using a graph
+fingerprint invariant under digit relabeling, transpose, legal row/column and
+band/stack permutations. Hash collisions may reject extra candidates.
+Normal tests verify all shipped puzzles' solutions, uniqueness and logical traces.
+No network or external engine is needed in the app. Clue patterns need not be symmetric.
+
+Seed zero is normalized to a nonzero constant. Recorded seeds reproduce new
+selections with this implementation/corpus; cross-version replay is not promised.
+Existing saves store full boards/solutions and never regenerate from seeds.
 
 ## Independent calibration
 
-The bank was compared with the official
+The former 30-puzzle self-generated bank was compared with the official
 [Sukaku Explainer 1.18.1 release](https://github.com/SudokuMonster/SukakuExplainer/releases/tag/v1.18.1).
-[Calibration CSV](difficulty-calibration.csv) records all 30 bundled puzzles,
-SE ratings, and the external solver's strongest technique. Hard bank puzzles
+[Calibration CSV](difficulty-calibration.csv) records those 30 historical puzzles,
+SE ratings, and the external solver's strongest technique. Historical Hard bank puzzles
 were filtered to SE ≥3.0 and Master to SE ≥5.0; the app still requires its own
 matching logical rating. Java/the external grader are development tools only.
 

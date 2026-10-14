@@ -339,8 +339,9 @@ locked candidates (Médio), pairs/triples (Difícil), fish/wings/coloring/short
 chains (Expert), and longer alternating chains (Mestre). A limited grader that
 stalls reports unrated. These are app-specific bands, not SE rating numbers.
 
-New games accept only a matching measured level. Fresh generation is bounded;
-verified variations from the bundled bank keep all levels available offline.
+New games accept only a matching measured level from an offline bank of 5,000
+verified puzzles (1,000 per level). Saved shuffled cycles avoid repeated base
+puzzles until each level is exhausted. See [bank provenance](docs/puzzle-bank.md).
 The header shows the strongest technique. Older games keep their saved level
 and display “jogo anterior”; their progress is preserved.
 
