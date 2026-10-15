@@ -24,20 +24,42 @@ try {
   await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await page.locator('#loading').waitFor({state:'detached'});
   await context.setOffline(true);
+  const savedBefore = await page.evaluate(()=>JSON.parse(localStorage.sudoku_state));
+  const cursorBefore = await page.evaluate(()=>JSON.parse(localStorage.sudoku_bank_v2));
+  await page.reload();
+  await page.locator('#loading').waitFor({state:'detached'});
+  const savedAfter = await page.evaluate(()=>JSON.parse(localStorage.sudoku_state));
+  for (const field of ['board','givens','solution','notes','history','redo_stack','seed','game_id']) {
+    assert.deepEqual(savedAfter[field],savedBefore[field], `Offline resume preserves ${field}`);
+  }
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.sudoku_bank_v2)),cursorBefore);
+
   console.log('AUDIT,requested,run,clues,handler_ms,measured,technique,grader_version');
   for(const [requested,label] of [['Easy','Fácil'],['Medium','Médio'],['Hard','Difícil'],['Expert','Expert'],['Master','Mestre']]) {
+    const level = ['Easy','Medium','Hard','Expert','Master'].indexOf(requested);
     for(let run=0;run<20;run++) {
+      const previousCursor = await page.evaluate(()=>JSON.parse(localStorage.sudoku_bank_v2));
       await openGameActions(page);
       await page.getByRole('button',{name:/Novo jogo/}).click();
       await page.getByRole('button',{name:label,exact:true}).waitFor();
-      const result=await page.evaluate(async label=>{
+      const previousId = await page.evaluate(()=>JSON.parse(localStorage.sudoku_state).game_id);
+      const elapsed=await page.evaluate(label=>{
         const button=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);
-        const start=performance.now();button.click();const elapsed=performance.now()-start;
-        // Persistence effects flush after the synchronous click handler.
-        await new Promise(resolve=>setTimeout(resolve,0));
-        const s=JSON.parse(localStorage.getItem('sudoku_state'));
-        return {elapsed,clues:s.givens.filter(v=>v!==0).length,difficulty:s.difficulty,board:s.board,givens:s.givens,rating:s.rating,requested:s.requested_difficulty};
+        const start=performance.now();button.click();return performance.now()-start;
       },label);
+      await page.waitForFunction(previousId=>JSON.parse(localStorage.sudoku_state).game_id!==previousId,previousId);
+      const result=await page.evaluate(()=>{
+        const s=JSON.parse(localStorage.sudoku_state);
+        return {clues:s.givens.filter(v=>v!==0).length,difficulty:s.difficulty,board:s.board,givens:s.givens,rating:s.rating,requested:s.requested_difficulty};
+      });
+      result.elapsed = elapsed;
+      const cursor = await page.evaluate(()=>JSON.parse(localStorage.sudoku_bank_v2));
+      assert.equal(cursor.positions[level],previousCursor.positions[level]+1);
+      if(run===9) {
+        await page.reload();
+        await page.locator('#loading').waitFor({state:'detached'});
+        assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.sudoku_bank_v2)),cursor);
+      }
       assert.equal(result.difficulty,requested);
       assert.deepEqual(result.board,result.givens);
       assert.ok((await page.locator('header p').innerText()).startsWith(label+' · '));
@@ -49,5 +71,6 @@ try {
       console.log(`AUDIT,${requested},${run},${result.clues},${result.elapsed.toFixed(3)},${result.rating.difficulty},${result.rating.strongest},${result.rating.grader_version}`);
     }
   }
+  await page.screenshot({path:'/tmp/puzzle-bank-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

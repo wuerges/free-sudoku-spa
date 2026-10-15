@@ -5,6 +5,17 @@ records publication dates. Versions follow saved-game compatibility: compatible
 changes and state additions bump minor; incompatible state changes bump major.
 The initial shared version is 0.9.0.
 
+## [0.29.0]
+
+### Added
+
+- Bundle 5,000 verified Sudoku puzzles, 1,000 per difficulty, for offline play.
+- Remember shuffled puzzle-bank cycles across reloads to avoid repeats until each level's bank is exhausted.
+
+### Changed
+
+- Select new games from a public-domain Sudoku Exchange collection, independently checked by the app's logical grader.
+
 ## [0.28.0]
 
 ### Added

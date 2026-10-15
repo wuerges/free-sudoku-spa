@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "free-sudoku-pwa"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "base64",
  "console_error_panic_hook",

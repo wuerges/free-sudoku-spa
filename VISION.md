@@ -13,7 +13,7 @@ This document defines product direction and acceptance criteria. It is not a cla
 The repository contains:
 
 - A 9×9 board with five localized difficulty levels: Easy, Medium, Hard, Expert, and Master.
-- A custom Rust generator and backtracking solver. Generation removes rotationally paired cells and checks that removals preserve a unique solution.
+- A bundled offline bank of 5,000 puzzles, evenly split across five levels, with Rust validation, grading and randomized variations. Shuffled cycles avoid repeated base puzzles while selection storage is available. A custom generator remains available for development.
 - A button-based number pad, pencil notes, saved Drop configuration with Drop only, No Drop and Both (the default), conflict highlighting, undo/redo, timer and pause, hints, and victory feedback.
 - Optional domino cascades with saved timing and empty-cell activation settings, plus saved sound volume and victory balloon settings, a sound preview, and Rust audio/canvas effects. Cascades use only single candidates from a simple row/column/3×3 box scan and start after correct normal or Drop entries.
 - Game, configuration, and help routes; automatic and manually selectable light/dark themes with shared semantic color tokens.
@@ -50,9 +50,9 @@ These statements describe code present in the repository. Browser behavior, perf
 
 ### 2. Difficulty quality
 
-**Current behavior:** Grader v1 records a deterministic logical solve trace and rates its strongest technique. New selections accept only matching measured levels, with bounded fresh generation and a bundled verified fallback bank. Unsupported puzzles stay unrated. Seed replay uses one nonzero RNG stream and is deterministic for the same generator/grader/corpus version. Clue bounds are secondary density constraints; failure is explicit.
+**Current behavior:** Grader v1 records a deterministic logical solve trace and rates its strongest technique. New selections accept only matching measured levels, from a bundled verified 5,000-puzzle bank. Unsupported puzzles stay unrated. Seed replay uses one nonzero RNG stream and is deterministic for the same generator/grader/corpus version. New-game selection uses saved shuffled cycles per level.
 
-**Verified:** Fixed puzzle fixtures and trace soundness checks cover all five levels. Native and offline WASM audits each exercised 100 selections, with actual ratings matching every selection. The bank was independently compared with Sukaku Explainer 1.18.1. See [the policy and measurements](docs/difficulty-policy.md). Existing saves retain progress and their previous labels; new rating metadata has compatible defaults.
+**Verified:** Fixed puzzle fixtures and trace soundness checks cover all five levels. Native and offline WASM audits each exercised 100 selections, with actual ratings matching every selection. The former 30-puzzle bank was independently compared with Sukaku Explainer 1.18.1; that historical calibration does not cover the expanded bank. See [the policy and measurements](docs/difficulty-policy.md). Existing saves retain progress and their previous labels; new rating metadata has compatible defaults.
 
 **Remaining validation:** Check generation/grading latency on representative Android hardware and collect player feedback to refine the local technique bands. Ratings describe this solver's chosen path; they are not a universal or minimal-difficulty guarantee. Daily-puzzle semantics and cross-version seed replay remain future work.
 
